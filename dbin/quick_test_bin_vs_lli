@@ -1,0 +1,99 @@
+#!/bin/bash
+
+separator_half="======================================="
+separator=${separator_half}${separator_half}
+
+function test_one
+{
+   test_id=$1
+
+   progname=${test_id}
+
+   (ulimit 10; csmith > $progname.c )
+   echo clang for llvm:
+   clang -I $TUUT/all/include/csmith-2.2.0 -c -emit-llvm $progname.c 
+   echo -e '\n'
+   echo $separator
+   echo clang for native:
+   clang -I $TUUT/all/include/csmith-2.2.0 -o $progname.bin $progname.c
+
+   (ulimit -t 120; ./$progname.bin > $test_id.bin.out )
+   (ulimit -t 120; \
+    $TUUT/all/bin/lli --force-interpreter $progname.bc > $test_id.lli.out )
+
+   diff -q $test_id.bin.out $test_id.lli.out
+   diff_status=$?
+   echo diff status=\"$diff_status\" '(should be 0)'
+   if [ $diff_status -eq "0" ]; then
+      echo test case passes
+      mv $progname.c GOOD
+      rm $test_id.*
+   else
+      echo WARNING: different output on test $test_id.
+      mv $progname.* $test_id.*.out BAD
+   fi
+
+   return $diff_status
+}
+
+function timed_test_one
+{
+   test_id=$1
+
+   start_time=`date +%s`
+   (
+     echo -e '\n\n\n' 
+     echo $separator$separator
+     echo $separator$separator
+     echo test_id=$test_id
+     echo -e '\n'
+     test_one $test_id 
+     echo $? > $test_id.status_file
+   ) 2>&1 | tee $test_id.full.out >> /dev/null
+   stop_time=`date +%s`
+   status=`cat $test_id.status_file`
+   rm $test_id.status_file
+   echo "  " test_one status=\"$status\"
+   
+   delta_s=$(( $stop_time - $start_time ))
+   delta_min=$(( $delta_s / 60 ))
+   delta_rem_s=$(( $delta_s % 60 ))
+
+   if [ $status -eq 0 ]; then
+      dest_dir=GOOD
+   else
+      dest_dir=BAD
+   fi
+   printf "   elapsed time %u:%2.2u (%u s)\n" \
+      $delta_min $delta_rem_s $delta_s | \
+      tee $dest_dir/$test_id.summary
+   echo "diff status=" $status >> $dest_dir/$test_id.summary
+   touch $test_id.full.out
+   mv $test_id.full.out $dest_dir
+}
+
+# ==========================================================================
+# main program
+
+# ==========================================================================
+# setup
+if [ ! -d BAD ]; then
+   mkdir BAD
+fi
+if [ ! -d GOOD ]; then
+   mkdir GOOD
+fi
+run_id=`date +%Y%b%d_%H%M%S`
+
+# ==========================================================================
+# start running tests
+test_num=0
+while true; do
+   test_id=test_${run_id}_$test_num
+   echo running $test_id at `date`
+   timed_test_one $test_id
+   test_num=$(($test_num+1))
+done
+
+# ==========================================================================
+# end of program
