@@ -21,7 +21,7 @@ if [ ! -d $PROJ_ROOT/live/bin ]; then
 fi
 export PATH=$PROJ_ROOT/live/bin:$PATH
 
-cd $PROJ_ROOT/git/llvm
+cd $PROJ_ROOT/git
 workspace soft
 
 # ==========================================================================
