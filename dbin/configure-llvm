@@ -2,20 +2,11 @@
 # Run llvm's configure script with customizations necessary for the current
 # development host.
 
-scriptname=lli_undef_fix/git/dbin/configure-llvm
-
-
-
-case `hostname` in
-   dyson)
-      PROJ_DIR=/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix
-      host_specific_options=""
-      ;;
-   *)
-      echo error: do not recognize host `hostname`.
-      exit -1
-      ;;
-esac
+scriptname=lli_undef_fix3/admin/bin/configure-llvm
+if [ -z "$PROJ_ROOT" ]; then
+   echo ${scriptname}: environment variable PROJ_ROOT not set.
+   exit 255
+fi
 
 # TODO2: consider running `gcc --version`, and if version is 4.6, then
 # setting --disable-compiler-version-checks. 
@@ -24,6 +15,26 @@ esac
 # gcc4.6 because the build process requires compiler support for C++2011.
 
 BUILD_DIR=`pwd`
+
+# ----------------------------------------------------------------------------
+# check the build directory
+
+# is the current directory the intended build directory?
+echo configuring to build in this directory:
+echo "  " \"$BUILD_DIR\"
+echo -n "Is that correct? (Y/n) "
+read input
+case $input in
+   y*|Y*)
+      echo continuing...
+      ;;
+   *)
+      echo Please cd to the intended build directory and rerun this script.
+      exit 255
+      ;;
+esac
+
+# is the current directory empty?
 if find | grep -vEq -e '^\\s*$'; then
    # all appears to be ok
    echo setting up build directory in $BUILD_DIR.
@@ -33,8 +44,11 @@ else
    exit 255
 fi
 
-exec $PROJ_DIR/git/llvm/configure --prefix $PROJ_DIR/live \
+# ----------------------------------------------------------------------------
+# configure the build
+exec $PROJ_ROOT/git/llvm/configure --prefix $PROJ_ROOT/live \
       $host_specific_options "$@"
 
+# ----------------------------------------------------------------------------
 # end of script
 

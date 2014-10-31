@@ -7,21 +7,21 @@
 
 scriptname=lli_undef_fix_workspace
 
-export PROJ_DIR=$EDUUUT/lli_undef_fix2
-if [ ! -d $PROJ_DIR ]; then
+export PROJ_ROOT=$EDUUUT/lli_undef_fix3
+if [ ! -d $PROJ_ROOT ]; then
    echo ${scriptname}: can not find project directory.
-   echo "  " dir=\"$PROJ_DIR\".
+   echo "  " dir=\"$PROJ_ROOT\".
    exit 255
 fi
 
-if [ ! -d $PROJ_DIR/live/bin ]; then
+if [ ! -d $PROJ_ROOT/live/bin ]; then
    echo ${scriptname}: can not find llvm live binary directory.
-   echo "  " dir=\"$PROJ_DIR/live/bin\".
+   echo "  " dir=\"$PROJ_ROOT/live/bin\".
    exit 255
 fi
-export PATH=$PROJ_DIR/live/bin:$PATH
+export PATH=$PROJ_ROOT/live/bin:$PATH
 
-cd $PROJ_DIR/git/llvm
+cd $PROJ_ROOT/git/llvm
 workspace soft
 
 # ==========================================================================

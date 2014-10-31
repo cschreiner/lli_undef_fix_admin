@@ -1,14 +1,18 @@
 #!/bin/bash
 # build llvm and install it
+scriptname=llvm_undef_fix3/admin/bin/make-llvm
 
+if [ -z "$PROJ_ROOT" ]; then
+   echo ${scriptname}: environment variable PROJ_ROOT not set.
+   exit 255
+fi
 
-BUILD_ROOT=/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix/git/llvm.build
-# TODO: change to use PROJ_ROOT to compute the BUILD_ROOT directory.  This
-# may mean that the setup script needs to set the PROJ_ROOT environment
-# variable.
+# ---------------------------------------------------------------------------
+# set things up
 
 separator="===================================================================="
 
+BUILD_ROOT=$PROJ_ROOT/llvm.build
 cd $BUILD_ROOT
 echo pwd=`pwd` #;;
 if [ -f BUILD.out ]; then
