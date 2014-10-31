@@ -10,17 +10,13 @@ if [ -z "$arg_label" ]; then
 fi
 shift
 
-BUILD_ROOT=/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix/git/llvm.build
-# TODO: change to use PROJ_ROOT to compute the BUILD_ROOT directory.  This
-# may mean that the setup script needs to set the PROJ_ROOT environment
-# variable.
-
 BUILD_OUT_FILE=BUILD.${arg_label}.out
 
 separator="===================================================================="
 
-cd $BUILD_ROOT
-echo pwd=`pwd` #;;
+cd $PROJ_ROOT/llvm.build
+echo building in dir=`pwd` 
+sleep 2
 if [ -f $BUILD_OUT_FILE ]; then
    cleandir $BUILD_OUT_FILE
 fi
