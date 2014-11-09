@@ -1,0 +1,13 @@
+#!/bin/sh
+# run lli with the -force-interpreter option
+if [ -z "$PROJ_ROOT" ]; then
+   echo environment variable PROJ_ROOT is not defined.
+   exit 255
+fi
+if [ -x $PROJ_ROOT/live/bin/lli ]; then
+   $PROJ_ROOT/live/bin/lli -force-interpreter "$@"
+else
+   echo $PROJ_ROOT/live/bin/lli does not appear to exist.
+   exit 255
+fi
+
