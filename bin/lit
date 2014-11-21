@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -z "$PROJ_ROOT" -o ! -d "$PROJ_ROOT" ]; then
+   echo environment variable PROJ_ROOT does not appear to indicate the
+   echo "  " project root directory.  Please fix.
+   exit 255
+fi
+
+$PROJ_ROOT/git/utils/lit/lit.py "$@"
+
