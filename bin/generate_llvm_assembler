@@ -218,66 +218,50 @@ our( %opcode_hash )=  {
       'add' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( nsw nuw ),
+         'flag_listref' => qw( nsw nuw ),
 	 },
       'sub' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( nsw nuw ),
+         'flag_listref' => qw( nsw nuw ),
 	 },
       'mul' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( nsw nuw ),
+         'flag_listref' => qw( nsw nuw ),
 	 },
       'sdiv' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( exact ),
+         'flag_listref' => qw( exact ),
 	 },
       'udiv' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( exact ),
+         'flag_listref' => qw( exact ),
 	 },
       'srem' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( ),
+         'flag_listref' => qw( ),
 	 },
       'urem' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_list' => qw( ),
+         'flag_listref' => qw( ),
 	 },
       # template: is 4 lines long:
       #'xxx' => {
       #	 'type'=> 'arith',
       #   'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-      #   'flag_list' => qw( ),
+      #   'flag_listref' => qw( ),
       #	 },
       };
 
 ## ===========================================================================
 ##   set up for this run
 
-our( %size )= new BitWidth( $arg_bitwidth );
-{
-   # TODO3: adjust this to exactly handle 64+-bit integers
-   if ( $arg_bitwidth eq "" )  {
-      # minimum width=6, maximum_width=32
-      $size{'bitwidth'}= int( rand()*26 + 6 );
-   } else {
-      $size{'bitwidth'}= $arg_bitwidth;
-      if ( $arg_bitwidth < 1 or $arg_bitwidth > 32 )  {
-	 die $main::scriptname . ": bitwidth out of range. \n";
-      }
-   }
-   $size{'max_val'}= 2** $size{'bitwidth'}- 1;
-   $size{'min_val'}= 0;
-   $size{'name'}= "i" . $size_{'bitwidth'};
-asdf
-}
+our( $regWidth )= new Bitwidth( $arg_bitwidth );
 
 ## ===========================================================================
 ##   set up output file
@@ -295,7 +279,7 @@ $out_fh->open( ">" $arg_outfile_name ) or
 if ( $arg_start_poison )  {
    
    $out_fh->print ( reg_context::getName() . 
-	 "= sub " . $size{'name'} . " nuw 0, 1 ; generates POISON \n" );
+	 "= sub " . $regWidth->getName() . " nuw 0, 1 ; generates POISON \n" );
    # TODO2: replace the above operands with random numbers
 }
 
@@ -333,7 +317,7 @@ exit( $main::EXIT_SUCCESS );
 # Warnings: 
 #
 # Inputs: 
-#   $size_hashref: information on the size of integers to use
+#   $regWidth: information on the size of integers to use
 # 
 # Outputs: 
 #   
@@ -344,7 +328,7 @@ exit( $main::EXIT_SUCCESS );
 # ============================================================================
 sub generate_one_inst
 {{
-   my( $size_hashref )= @_;
+   my( $regWidth )= @_;
 
    my( $opcode );
    {
@@ -355,7 +339,7 @@ sub generate_one_inst
 
    my( $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
-      $inst= generate_arith_inst( $size_hashref, $opcode );
+      $inst= generate_arith_inst( $regWidth, $opcode );
    } else {
       die $main::scriptname . ": don't recognize opcode type for \"$opcode\"\n";
    }
@@ -376,7 +360,7 @@ sub generate_one_inst
 # Warnings: 
 #
 # Inputs: 
-#   $size_hashref: info on integer size to use, per generate_one_inst()
+#   $regWidth: info on integer size to use, per generate_one_inst()
 #   $opcode: the opcode to generate
 # 
 # Outputs: none
@@ -387,10 +371,38 @@ sub generate_one_inst
 # ============================================================================
 sub generate_arith_inst
 {{
-   my( $size_hashref, $opcode )= @_;
+   my( $regWidth, $opcode )= @_;
 
-   asdf
+   my( $flags )= "";
+   my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
+   for ( my $ii= 0; $ii < scalar($$flag_listref); $ii++ )  {
+      if ( $rand() < .5 )  {
+         $flags.= $$flag_listref[$ii] . " ";
+      }
+   } 
+
+   my( $operand1 )= reg_context::getPrevName();
+
+   my( $operand2 );
+   if ( rand() < .5 )  {
+      # operand is a constant
+      $operand2= $regWidth->getRand();
+   } else {
+      $operand2= reg_context::getRecentName();
+   }
    
+   # maybe swap operands
+   if ( rand() < .5 )  {
+      my( $tmp )= $operand1;
+      $operand1= $operand2;
+      $operand2= $tmp;
+   }
+
+   my( $inst )= $opcode_hash{$opcode}->{'name'} . ' ' . 
+	 $regWidth->getName() . ' ' $flags . ' ' $operand1 . ', ' $operand2 .
+         "\n";
+
+   return $inst;
 }}
 
 
@@ -769,7 +781,7 @@ package main;
 
 ## ****************************************************************************
 ## ****************************************************************************
-#package BitWidth;
+#package Bitwidth;
 
 ## ****************************************************************************
 ## package BEGIN and END functions
@@ -781,7 +793,7 @@ package main;
    {{
       # ----------------------------------------------------------------------
       # package-specific constants
-      $packagename= "BitWidth";
+      $packagename= "Bitwidth";
 
       # ----------------------------------------------------------------------
       # other stuff
@@ -888,6 +900,10 @@ sub getRandVal
 #   my( )= @_;
 #}}
 
+   $perl_this->{'bitwidth'}= $width;
+   $perl_this->{'max_val'}= 2** $width- 1;
+   $perl_this->{'min_val'}= 0;
+   $perl_this->{'name'}= "i" . $width;
 ## ===========================================================================
 ## Short get subroutines
 ## ===========================================================================
@@ -898,7 +914,11 @@ sub getRandVal
 # Return Value: the field's value
 #
 # ============================================================================
-#sub sub_name {{ my($perl_this)= @_; return ; }}
+#sub sub_name {{ my($perl_this)= @_; return $perl_this->{'xx'}; }}
+sub getBitwidth {{ my($perl_this)= @_; return $perl_this->{'bitwidth'}; }}
+sub getMaxVal {{ my($perl_this)= @_; return $perl_this->{'max_val'}; }}
+sub getMinVal {{ my($perl_this)= @_; return $perl_this->{'min_val'}; }}
+sub getName {{ my($perl_this)= @_; return $perl_this->{'name'}; }}
 
 ## ===========================================================================
 ## Short set subroutines
