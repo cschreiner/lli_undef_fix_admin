@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Run llvm's configure script with customizations necessary for the current
 # development host.
 
@@ -46,8 +46,14 @@ fi
 
 # ----------------------------------------------------------------------------
 # configure the build
-exec $PROJ_ROOT/git/llvm/configure --prefix $PROJ_ROOT/live \
+$PROJ_ROOT/git/llvm/configure --prefix $PROJ_ROOT/live \
       $host_specific_options "$@"
+
+# ----------------------------------------------------------------------------
+# set up stuff derived from the configuration
+
+# lit needs a config-generated file in its test dir hierarchy
+ln -s $BUILD_DIR/test/lit.site.cfg $PROJ_ROOT/git/test 
 
 # ----------------------------------------------------------------------------
 # end of script
