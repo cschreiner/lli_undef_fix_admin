@@ -134,6 +134,9 @@ if ( scalar(@ARGV) > 0 )  {
 ##   get command line args
 
 use vars qw ( $arg_outfile_name );
+use vars qw ( $arg_bitwidth $arg_start_poison $arg_num_steps );
+$arg_bitwidth= 8;
+$arg_num_steps= 10;
 
 use vars qw( $need_to_exit );
 $need_to_exit= $FALSE;
@@ -175,6 +178,9 @@ if ( scalar(@ARGV) > 0 )  {
    GetOptions ( "help|h" => \$arg_help, 
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
+         "bitwidth=i" => \$arg_bitwidth,
+         "start-poison" => \$arg_start_poison,
+         "num-steps=i" => \$arg_start_poison,
 	 );
 
    if ( $arg_help )  {
@@ -267,7 +273,7 @@ our( $regWidth )= new Bitwidth( $arg_bitwidth );
 ##   set up output file
 
 our( $out_fh )= new FileHandle;
-$out_fh->open( ">" $arg_outfile_name ) or
+$out_fh->open( ">" . $arg_outfile_name ) or
    die $main::scriptname . ": can't open output file for writing, \n" .
          "\t" . "file=\"$arg_outfile_name\",\n" .
          "\t" . "$!. \n";
@@ -275,6 +281,9 @@ $out_fh->open( ">" $arg_outfile_name ) or
 
 ## ===========================================================================
 ##   start generating
+
+$out_fh->printf( generate_const_inst( $regWidth ) );
+$out_fh->printf( generate_const_inst( $regWidth ) );
 
 if ( $arg_start_poison )  {
    
@@ -284,10 +293,10 @@ if ( $arg_start_poison )  {
 }
 
 ## ===========================================================================
-##   generate
+##   generate bulk of the instructions
 
-for ( $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
-   $out_fh->print ( generate_one_inst( \%size ) );
+for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
+   $out_fh->print ( generate_one_inst( $regWidth ) );
 }
 
 ## ===========================================================================
@@ -317,7 +326,7 @@ exit( $main::EXIT_SUCCESS );
 # Warnings: 
 #
 # Inputs: 
-#   $regWidth: information on the size of integers to use
+#   $regWidth: a regWidth instance with info on the size of integers to use
 # 
 # Outputs: 
 #   
@@ -376,7 +385,7 @@ sub generate_arith_inst
    my( $flags )= "";
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
    for ( my $ii= 0; $ii < scalar($$flag_listref); $ii++ )  {
-      if ( $rand() < .5 )  {
+      if ( rand() < .5 )  {
          $flags.= $$flag_listref[$ii] . " ";
       }
    } 
@@ -399,12 +408,41 @@ sub generate_arith_inst
    }
 
    my( $inst )= $opcode_hash{$opcode}->{'name'} . ' ' . 
-	 $regWidth->getName() . ' ' $flags . ' ' $operand1 . ', ' $operand2 .
-         "\n";
+	 $regWidth->getName() . ' ' . $flags . ' ' . 
+	 $operand1 . ', ' . $operand2 . "\n";
 
    return $inst;
 }}
 
+## ===========================================================================
+## Subroutine generate_const_inst()
+## ===========================================================================
+# Description: generates a constant-assignment instruction
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $regWidth: info on integer size to use, per generate_one_inst()
+#   
+# 
+# Outputs: none
+#   
+# Return Value: 
+#   string containing the instruction generated.  String contains a EOL.
+#   
+# ============================================================================
+sub generate_const_inst
+{{
+   my( $regWidth )= @_;
+
+   my( $inst )= reg_context::getName(). "= ". $regWidth->getName(). ' ' . 
+         $regWidth->getRand() . "\n";
+   return $inst;
+}}
 
 
 # template 25 lines long
@@ -644,11 +682,13 @@ package reg_context;
    {{
       # ----------------------------------------------------------------------
       # package-specific constants
+      use vars qw ( $packagename );
       $packagename= "reg_context";
 
       # ----------------------------------------------------------------------
       # other stuff
-      our( $reg_num )= 0;
+      use vars qw ( $reg_num );
+      $reg_num= 0;
 
    }}
 
@@ -793,6 +833,7 @@ package main;
    {{
       # ----------------------------------------------------------------------
       # package-specific constants
+      use vars qw ( $packagename );
       $packagename= "Bitwidth";
 
       # ----------------------------------------------------------------------
@@ -877,7 +918,7 @@ sub getRandVal
    if ( !defined($margin) )  { $margin2= 0; }
 
    my( $range )= $perl_this->{'maxVal'} - $perl_this->{'minVal'}- 2*$margin2;;
-   $val= int( rand() * $range+ $perl_this->{'minVal'}+ $margin2 );
+   my $val= int( rand() * $range+ $perl_this->{'minVal'}+ $margin2 );
 
    return $val;
 }}
@@ -900,10 +941,6 @@ sub getRandVal
 #   my( )= @_;
 #}}
 
-   $perl_this->{'bitwidth'}= $width;
-   $perl_this->{'max_val'}= 2** $width- 1;
-   $perl_this->{'min_val'}= 0;
-   $perl_this->{'name'}= "i" . $width;
 ## ===========================================================================
 ## Short get subroutines
 ## ===========================================================================
