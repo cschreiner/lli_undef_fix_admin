@@ -741,7 +741,11 @@ sub getName
 sub getPrevName
 {{
    #my( )= @_;
-   return "%" . $reg_num;
+   if ( $reg_num < 2 )  {
+      die $main::scriptname . 
+	    ": internal error 2014nov24_154228, code=\"$reg_num\"\n";
+   }
+   return "%" . ($reg_num- 2);
 }}
 
 ## ===========================================================================
@@ -760,8 +764,11 @@ sub getRecentName
 {{
    #my( )= @_;
    my( $limit )= 10;
-   if ( $reg_num < $limit )  { $limit= $reg_num; };
-   my( $rr )= $reg_num- int( rand()*$limit );
+   my( $max_returnable_reg_num )= $reg_num- 3;
+   if ( $max_returnable_reg_num < $limit )  { 
+      $limit= $max_returnable_reg_num; 
+   };
+   my( $rr )= $max_returnable_reg_num- int( rand()*$limit );
    return "%" . $rr;
 }}
 
