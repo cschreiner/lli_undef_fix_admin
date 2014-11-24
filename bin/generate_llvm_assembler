@@ -8,9 +8,8 @@
 # For a copyright information, see the statement in the POD documentation at
 # the end of this file.  
 #
-# Description: 
+# Description: see POD documentation
 #	
-#
 # ****************************************************************************
 
 # ****************************************************************************
@@ -26,7 +25,7 @@
 # ****************************************************************************
 # Compiler Directives (use's)
 # make sure we are using this Perl version or later
-use 5.6.0;
+use 5.10.0;
 
 use strict;
 use Getopt::Long;
@@ -134,6 +133,8 @@ if ( scalar(@ARGV) > 0 )  {
 ## ===========================================================================
 ##   get command line args
 
+use vars qw ( $arg_outfile_name );
+
 use vars qw( $need_to_exit );
 $need_to_exit= $FALSE;
 
@@ -195,6 +196,8 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOptions left behind
 
+$arg_outfile_name= shift @ARGV;
+
 ## -----------------------------------------------------------------------
 ##   check arguments
 
@@ -209,7 +212,108 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
-##   
+##  set up constants
+
+our( %opcode_hash )=  {
+      'add' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( nsw nuw ),
+	 },
+      'sub' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( nsw nuw ),
+	 },
+      'mul' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( nsw nuw ),
+	 },
+      'sdiv' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( exact ),
+	 },
+      'udiv' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( exact ),
+	 },
+      'srem' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( ),
+	 },
+      'urem' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_list' => qw( ),
+	 },
+      # template: is 4 lines long:
+      #'xxx' => {
+      #	 'type'=> 'arith',
+      #   'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+      #   'flag_list' => qw( ),
+      #	 },
+      };
+
+## ===========================================================================
+##   set up for this run
+
+our( %size )= new BitWidth( $arg_bitwidth );
+{
+   # TODO3: adjust this to exactly handle 64+-bit integers
+   if ( $arg_bitwidth eq "" )  {
+      # minimum width=6, maximum_width=32
+      $size{'bitwidth'}= int( rand()*26 + 6 );
+   } else {
+      $size{'bitwidth'}= $arg_bitwidth;
+      if ( $arg_bitwidth < 1 or $arg_bitwidth > 32 )  {
+	 die $main::scriptname . ": bitwidth out of range. \n";
+      }
+   }
+   $size{'max_val'}= 2** $size{'bitwidth'}- 1;
+   $size{'min_val'}= 0;
+   $size{'name'}= "i" . $size_{'bitwidth'};
+asdf
+}
+
+## ===========================================================================
+##   set up output file
+
+our( $out_fh )= new FileHandle;
+$out_fh->open( ">" $arg_outfile_name ) or
+   die $main::scriptname . ": can't open output file for writing, \n" .
+         "\t" . "file=\"$arg_outfile_name\",\n" .
+         "\t" . "$!. \n";
+
+
+## ===========================================================================
+##   start generating
+
+if ( $arg_start_poison )  {
+   
+   $out_fh->print ( reg_context::getName() . 
+	 "= sub " . $size{'name'} . " nuw 0, 1 ; generates POISON \n" );
+   # TODO2: replace the above operands with random numbers
+}
+
+## ===========================================================================
+##   generate
+
+for ( $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
+   $out_fh->print ( generate_one_inst( \%size ) );
+}
+
+## ===========================================================================
+##   clean up output file and exit
+
+$out_fh->close() or
+   die $main::scriptname . ": can't close output file after writing, \n" .
+         "\t" . "file=\"$arg_outfile_name\",\n" .
+         "\t" . "$!. \n";
+exit( $main::EXIT_SUCCESS );
 
 ## ===========================================================================
 ##   
@@ -218,13 +322,77 @@ if ( $debug_flag )  {
 ##   
 
 ## ===========================================================================
-##   
+## Subroutine generate_one_inst()
+## ===========================================================================
+# Description: generates one assembler instruction
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $size_hashref: information on the size of integers to use
+# 
+# Outputs: 
+#   
+#
+# Return Value: 
+#   a string containing the instruction
+#
+# ============================================================================
+sub generate_one_inst
+{{
+   my( $size_hashref )= @_;
+
+   my( $opcode );
+   {
+      my( @opcode_list )= keys %opcode_hash;
+      $opcode= $opcode_list[ int( rand() * scalar(@opcode_list) ) ];
+      print "selected opcode=\"$opcode\"\n";;
+   }
+
+   my( $inst );
+   if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
+      $inst= generate_arith_inst( $size_hashref, $opcode );
+   } else {
+      die $main::scriptname . ": don't recognize opcode type for \"$opcode\"\n";
+   }
+
+   return $inst;
+}}
+
 
 ## ===========================================================================
-##   
-
+## Subroutine generate_arith_inst()
 ## ===========================================================================
-##   
+# Description: generates an arithmetic instruction
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $size_hashref: info on integer size to use, per generate_one_inst()
+#   $opcode: the opcode to generate
+# 
+# Outputs: none
+#   
+# Return Value: 
+#   string containing the instruction generated
+#
+# ============================================================================
+sub generate_arith_inst
+{{
+   my( $size_hashref, $opcode )= @_;
+
+   asdf
+   
+}}
+
 
 
 # template 25 lines long
@@ -444,10 +612,317 @@ sub give_help
 
 
 
-
 # ****************************************************************************
 # end this package 
 package main;
+
+
+## ****************************************************************************
+## ****************************************************************************
+package reg_context;
+# Description: information for selecting registers
+
+## ****************************************************************************
+## package BEGIN and END functions
+
+   # =========================================================================
+   # subroutine BEGIN
+   # =========================================================================
+   sub BEGIN
+   {{
+      # ----------------------------------------------------------------------
+      # package-specific constants
+      $packagename= "reg_context";
+
+      # ----------------------------------------------------------------------
+      # other stuff
+      our( $reg_num )= 0;
+
+   }}
+
+   # =========================================================================
+   # subroutine END
+   # =========================================================================
+   sub END
+   {{
+      
+   }}
+
+## ****************************************************************************
+## start the package
+
+## ===========================================================================
+## Subroutine getName
+## ===========================================================================
+# Description: returns the name of a new register
+#
+# Inputs: none
+# 
+# Outputs: none
+#
+# Return Value: per description
+#
+# ============================================================================
+sub getName
+{{
+   #my( )= @_;
+   my( $ret_val )= "%" . $reg_num;
+   $reg_num++;
+   return $ret_val;
+}}
+
+## ===========================================================================
+## Subroutine getPrevName
+## ===========================================================================
+# Description: gets the name of the previous (most recently issued) register
+#
+# Inputs: none
+# 
+# Outputs: none
+#
+# Return Value: per description
+#
+# ============================================================================
+sub getPrevName
+{{
+   #my( )= @_;
+   return "%" . $reg_num;
+}}
+
+## ===========================================================================
+## Subroutine getRecentName
+## ===========================================================================
+# Description: gets the name of a recently issued register
+#
+# Inputs: none
+# 
+# Outputs: none
+#
+# Return Value: per description
+#
+# ============================================================================
+sub getRecentName
+{{
+   #my( )= @_;
+   my( $limit )= 10;
+   if ( $reg_num < $limit )  { $limit= $reg_num; };
+   my( $rr )= $reg_num- int( rand()*$limit );
+   return "%" . $rr;
+}}
+
+#template is 16 lines long
+## ===========================================================================
+## Subroutine sub_name
+## ===========================================================================
+# Description:
+#
+# Inputs:
+# 
+# Outputs:
+#
+# Return Value:
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   my( )= @_;
+#}}
+
+## ===========================================================================
+## Short get subroutines
+## ===========================================================================
+# Description: short subroutines that only get one field
+#
+# Inputs: none
+#
+# Return Value: the field's value
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   return ;
+#}}
+
+## ===========================================================================
+## Short set subroutines
+## ===========================================================================
+# Description: short subroutines that only set one field
+#
+# Inputs: the field's new value
+#
+# Return Value: none
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   my ($ii)= @_;
+#}}
+
+
+
+
+## ****************************************************************************
+## end this package 
+package main;
+## ****************************************************************************
+## ****************************************************************************
+
+## ****************************************************************************
+## ****************************************************************************
+#package BitWidth;
+
+## ****************************************************************************
+## package BEGIN and END functions
+
+   # =========================================================================
+   # subroutine BEGIN
+   # =========================================================================
+   sub BEGIN
+   {{
+      # ----------------------------------------------------------------------
+      # package-specific constants
+      $packagename= "BitWidth";
+
+      # ----------------------------------------------------------------------
+      # other stuff
+
+   }}
+
+   # =========================================================================
+   # subroutine END
+   # =========================================================================
+   sub END
+   {{
+      
+   }}
+
+## ****************************************************************************
+## start the package
+
+## ===========================================================================
+## Subroutine new
+## ===========================================================================
+# Description: creates a new instance
+#
+# Inputs:
+#   $class: information about the class (provided by perl)
+#   $target_width: an integer indicating the preferred with to work with
+# 
+# Outputs: none
+#
+# Return Value: a new instance
+#
+# ============================================================================
+sub new
+{{
+   my( $class, $target_width )= @_;
+
+   my( $perl_this );
+   bless $perl_this, $class;
+
+   # TODO3: adjust this to exactly handle 64+-bit integers
+   my( $max_width )= 32;
+   my( $abs_min_width )= 1;
+   my( $pref_min_width )= 6;
+   my( $width );
+   if ( $target_width eq "" )  {
+      $width= int( rand()*($max_width-$pref_min_width) + $pref_min_width );
+   } else {
+      if ( $target_width < $abs_min_width or $target_width > $max_width )  {
+	 die $main::scriptname . ": bitwidth out of range. \n";
+      }
+      $width= $target_width;
+   }
+   $perl_this->{'bitwidth'}= $width;
+   $perl_this->{'max_val'}= 2** $width- 1;
+   $perl_this->{'min_val'}= 0;
+   $perl_this->{'name'}= "i" . $width;
+
+   return $perl_this;
+}}
+
+## ===========================================================================
+## Subroutine getRandVal
+## ===========================================================================
+# Description: returns a random value for this size of integer
+#
+# Inputs:
+#   $perl_this: the instance in question (provided by PERL)
+#   $margin: do not return a value within this distance of the min or max value.
+#	Defaults to 0.  This guarantees that the value returned can be 
+#	incremented or decremented by up to this amount without overflow.
+# 
+# Outputs: none
+#
+# Return Value: per Description
+#
+# ============================================================================
+sub getRandVal
+{{
+   my( $perl_this, $margin )= @_;
+
+   my( $margin2 )= $margin;
+   if ( !defined($margin) )  { $margin2= 0; }
+
+   my( $range )= $perl_this->{'maxVal'} - $perl_this->{'minVal'}- 2*$margin2;;
+   $val= int( rand() * $range+ $perl_this->{'minVal'}+ $margin2 );
+
+   return $val;
+}}
+
+#template is 16 lines long
+## ===========================================================================
+## Subroutine sub_name
+## ===========================================================================
+# Description:
+#
+# Inputs:
+# 
+# Outputs:
+#
+# Return Value:
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   my( )= @_;
+#}}
+
+## ===========================================================================
+## Short get subroutines
+## ===========================================================================
+# Description: short subroutines that only get one field
+#
+# Inputs: $perl_this: the instance in question (provided by PERL)
+#
+# Return Value: the field's value
+#
+# ============================================================================
+#sub sub_name {{ my($perl_this)= @_; return ; }}
+
+## ===========================================================================
+## Short set subroutines
+## ===========================================================================
+# Description: short subroutines that only set one field
+#
+# Inputs: the field's new value
+#
+# Return Value: none
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   my ($ii)= @_;
+#}}
+
+
+
+
+## ****************************************************************************
+## end this package 
+package main;
+## ****************************************************************************
+## ****************************************************************************
 
 __END__
 
@@ -455,11 +930,7 @@ __END__
 
 =head1 NAME - generate_llvm_assembler.pl
 
-=cut
-
-#put a short (one line) description here
-
-=pod
+Generate a random LLVM assembler program
 
 =head1 SYNOPSIS
 
@@ -470,11 +941,17 @@ __END__
 
 =pod
 
- generate_llvm_assembler.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
- generate_llvm_assembler.pl [debug] ? 
+generate_llvm_assembler.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
+
+generate_llvm_assembler.pl [debug] F<output_file>
 
 
 =head1 DESCRIPTION
+
+Generates a random LLVM assembler program.  Currently, the program is
+a set of linear register assignments, meaning it assigns an arithmetic
+result to a register, then uses that result to compute another
+arithmetic result for another register, and so forth.
 
 
 =head1 EXTERNAL INFLUENCES
@@ -495,13 +972,14 @@ __END__
 
 =head1 AUTHOR AND COPYRIGHT
 
-generate_llvm_assembler.pl was written by Christian A. Schreiner.  Copyright (C) 
-2014-2014 by University of Utah.  You may use, examine, or modify
-this software only in accordance with the GNU Public License, or, alternately, 
-by special arrangement with the author.  generate_llvm_assembler.pl is released without 
-any warranties; if you use it and something breaks, you are responsible for 
-cleaning up afterwards.  This notice is precautionary only and does not 
-inherently imply publication or release for public use.  
+generate_llvm_assembler.pl was written by Christian A. Schreiner.
+Copyright (C) 2014-2014 by University of Utah.  You may use, examine,
+or modify this software only in accordance with the GNU Public
+License, or, alternately, by special arrangement with the author.
+generate_llvm_assembler.pl is released without any warranties; if you
+use it and something breaks, you are responsible for cleaning up
+afterwards.  This notice is precautionary only and does not inherently
+imply publication or release for public use.  
 
 =head1 SEE ALSO
 
