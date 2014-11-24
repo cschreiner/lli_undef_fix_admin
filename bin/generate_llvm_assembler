@@ -409,7 +409,7 @@ sub generate_arith_inst
       $operand2= $tmp;
    }
 
-   my( $inst )= $dest_reg . "= " . $opcode . ' ' . 
+   my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
 	 $regWidth->getName() . ' ' . $flags . ' ' . 
 	 $operand1 . ', ' . $operand2 . "\n";
 
@@ -441,7 +441,8 @@ sub generate_const_inst
 {{
    my( $regWidth )= @_;
 
-   my( $inst )= reg_context::getName(). "= ". $regWidth->getName(). ' ' . 
+   my( $inst )= "  " . 
+	 reg_context::getName(). "= ". $regWidth->getName(). ' ' . 
          $regWidth->getRandVal() . "\n";
    return $inst;
 }}
