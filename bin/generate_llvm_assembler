@@ -220,49 +220,49 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##  set up constants
 
-our( %opcode_hash )=  {
+our( %opcode_hash )=  (
       'add' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( nsw nuw ),
+         'flag_listref' => [ qw( nsw nuw ) ],
 	 },
       'sub' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( nsw nuw ),
+         'flag_listref' => [ qw( nsw nuw ) ],
 	 },
       'mul' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( nsw nuw ),
+         'flag_listref' => [ qw( nsw nuw ) ],
 	 },
       'sdiv' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( exact ),
+         'flag_listref' => [ qw( exact ) ],
 	 },
       'udiv' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( exact ),
+         'flag_listref' => [ qw( exact ) ],
 	 },
       'srem' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( ),
+         'flag_listref' => [ qw( ) ],
 	 },
       'urem' => {
 	 'type'=> 'arith',
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-         'flag_listref' => qw( ),
+         'flag_listref' => [ qw( ) ],
 	 },
       # template: is 4 lines long:
       #'xxx' => {
       #	 'type'=> 'arith',
       #   'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-      #   'flag_listref' => qw( ),
+      #   'flag_listref' => [ qw( ) ],
       #	 },
-      };
+      );
 
 ## ===========================================================================
 ##   set up for this run
@@ -384,7 +384,7 @@ sub generate_arith_inst
 
    my( $flags )= "";
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
-   for ( my $ii= 0; $ii < scalar($$flag_listref); $ii++ )  {
+   for ( my $ii= 0; $ii < scalar(@$flag_listref); $ii++ )  {
       if ( rand() < .5 )  {
          $flags.= $$flag_listref[$ii] . " ";
       }
@@ -395,7 +395,7 @@ sub generate_arith_inst
    my( $operand2 );
    if ( rand() < .5 )  {
       # operand is a constant
-      $operand2= $regWidth->getRand();
+      $operand2= $regWidth->getRandVal();
    } else {
       $operand2= reg_context::getRecentName();
    }
@@ -440,7 +440,7 @@ sub generate_const_inst
    my( $regWidth )= @_;
 
    my( $inst )= reg_context::getName(). "= ". $regWidth->getName(). ' ' . 
-         $regWidth->getRand() . "\n";
+         $regWidth->getRandVal() . "\n";
    return $inst;
 }}
 
