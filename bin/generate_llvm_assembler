@@ -821,7 +821,7 @@ package main;
 
 ## ****************************************************************************
 ## ****************************************************************************
-#package Bitwidth;
+package Bitwidth;
 
 ## ****************************************************************************
 ## package BEGIN and END functions
@@ -870,7 +870,7 @@ sub new
 {{
    my( $class, $target_width )= @_;
 
-   my( $perl_this );
+   my( $perl_this )= {};
    bless $perl_this, $class;
 
    # TODO3: adjust this to exactly handle 64+-bit integers
