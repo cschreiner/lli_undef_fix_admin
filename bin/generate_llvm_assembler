@@ -897,8 +897,8 @@ sub new
       $width= $target_width;
    }
    $perl_this->{'bitwidth'}= $width;
-   $perl_this->{'max_val'}= 2** $width- 1;
-   $perl_this->{'min_val'}= 0;
+   $perl_this->{'maxVal'}= 2** $width- 1;
+   $perl_this->{'minVal'}= 0;
    $perl_this->{'name'}= "i" . $width;
 
    return $perl_this;
@@ -928,6 +928,9 @@ sub getRandVal
    if ( !defined($margin) )  { $margin2= 0; }
 
    my( $range )= $perl_this->{'maxVal'} - $perl_this->{'minVal'}- 2*$margin2;;
+   print "max=\"" . $perl_this->{'maxVal'} . "\", min=\"" . 
+         $perl_this->{'minVal'} . "\", margin2=\"$margin2\"\n";;
+   print "range=\"$range\"\n";;
    my $val= int( rand() * $range+ $perl_this->{'minVal'}+ $margin2 );
 
    return $val;
@@ -963,8 +966,8 @@ sub getRandVal
 # ============================================================================
 #sub sub_name {{ my($perl_this)= @_; return $perl_this->{'xx'}; }}
 sub getBitwidth {{ my($perl_this)= @_; return $perl_this->{'bitwidth'}; }}
-sub getMaxVal {{ my($perl_this)= @_; return $perl_this->{'max_val'}; }}
-sub getMinVal {{ my($perl_this)= @_; return $perl_this->{'min_val'}; }}
+sub getMaxVal {{ my($perl_this)= @_; return $perl_this->{'maxVal'}; }}
+sub getMinVal {{ my($perl_this)= @_; return $perl_this->{'minVal'}; }}
 sub getName {{ my($perl_this)= @_; return $perl_this->{'name'}; }}
 
 ## ===========================================================================
