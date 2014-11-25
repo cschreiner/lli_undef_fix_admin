@@ -26,7 +26,7 @@
 # ****************************************************************************
 # Compiler Directives (use's)
 # make sure we are using this Perl version or later
-use 5.6.0;
+use 5.10.0;
 
 use strict;
 use Getopt::Long;
@@ -140,6 +140,7 @@ $need_to_exit= $FALSE;
 ## -----------------------------------------------------------------------
 ##   set up defaults
 
+use vars qw ( $arg_num_iterations );
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -195,9 +196,15 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOptions left behind
 
+$arg_num_iterations= shift @ARGV;
+
 ## -----------------------------------------------------------------------
 ##   check arguments
 
+if ( $num_iterations !~ m/^\d+/ )  {
+   warn $main::scriptname . ": the num_iterations argument on the command \n" .
+	 "\t" . "line does not appear to be a 0 or a positive integer. \n";
+}
 if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 
 ## -----------------------------------------------------------------------
@@ -209,7 +216,37 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
-##   
+##   do the running
+
+for ( my $iteration= 1; 
+      $ii < $arg_num_iterations or $arg_num_iterations==0; 
+      $ii++ )  {
+   my( $asm_filename )= "run$ii.ll";
+   my( $report_filename )= "run$ii.report";
+   my( $stdout_filename )= "run$ii.stdout";
+   my( $stderr_filename )= "run$ii.stderr";
+   my( $status );
+
+   # TODO: change these system("echo...") commands into normal writes to a file
+ 
+   my( $cmd )= "generate_llvm_assembler $asm_filename";
+   system( "echo cmd=$cmd >> $report_filename" );
+   ($status, undef, undef)= system_wrapper( $cmd, "" );
+   if ( $status != 0 )  {
+      system( "echo generate_llvm_assembler exited with status " . 
+            "$status >> $report_filename" );
+      next;
+   }
+
+   $cmd= "lli -force-interpreter $asm_filename ". 
+         "> $stdout_filename 2> $stderr_filename";
+   ($status, undef, undef)= system_wrapper( $cmd, "" );
+   if ( $status != 0 )  {
+      system( "echo lli exited with status " . 
+            "$status >> $report_filename" );
+      next;
+   }
+}
 
 ## ===========================================================================
 ##   
