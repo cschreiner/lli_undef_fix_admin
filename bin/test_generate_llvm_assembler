@@ -227,7 +227,7 @@ for ( my $iteration= 0;
    my( $report_filename )= "run$iteration.report";
    my( $stdout_filename )= "run$iteration.stdout";
    my( $stderr_filename )= "run$iteration.stderr";
-   my( $status, $error );
+   my( $status, $ok );
 
    my( $datestamp )= `date`;
    chomp $datestamp;
