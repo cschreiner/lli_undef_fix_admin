@@ -141,6 +141,7 @@ $need_to_exit= $FALSE;
 ##   set up defaults
 
 use vars qw ( $arg_num_iterations );
+use vars qw ( @arg_generate_llvm_assembler_opt_list );
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -175,6 +176,7 @@ if ( scalar(@ARGV) > 0 )  {
    GetOptions ( "help|h" => \$arg_help, 
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
+         "g|generate-llvm-assembler-opt=s" => \@arg_generate_llvm_assembler_opt_list,
 	 );
 
    if ( $arg_help )  {
@@ -216,6 +218,13 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
+##   get ready to run
+
+our( $generate_llvm_assembler_opts )= '"' . 
+      join ('" "', @arg_generate_llvm_assembler_opt_list ) .
+      '"';
+
+## ===========================================================================
 ##   do the running
 
 for ( my $iteration= 0; 
@@ -235,7 +244,8 @@ for ( my $iteration= 0;
    print "$msg \n";
    system( "echo $msg >> $report_filename" );
 
-   my( $cmd )= "generate_llvm_assembler $asm_filename";
+   my( $cmd )= 
+	 "generate_llvm_assembler $generate_llvm_assembler_opts $asm_filename";
    system( "echo cmd=$cmd >> $report_filename" );
    ($status, undef, undef)= system_wrapper( $cmd, "" );
    if ( $status != 0 )  {
