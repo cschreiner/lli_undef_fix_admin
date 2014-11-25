@@ -421,7 +421,7 @@ sub generate_arith_inst
       }
    } 
 
-   my( $operand1 )= reg_context::getPrevName();
+   my( $operand1 )= reg_context::getPrevName(1);
 
    my( $operand2 );
    if ( rand() < .5 )  {
@@ -758,9 +758,12 @@ sub getName
 ## ===========================================================================
 ## Subroutine getPrevName
 ## ===========================================================================
-# Description: gets the name of the previous (most recently issued) register
+# Description: gets the name of the nth previously issued register
 #
-# Inputs: none
+# Inputs: 
+#   $steps: the number of steps back to go. 0 (the default) indicates the 
+#	absolute most recently issued register, 1 is the one before that, 
+#	and so forth.
 # 
 # Outputs: none
 #
@@ -769,12 +772,16 @@ sub getName
 # ============================================================================
 sub getPrevName
 {{
-   #my( )= @_;
-   if ( $reg_num < 2 )  {
+   my( $steps )= @_;
+   my( $steps2 )= $steps;
+   if ( ! defined($steps) )  { $steps2= 0; }
+
+   if ( ($reg_num- 1 - $steps) < 0 )  {
       die $main::scriptname . 
-	    ": internal error 2014nov24_154228, code=\"$reg_num\"\n";
+	    ": internal error 2014nov24_154228, " . 
+	    "codes=\"$reg_num\", \"$steps\"\n";
    }
-   return "%" . ($reg_num- 2);
+   return "%" . ($reg_num- 1- $steps2);
 }}
 
 ## ===========================================================================
