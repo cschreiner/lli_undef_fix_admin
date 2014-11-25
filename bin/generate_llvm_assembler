@@ -356,7 +356,9 @@ sub generate_one_inst
    {
       my( @opcode_list )= keys %opcode_hash;
       $opcode= $opcode_list[ int( rand() * scalar(@opcode_list) ) ];
-      print "selected opcode=\"$opcode\"\n";;
+      if ( $main::debug_flag )  {
+	print "selected opcode=\"$opcode\"\n";
+      }
    }
 
    my( $inst );
@@ -940,10 +942,12 @@ sub getRandVal
    my( $margin2 )= $margin;
    if ( !defined($margin) )  { $margin2= 0; }
 
-   my( $range )= $perl_this->{'maxVal'} - $perl_this->{'minVal'}- 2*$margin2;;
-   print "max=\"" . $perl_this->{'maxVal'} . "\", min=\"" . 
-         $perl_this->{'minVal'} . "\", margin2=\"$margin2\"\n";;
-   print "range=\"$range\"\n";;
+   my( $range )= $perl_this->{'maxVal'} - $perl_this->{'minVal'}- 2*$margin2;
+   if ( $main::debug_flag )  {
+     print "max=\"" . $perl_this->{'maxVal'} . "\", min=\"" . 
+	   $perl_this->{'minVal'} . "\", margin2=\"$margin2\"\n";
+     print "range=\"$range\"\n";
+   }
    my $val= int( rand() * $range+ $perl_this->{'minVal'}+ $margin2 );
 
    return $val;
