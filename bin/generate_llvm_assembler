@@ -180,7 +180,7 @@ if ( scalar(@ARGV) > 0 )  {
 	 "revision" => \$arg_revision,
          "bitwidth=i" => \$arg_bitwidth,
          "start-poison" => \$arg_start_poison,
-         "num-steps=i" => \$arg_start_poison,
+         "num-steps=i" => \$arg_num_steps,
 	 );
 
    if ( $arg_help )  {
@@ -310,7 +310,7 @@ for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
 $out_fh->print( "\n" );
 $out_fh->print( "  ; clean up and return \n" );
 $out_fh->print( "  ret " . $regWidth->getName() . " 0 \n" );
-$out_fh->print( "}" );
+$out_fh->print( "} \n" );
 
 ## ===========================================================================
 ##   clean up output file and exit
