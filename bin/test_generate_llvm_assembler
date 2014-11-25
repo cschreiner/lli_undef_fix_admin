@@ -221,14 +221,20 @@ if ( $debug_flag )  {
 for ( my $iteration= 0; 
       $iteration < $arg_num_iterations or $arg_num_iterations==0; 
       $iteration++ )  {
+   # TODO: change these system("echo...") commands into normal writes to a file
+ 
    my( $asm_filename )= "run$iteration.ll";
    my( $report_filename )= "run$iteration.report";
    my( $stdout_filename )= "run$iteration.stdout";
    my( $stderr_filename )= "run$iteration.stderr";
-   my( $status );
+   my( $status, $error );
 
-   # TODO: change these system("echo...") commands into normal writes to a file
- 
+   my( $datestamp )= `date`;
+   chomp $datestamp;
+   my( $msg )= "starting iteration $iteration at $datestamp";
+   print "$msg \n";
+   system( "echo $msg >> $report_filename" );
+
    my( $cmd )= "generate_llvm_assembler $asm_filename";
    system( "echo cmd=$cmd >> $report_filename" );
    ($status, undef, undef)= system_wrapper( $cmd, "" );
@@ -241,8 +247,10 @@ for ( my $iteration= 0;
    $cmd= "lli -force-interpreter $asm_filename ". 
          "> $stdout_filename 2> $stderr_filename";
    ($status, undef, undef)= system_wrapper( $cmd, "" );
+   $ok="ok";
+   if ( $status != 0 )  { $ok= "ERROR"; }
    system( "echo lli exited with status " . 
-	 "$status >> $report_filename" );
+	 "$status \\($ok\\) >> $report_filename" );
 }
 
 ## ===========================================================================
