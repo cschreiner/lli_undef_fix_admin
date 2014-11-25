@@ -201,7 +201,7 @@ $arg_num_iterations= shift @ARGV;
 ## -----------------------------------------------------------------------
 ##   check arguments
 
-if ( $num_iterations !~ m/^\d+/ )  {
+if ( $arg_num_iterations !~ m/^\d+/ )  {
    warn $main::scriptname . ": the num_iterations argument on the command \n" .
 	 "\t" . "line does not appear to be a 0 or a positive integer. \n";
 }
@@ -219,12 +219,12 @@ if ( $debug_flag )  {
 ##   do the running
 
 for ( my $iteration= 1; 
-      $ii < $arg_num_iterations or $arg_num_iterations==0; 
-      $ii++ )  {
-   my( $asm_filename )= "run$ii.ll";
-   my( $report_filename )= "run$ii.report";
-   my( $stdout_filename )= "run$ii.stdout";
-   my( $stderr_filename )= "run$ii.stderr";
+      $iteration < $arg_num_iterations or $arg_num_iterations==0; 
+      $iteration++ )  {
+   my( $asm_filename )= "run$iteration.ll";
+   my( $report_filename )= "run$iteration.report";
+   my( $stdout_filename )= "run$iteration.stdout";
+   my( $stderr_filename )= "run$iteration.stderr";
    my( $status );
 
    # TODO: change these system("echo...") commands into normal writes to a file
