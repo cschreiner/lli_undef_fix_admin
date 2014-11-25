@@ -218,7 +218,7 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   do the running
 
-for ( my $iteration= 1; 
+for ( my $iteration= 0; 
       $iteration < $arg_num_iterations or $arg_num_iterations==0; 
       $iteration++ )  {
    my( $asm_filename )= "run$iteration.ll";
@@ -241,11 +241,8 @@ for ( my $iteration= 1;
    $cmd= "lli -force-interpreter $asm_filename ". 
          "> $stdout_filename 2> $stderr_filename";
    ($status, undef, undef)= system_wrapper( $cmd, "" );
-   if ( $status != 0 )  {
-      system( "echo lli exited with status " . 
-            "$status >> $report_filename" );
-      next;
-   }
+   system( "echo lli exited with status " . 
+	 "$status >> $report_filename" );
 }
 
 ## ===========================================================================
