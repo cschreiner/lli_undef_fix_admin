@@ -143,7 +143,7 @@ $need_to_exit= $FALSE;
 
 use vars qw ( $arg_num_iterations );
 use vars qw ( @arg_generate_llvm_assembler_opt_list );
-use vars qw ( @arg_bitwidth );
+use vars qw ( @arg_bitwidth_list );
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -179,7 +179,7 @@ if ( scalar(@ARGV) > 0 )  {
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
          "g|generate-llvm-assembler-opt=s" => \@arg_generate_llvm_assembler_opt_list,
-         "bitwidth=i" => \@arg_bitwidth,
+         "bitwidth=i" => \@arg_bitwidth_list,
 	 );
 
    if ( $arg_help )  {
@@ -255,7 +255,7 @@ for ( my $iteration= 0;
 
    my( $cmd )= "generate_llvm_assembler " . 
 	 $generate_llvm_assembler_opts . ' ' . $bitwidth_arg . ' ' . 
-	 $asm_filename";
+	 $asm_filename;
    system( "echo cmd=$cmd >> $report_filename" );
    ($status, undef, $sig)= system_wrapper( $cmd, "" );
    if ( $sig == SIGINT or $sig == SIGQUIT or $sig == SIGTERM or 
