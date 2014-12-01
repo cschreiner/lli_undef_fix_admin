@@ -33,6 +33,7 @@ use Getopt::Long;
 use Config;
 use File::Spec;
 use FileHandle;
+use POSIX;
 
 # ****************************************************************************
 # package identification
