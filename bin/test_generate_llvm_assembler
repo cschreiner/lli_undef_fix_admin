@@ -143,6 +143,7 @@ $need_to_exit= $FALSE;
 
 use vars qw ( $arg_num_iterations );
 use vars qw ( @arg_generate_llvm_assembler_opt_list );
+use vars qw ( @arg_bitwidth );
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -178,6 +179,7 @@ if ( scalar(@ARGV) > 0 )  {
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
          "g|generate-llvm-assembler-opt=s" => \@arg_generate_llvm_assembler_opt_list,
+         "bitwidth=i" => \@arg_bitwidth,
 	 );
 
    if ( $arg_help )  {
@@ -239,14 +241,21 @@ for ( my $iteration= 0;
    my( $stderr_filename )= "run$iteration.stderr";
    my( $status, $sig, $ok );
 
+   my ( $bitwidth_arg )= "";
+   if ( scalar(@arg_bitwidth_list) > 0 )  {
+      my $ii= rand( scalar(@arg_bitwidth_list) );
+      $bitwidth_arg="--bitwidth=" . $arg_bitwidth_list[$ii]; 
+   }
+
    my( $datestamp )= `date`;
    chomp $datestamp;
    my( $msg )= "starting iteration $iteration at $datestamp";
    print "$msg \n";
    system( "echo $msg >> $report_filename" );
 
-   my( $cmd )= 
-	 "generate_llvm_assembler $generate_llvm_assembler_opts $asm_filename";
+   my( $cmd )= "generate_llvm_assembler " . 
+	 $generate_llvm_assembler_opts . ' ' . $bitwidth_arg . ' ' . 
+	 $asm_filename";
    system( "echo cmd=$cmd >> $report_filename" );
    ($status, undef, $sig)= system_wrapper( $cmd, "" );
    if ( $sig == SIGINT or $sig == SIGQUIT or $sig == SIGTERM or 
@@ -554,6 +563,11 @@ times, 0 indicates an infinite number of times.
 Pass I<opt> to generate_llvm_assembler.  This option may be repeated as
 often as desired.
 
+=item --bitwidth=I<n>
+
+Pass --bitwidth=I<n> as an option to generate_llvm_assembler.  If this option
+is repeated, one value of I<n> will be randomly selected for each invocation
+of generate_llvm_assembler.
 
 =back
 
@@ -575,13 +589,14 @@ often as desired.
 
 =head1 AUTHOR AND COPYRIGHT
 
-test_generate_llvm_assembler.pl was written by Christian A. Schreiner.  Copyright (C) 
-2014-2014 by University of Utah.  You may use, examine, or modify
-this software only in accordance with the GNU Public License, or, alternately, 
-by special arrangement with the author.  test_generate_llvm_assembler.pl is released without 
-any warranties; if you use it and something breaks, you are responsible for 
-cleaning up afterwards.  This notice is precautionary only and does not 
-inherently imply publication or release for public use.  
+test_generate_llvm_assembler.pl was written by Christian A. Schreiner.
+Copyright (C) 2014-2014 by University of Utah.  You may use, examine, or
+modify this software only in accordance with the GNU Public License, or,
+alternately, by special arrangement with the author.
+test_generate_llvm_assembler.pl is released without any warranties; if you use
+it and something breaks, you are responsible for cleaning up afterwards.  This
+notice is precautionary only and does not inherently imply publication or
+release for public use.
 
 =head1 SEE ALSO
 
