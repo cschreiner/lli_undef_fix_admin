@@ -1,0 +1,11 @@
+Interesting notes from the email thread John mentioned:
+
+Why poison is needed:
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-November/045730.html
+
+Contradictions in considering select a control-flow vs an arithmetic
+instruction:
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076945.html
+
+(end of email)
+

@@ -719,8 +719,12 @@ package reg_context;
 
       # ----------------------------------------------------------------------
       # other stuff
+
+      use constant MIN_REG_NUM => 1;
+
       use vars qw ( $reg_num );
-      $reg_num= 1; # llvm requires the first register to be %1
+      $reg_num= MIN_REG_NUM; # llvm requires the first register to be %1
+
 
    }}
 
@@ -805,6 +809,10 @@ sub getRecentName
       $limit= $max_returnable_reg_num; 
    };
    my( $rr )= $max_returnable_reg_num- int( rand()*$limit );
+   if ( $rr < MIN_REG_NUM )  {
+      die $main::scriptname . 
+	    ": internal error 2014nov24_210556, code=\"$rr\"\n";
+   }
    return "%" . $rr;
 }}
 
