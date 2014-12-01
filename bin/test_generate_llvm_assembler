@@ -522,12 +522,29 @@ __END__
 
 =pod
 
- test_generate_llvm_assembler.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
- test_generate_llvm_assembler.pl [debug] ? 
+test_generate_llvm_assembler.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
+
+test_generate_llvm_assembler.pl [debug] I<options> I<num_iterations>
 
 
 =head1 DESCRIPTION
 
+Generate llvm assembler programs via F<generate_llvm_assembler>, and feed
+them through the interpreter.  I<num_iterations> specifies the number of
+times, 0 indicates an infinite number of times.
+
+=head2 Options
+
+=over
+
+=item -g I<opt>
+=item --generate-llvm-assembler-opt I<opt>
+
+Pass I<opt> to generate_llvm_assembler.  This option may be repeated as
+often as desired.
+
+
+=back
 
 =head1 EXTERNAL INFLUENCES
 
