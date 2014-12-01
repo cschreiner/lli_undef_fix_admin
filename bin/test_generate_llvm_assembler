@@ -236,7 +236,7 @@ for ( my $iteration= 0;
    my( $report_filename )= "run$iteration.report";
    my( $stdout_filename )= "run$iteration.stdout";
    my( $stderr_filename )= "run$iteration.stderr";
-   my( $status, $ok );
+   my( $status, $sig, $ok );
 
    my( $datestamp )= `date`;
    chomp $datestamp;
@@ -247,7 +247,12 @@ for ( my $iteration= 0;
    my( $cmd )= 
 	 "generate_llvm_assembler $generate_llvm_assembler_opts $asm_filename";
    system( "echo cmd=$cmd >> $report_filename" );
-   ($status, undef, undef)= system_wrapper( $cmd, "" );
+   ($status, undef, $sig)= system_wrapper( $cmd, "" );
+   if ( $sig == SIGINT or $sig == SIGQUIT or $sig == SIGTERM or 
+	 $sig == SIGABRT )  {
+      die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
+            "cmd=\"$cmd\". \n";
+   }
    if ( $status != 0 )  {
       system( "echo generate_llvm_assembler exited with status " . 
             "$status >> $report_filename" );
@@ -256,7 +261,12 @@ for ( my $iteration= 0;
 
    $cmd= "lli -force-interpreter $asm_filename ". 
          "> $stdout_filename 2> $stderr_filename";
-   ($status, undef, undef)= system_wrapper( $cmd, "" );
+   ($status, undef, $sig)= system_wrapper( $cmd, "" );
+   if ( $sig == SIGINT or $sig == SIGQUIT or $sig == SIGTERM or 
+	 $sig == SIGABRT )  {
+      die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
+            "cmd=\"$cmd\". \n";
+   }
    $ok="ok";
    if ( $status != 0 )  { $ok= "ERROR"; }
    system( "echo lli exited with status " . 
