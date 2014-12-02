@@ -256,6 +256,21 @@ our( %opcode_hash )=  (
          'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
          'flag_listref' => [ qw( ) ],
 	 },
+      'and' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_listref' => [ qw( ) ],
+	 },
+      'or' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_listref' => [ qw( ) ],
+	 },
+      'xor' => {
+	 'type'=> 'arith',
+         'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+         'flag_listref' => [ qw( ) ],
+	 },
       # template: is 4 lines long:
       #'xxx' => {
       #	 'type'=> 'arith',
