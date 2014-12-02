@@ -36,6 +36,10 @@ right_monitor_height=1050
 xterm -sb -title "vmstat xterm" -geometry 82x25+$left_monitor_width-0 \
       -e "vmstat 5" &
 
+(cd $PROJ_ROOT/admin;
+      xterm -sb -fn 8x13 -title "admin xterm" 
+	 -geometry 80x60+$left_monitor_width-0 & )
+
 # TODO2: add something here for the web browser window
 firefox http://www.llvm.org/docs/GettingStarted.html \
       http://llvm.org/docs/LangRef.html \
