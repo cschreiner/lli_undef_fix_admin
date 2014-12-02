@@ -19,7 +19,7 @@ if [ ! -d $PROJ_ROOT/live/bin ]; then
    echo "  " dir=\"$PROJ_ROOT/live/bin\".
    exit 255
 fi
-export PATH=$PROJ_ROOT/live/bin:$PATH
+export PATH=$PROJ_ROOT/live/bin:$PROJ_ROOT/admin/bin:$PATH
 
 cd $PROJ_ROOT/git
 workspace soft
@@ -28,10 +28,10 @@ workspace soft
 # extra windows customized for this project
 
 # these are currently customized for dyson, rethink them for other hosts.
-left_monitor_width=1680
-left_monitor_height=1050
-right_monitor_width=1280
-right_monitor_height=1024
+left_monitor_width=1920
+left_monitor_height=1200
+right_monitor_width=1680
+right_monitor_height=1050
 
 xterm -sb -title "vmstat xterm" -geometry 82x25+$left_monitor_width-0 \
       -e "vmstat 5" &
