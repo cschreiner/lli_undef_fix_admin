@@ -454,6 +454,7 @@ sub generate_shift_inst
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
    for ( my $ii= 0; $ii < scalar(@$flag_listref); $ii++ )  {
       if ( rand() < .5 )  {
+	 # a flag must ALWAYS end in a space. 
          $flags.= $$flag_listref[$ii] . " ";
       }
    } 
@@ -467,7 +468,7 @@ sub generate_shift_inst
    }
    
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . ' ' . $regWidth->getName() . ' ' .
+	 $flags . $regWidth->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
    return $inst;
@@ -506,6 +507,7 @@ sub generate_arith_inst
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
    for ( my $ii= 0; $ii < scalar(@$flag_listref); $ii++ )  {
       if ( rand() < .5 )  {
+	 # a flag must ALWAYS end in a space. 
          $flags.= $$flag_listref[$ii] . " ";
       }
    } 
@@ -528,7 +530,7 @@ sub generate_arith_inst
    }
 
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . ' ' . $regWidth->getName() . ' ' .
+	 $flags . $regWidth->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
    return $inst;
