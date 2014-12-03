@@ -103,7 +103,7 @@ use POSIX;
       # ----------------------------------------------------------------------
       # other stuff
       use vars qw ( $need_graceful_exit );
-      $need_graceful_exit= $main::FALSE;
+      $main::need_graceful_exit= $main::FALSE;
 
    }}
 
@@ -137,7 +137,9 @@ if ( scalar(@ARGV) > 0 )  {
 ## ===========================================================================
 ##   initializations
 
-$SIG{INT}= \&main::handle_sigINT;
+print "sig{INT} before= \"" . $SIG{INT} . "\"\n";
+$SIG{INT}= \&main::request_graceful_exit;
+print "sig{INT} after = \"" . $SIG{INT} . "\"\n";
 
 
 ## ===========================================================================
@@ -271,7 +273,7 @@ for ( my $iteration= 0;
       die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
             "cmd=\"$cmd\". \n";
    } elsif ( $sig == SIGINT )  {
-      handle_sigINT();
+      request_graceful_exit();
    }
    if ( $status != 0 )  {
       system( "echo generate_llvm_assembler exited with status " . 
@@ -287,14 +289,15 @@ for ( my $iteration= 0;
       die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
             "cmd=\"$cmd\". \n";
    } elsif ( $sig == SIGINT )  {
-      handle_sigINT();
+      request_graceful_exit();
    }
    $ok="ok";
    if ( $status != 0 )  { $ok= "ERROR"; }
    system( "echo lli exited with status " . 
 	 "$status \\($ok\\) >> $report_filename" );
 
-   if ( $need_graceful_exit )  {
+   print "   main::need_graceful_exit=$main::need_graceful_exit\n";;
+   if ( $main::need_graceful_exit )  {
       print "starting graceful exit... \n";
       last;
    }
@@ -317,13 +320,18 @@ exit $main::EXIT_SUCCESS;
 ##   
 
 ## ===========================================================================
-## Subroutine handle_sigINT()
+## Subroutine request_graceful_exit()
 ## ===========================================================================
-# Description: called when the program receives an INT signal (aka "SIGINT").
-#	It sets a flag to cause a graceful exit.  If the program is out of 
+# Description: 
+#	Sets a flag to cause a graceful exit at the end of the
+#	currently running test iteration.  If the program is out of
 #	control, it should be stopped via a SIGKILL, not a SIGINT.
 #
-# Method: 
+#	This function is typically called when the program receives
+#	certain signals (which ones are specified by code that sets
+#	signal handlers during initialization).  
+#
+# Method:
 #
 # Notes: 
 #
@@ -336,7 +344,7 @@ exit $main::EXIT_SUCCESS;
 # Return Value: PERL_SUCCESS
 #   
 # ============================================================================
-sub handle_sigINT
+sub request_graceful_exit
 {{
    #my( )= @_;
    $main::need_graceful_exit= $main::TRUE;
