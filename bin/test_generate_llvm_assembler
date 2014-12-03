@@ -293,7 +293,6 @@ for ( my $iteration= 0;
    system( "echo lli exited with status " . 
 	 "$status \\($ok\\) >> $report_filename" );
 
-   print "   main::need_graceful_exit=$main::need_graceful_exit\n";;
    if ( $main::need_graceful_exit )  {
       print "starting graceful exit... \n";
       last;
