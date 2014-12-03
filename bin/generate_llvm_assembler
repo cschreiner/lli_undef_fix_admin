@@ -306,12 +306,27 @@ our( $regWidth )= new Bitwidth( $arg_bitwidth );
 
 our ( $definitions, $instructions );
 
-for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
-   my( $def, $inst )= generate_one_inst( $regWidth );
-   $definitions.= $def;
-   $instructions.= $inst;
-}
+{
+   my( $def, $inst );
 
+   for ( my $ii= 0; $ii < 2; $ii++ )  {
+      ( $def, $inst )= generate_const_inst( $regWidth );
+      $definitions.= $def;
+      $instructions.= $inst;
+   }
+
+  if ( $arg_start_poison )  {
+     $instructions.= "  " . reg_context::getName() . 
+	   "= sub nuw " . $regWidth->getName() . " 0, 1 ; generates POISON \n";
+     # TODO2: replace the above operands with random numbers
+  }
+
+  for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
+     my( $def, $inst )= generate_one_inst( $regWidth );
+     $definitions.= $def;
+     $instructions.= $inst;
+  }
+}
 
 ## ===========================================================================
 ##   set up output file
@@ -348,15 +363,6 @@ $out_fh->print( "  ; \%convert [? x i8]* to i8* \n" );
 $out_fh->print( "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
     "i64 0, i64 0\n" );
 $out_fh->print( "\n" );
-
-$out_fh->print( generate_const_inst( $regWidth ) );
-$out_fh->print( generate_const_inst( $regWidth ) );
-
-if ( $arg_start_poison )  {
-   $out_fh->print ( "  " . reg_context::getName() . 
-	 "= sub nuw " . $regWidth->getName() . " 0, 1 ; generates POISON \n" );
-   # TODO2: replace the above operands with random numbers
-}
 
 # ..................................................................
 # write out generated instructions
@@ -434,6 +440,8 @@ sub generate_one_inst
       ( $pre_def, $inst )= generate_arith_inst( $regWidth, $opcode );
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'shift' )  {
       ( $pre_def, $inst )= generate_shift_inst( $regWidth, $opcode );
+   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'storeload' )  {
+      ( $pre_def, $inst )= generate_storeload_insts( $regWidth, $opcode );
    } else {
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
