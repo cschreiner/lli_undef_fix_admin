@@ -507,7 +507,8 @@ sub generate_storeload_insts
    $inst.= "  " . "store " . 
          $store_flags . $regWidth->getName() . ' ' . $src_reg . ', ' . 
          $regWidth->getName() . '* ' . $addr_name . "\n";
-   $inst.= "  " . "load " . $regWidth->getName() . "* $addr_name \n";
+   $inst.= "  " . $dest_reg . "= load " . $regWidth->getName() . 
+	 "* $addr_name \n";
    # TODO2: consider adding an 'align 4' or similar to the load and 
    # store instructions.
 
