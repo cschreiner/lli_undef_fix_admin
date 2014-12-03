@@ -137,10 +137,7 @@ if ( scalar(@ARGV) > 0 )  {
 ## ===========================================================================
 ##   initializations
 
-print "sig{INT} before= \"" . $SIG{INT} . "\"\n";
-$SIG{INT}= \&main::request_graceful_exit;
-print "sig{INT} after = \"" . $SIG{INT} . "\"\n";
-
+$SIG{HUP}= \&main::request_graceful_exit;
 
 ## ===========================================================================
 ##   get command line args
@@ -269,10 +266,10 @@ for ( my $iteration= 0;
    system( "echo cmd=$cmd >> $report_filename" );
    ($status, undef, $sig)= system_wrapper( $cmd, "" );
    if ( $sig == SIGKILL or $sig == SIGQUIT or $sig == SIGTERM or 
-	 $sig == SIGABRT )  {
+	 $sig == SIGINT or $sig == SIGABRT )  {
       die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
             "cmd=\"$cmd\". \n";
-   } elsif ( $sig == SIGINT )  {
+   } elsif ( $sig == SIGHUP )  {
       request_graceful_exit();
    }
    if ( $status != 0 )  {
@@ -285,10 +282,10 @@ for ( my $iteration= 0;
          "> $stdout_filename 2> $stderr_filename";
    ($status, undef, $sig)= system_wrapper( $cmd, "" );
    if ( $sig == SIGKILL or $sig == SIGQUIT or $sig == SIGTERM or 
-	 $sig == SIGABRT )  {
+	 $sig == SIGINT or $sig == SIGABRT )  {
       die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
             "cmd=\"$cmd\". \n";
-   } elsif ( $sig == SIGINT )  {
+   } elsif ( $sig == SIGHUP )  {
       request_graceful_exit();
    }
    $ok="ok";
@@ -325,11 +322,13 @@ exit $main::EXIT_SUCCESS;
 # Description: 
 #	Sets a flag to cause a graceful exit at the end of the
 #	currently running test iteration.  If the program is out of
-#	control, it should be stopped via a SIGKILL, not a SIGINT.
+#	control, it should be stopped via a SIGKILL, not one of the 
+#	"handleable" signals.
 #
-#	This function is typically called when the program receives
-#	certain signals (which ones are specified by code that sets
-#	signal handlers during initialization).  
+#	This function is typically used as a signal handler, meaning
+#	it is called when the program receives certain signals.
+#	(Which signals those are is specified by code that sets signal
+#	handlers during initialization.)
 #
 # Method:
 #
@@ -606,6 +605,11 @@ test_generate_llvm_assembler.pl [debug] I<options> I<num_iterations>
 Generate llvm assembler programs via F<generate_llvm_assembler>, and feed
 them through the interpreter.  I<num_iterations> specifies the number of
 times, 0 indicates an infinite number of times.
+
+Sending this process a SIGHUP causes it to terminate gracefully.  This
+is useful if it is running for a long time and needs to stop early.
+Killing this program is of course possible, but has left output files
+in a confused state, making it hard to reliably analyze them.
 
 =head2 Options
 
