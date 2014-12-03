@@ -421,6 +421,63 @@ sub generate_one_inst
 
 
 ## ===========================================================================
+# Subroutine generate_storeload_insts()
+# ===========================================================================
+# Description: generates a store instruction, immediately followed by a load
+#	instruction.  The idea is to make sure every value gets stored also
+#	gets loaded later in the program.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $regWidth: info on integer size to use, per generate_one_inst()
+#   $opcode: the opcode to generate
+# 
+# Outputs: none
+#   
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
+#
+# ============================================================================
+sub generate_storeload_insts
+{{
+   my( $regWidth, $opcode )= @_;
+
+   my( $addr_name )= '@addr_';
+   for ( my $ii= 0; $ii < 4; $ii++ )  {
+      # This assumes that the character encoding has the lower-case codepoints
+      # be consecutive.
+      $addr_name.= chr( ord('a')+ int(26*rand()) );
+   }
+   my( $pre_func )= $addr_name . " = global " . $regWidth->getName() . "\n";
+
+   my( $dest_reg )= reg_context::getName();
+   my( $src_reg )= reg_context::getPrevName(1);
+
+   my( $store_flags )= " ";
+   if ( rand() < .5 )  {
+      $store_flags= "volatile ";
+   }
+   # recall that flags strings must always end in a space
+
+   my( $inst );
+   $inst.= "  " . "store " . 
+         $store_flags . $regWidth->getName() . ' ' . $src_reg . ', ' . 
+         $regWidth->getName() . '* ' . $addr_name . "\n";
+   $inst.= "  " . "load " . $regWidth->getName() . "* $addr_name \n";
+   # TODO2: consider adding an 'align 4' or similar to the load and 
+   # store instructions.
+
+   return ( $pre_func, $inst );
+}}
+
+## ===========================================================================
 ## Subroutine generate_shift_inst()
 ## ===========================================================================
 # Description: generates a shift instruction.  Shift instructions 
@@ -440,7 +497,9 @@ sub generate_one_inst
 # 
 # Outputs: none
 #   
-# Return Value: 
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
 #   string containing the instruction generated
 #
 # ============================================================================
