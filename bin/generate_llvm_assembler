@@ -274,17 +274,17 @@ our( %opcode_hash )=  (
 	 },
       'shl' => {
 	 'type'=> 'shift',
-         'gen_ftn' => 'generate_logic_inst', # change this to a ftn ptr
+         'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
          'flag_listref' => [ qw( nsw nuw ) ],
 	 },
       'lshr' => {
 	 'type'=> 'shift',
-         'gen_ftn' => 'generate_logic_inst', # change this to a ftn ptr
+         'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
          'flag_listref' => [ qw( exact ) ],
 	 },
       'ashr' => {
 	 'type'=> 'shift',
-         'gen_ftn' => 'generate_logic_inst', # change this to a ftn ptr
+         'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
          'flag_listref' => [ qw( exact ) ],
 	 },
       # template: is 4 lines long:
@@ -408,10 +408,12 @@ sub generate_one_inst
    my( $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
       $inst= generate_arith_inst( $regWidth, $opcode );
-   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'logic' )  {
-      $inst= generate_logic_inst( $regWidth, $opcode );
+   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'shift' )  {
+      $inst= generate_shift_inst( $regWidth, $opcode );
    } else {
-      die $main::scriptname . ": don't recognize opcode type for \"$opcode\"\n";
+      die $main::scriptname . 
+	    ": don't recognize opcode type for \"$opcode\", \"" . 
+	    $opcode_hash{$opcode}->{'type'} . "\"\n";
    }
 
    return $inst;
@@ -1076,19 +1078,37 @@ sub getRandVal
 # Description: returns a random number from 0 to this instance's bitwidth. 
 #	This is the legal range that a register may be shifted right or left.
 #
+# Note: strange, shifting by the width of the register is sometimes allowed 
+#	and sometimes not.  For example, 
+#	   %9= lshr i13 %8, 13
+#	   %11= ashr  i13 %10, 13
+#	are ok, but
+#	   %9= lshr exact i13 %8, 13
+#	and
+#	   %11= ashr exact i13 %10, 13
+#	are not.  Even though the 'exact' flag is supposted to generate
+#	poison if 0 bits are shifted out, its presence causes
+#	execution to halt with an "overshift" error.  Officially, shifting by 
+#	the register width or larger yields an undefined result (NOT undefined 
+#	behavior). Is the fact that this is sometimes allowed and sometimes 
+
+#	not an error in the interpreter? TODO2: look into this.  If
+#	the result is undefined, I assume the interpreter should replaced it 
+#	with a random value of appropriate width.
+#
 # Inputs:
 #   $perl_this: the instance in question (provided by PERL)
 # 
 # Outputs: none
 #
-# Return Value: a number n such that 0 <= n <= bitwidth
+# Return Value: a number n such that 0 <= n < bitwidth
 #
 # ============================================================================
 sub getRandShiftVal
 {{
    my( $perl_this )= @_;
 
-   my( $val )= int( rand() * ($perl_this->bitwidth+ 1) );
+   my( $val )= int( rand() * ($perl_this->{'bitwidth'}) );
    return $val;
 }}
 
