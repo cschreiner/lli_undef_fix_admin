@@ -2,7 +2,7 @@
 #include <iostream>
 #include <map>
 
-int dummy= 17;
+uint8_t dummy= 17;
 
 int main ( int argc, char* argv[] )
 {{
