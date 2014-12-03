@@ -287,6 +287,11 @@ our( %opcode_hash )=  (
          'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
          'flag_listref' => [ qw( exact ) ],
 	 },
+      'storeload' => {
+	 'type'=> 'storeload',
+         'gen_ftn' => 'generate_storeload_inst', # change this to a ftn ptr
+         'flag_listref' => [ ],
+	 },
       # template: is 4 lines long:
       #'xxx' => {
       #	 'type'=> 'arith',
