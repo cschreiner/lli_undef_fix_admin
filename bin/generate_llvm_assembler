@@ -135,7 +135,8 @@ if ( scalar(@ARGV) > 0 )  {
 
 use vars qw ( $arg_outfile_name );
 use vars qw ( $arg_bitwidth $arg_start_poison $arg_num_steps );
-$arg_bitwidth= 8;
+$arg_bitwidth= undef; # causes choosing a random value, later.
+$arg_start_poison= $main::FALSE;
 $arg_num_steps= 10;
 
 use vars qw( $need_to_exit );
@@ -928,7 +929,8 @@ package Bitwidth;
 #
 # Inputs:
 #   $class: information about the class (provided by perl)
-#   $target_width: an integer indicating the preferred with to work with
+#   $target_width: an integer indicating the preferred with to work with.
+#	If undefined, a random value will be chosen.
 # 
 # Outputs: none
 #
@@ -1074,7 +1076,7 @@ Generate a random LLVM assembler program
 
 generate_llvm_assembler.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
 
-generate_llvm_assembler.pl [debug] F<output_file>
+generate_llvm_assembler.pl [debug] I<options> F<output_file>
 
 
 =head1 DESCRIPTION
@@ -1084,6 +1086,25 @@ a set of linear register assignments, meaning it assigns an arithmetic
 result to a register, then uses that result to compute another
 arithmetic result for another register, and so forth.
 
+=head2 Options
+
+=over
+
+=item --bitwidth I<n>
+
+Generate code using integer values that are I<n> bits wide.  If
+unspecified, a random value will be chosen.
+
+=item --start-poison
+
+Set to force generation of a poison value early in the program.  This
+is useful when testing propogation and handling of poison values.
+
+=item --num-steps I<n>
+
+Generate I<n> steps in the program.  The default is 10.
+
+=back
 
 =head1 EXTERNAL INFLUENCES
 
