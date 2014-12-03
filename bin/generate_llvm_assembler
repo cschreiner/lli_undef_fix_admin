@@ -300,6 +300,19 @@ our( %opcode_hash )=  (
 
 our( $regWidth )= new Bitwidth( $arg_bitwidth );
 
+
+## ===========================================================================
+##   generate instructions
+
+our ( $definitions, $instructions );
+
+for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
+   my( $def, $inst )= generate_one_inst( $regWidth );
+   $definitions.= $def;
+   $instructions.= $inst;
+}
+
+
 ## ===========================================================================
 ##   set up output file
 
@@ -322,6 +335,14 @@ $out_fh->print( "; external declaration of the printf(~) function \n" );
 $out_fh->print( "declare i32 \@printf(i8* nocapture readonly, ...)\n" );
 $out_fh->print( "\n" );
 
+# ----------------------------------------------------------------------------
+# write out definitions
+$out_fh->print( $definitions );
+$out_fh->print( "\n" );
+
+# ----------------------------------------------------------------------------
+# write out the main function
+
 $out_fh->print( "define " . $regWidth->getName() . ' @main()' . " { ; \n" );
 $out_fh->print( "  ; \%convert [? x i8]* to i8* \n" );
 $out_fh->print( "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
@@ -337,15 +358,12 @@ if ( $arg_start_poison )  {
    # TODO2: replace the above operands with random numbers
 }
 
-## ===========================================================================
-##   generate bulk of the instructions
+# ..................................................................
+# write out generated instructions
+$out_fh->print( $instructions );
 
-for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
-   $out_fh->print ( generate_one_inst( $regWidth ) );
-}
-
-## ===========================================================================
-##   write out end of program
+# ..................................................................
+# write out end of main function
 
 $out_fh->print( "\n" );
 $out_fh->print( "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, " .
@@ -355,6 +373,10 @@ $out_fh->print( "\n" );
 $out_fh->print( "  ; clean up and return \n" );
 $out_fh->print( "  ret " . $regWidth->getName() . " 0 \n" );
 $out_fh->print( "} \n" );
+
+## ===========================================================================
+##   write out end of program
+$out_fh->print( "\n" . "; end of program \n" . "\n" );
 
 ## ===========================================================================
 ##   clean up output file and exit
@@ -388,8 +410,10 @@ exit( $main::EXIT_SUCCESS );
 # Outputs: 
 #   
 #
-# Return Value: 
-#   a string containing the instruction
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
 #
 # ============================================================================
 sub generate_one_inst
@@ -405,18 +429,18 @@ sub generate_one_inst
       }
    }
 
-   my( $inst );
+   my( $pre_def, $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
-      $inst= generate_arith_inst( $regWidth, $opcode );
+      ( $pre_def, $inst )= generate_arith_inst( $regWidth, $opcode );
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'shift' )  {
-      $inst= generate_shift_inst( $regWidth, $opcode );
+      ( $pre_def, $inst )= generate_shift_inst( $regWidth, $opcode );
    } else {
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
 	    $opcode_hash{$opcode}->{'type'} . "\"\n";
    }
 
-   return $inst;
+   return ( $pre_def, $inst );
 }}
 
 
@@ -528,7 +552,7 @@ sub generate_shift_inst
 	 $flags . $regWidth->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
-   return $inst;
+   return ("", $inst );
 }}
 
 ## ===========================================================================
@@ -550,7 +574,9 @@ sub generate_shift_inst
 # 
 # Outputs: none
 #   
-# Return Value: 
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
 #   string containing the instruction generated
 #
 # ============================================================================
@@ -564,7 +590,7 @@ sub generate_arith_inst
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
    for ( my $ii= 0; $ii < scalar(@$flag_listref); $ii++ )  {
       if ( rand() < .5 )  {
-	 # a flag must ALWAYS end in a space. 
+
          $flags.= $$flag_listref[$ii] . " ";
       }
    } 
@@ -590,7 +616,7 @@ sub generate_arith_inst
 	 $flags . $regWidth->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
-   return $inst;
+   return ("", $inst );
 }}
 
 ## ===========================================================================
@@ -610,8 +636,10 @@ sub generate_arith_inst
 #   
 # Outputs: none
 #   
-# Return Value: 
-#   string containing the instruction generated.  String contains a EOL.
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
 #   
 # ============================================================================
 sub generate_const_inst
@@ -621,7 +649,7 @@ sub generate_const_inst
    my( $inst )= "  " . 
 	 reg_context::getName(). "= add ". $regWidth->getName(). ' ' . 
          $regWidth->getRandVal() . ", 0 \n";
-   return $inst;
+   return ("", $inst );
 }}
 
 
