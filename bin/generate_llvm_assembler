@@ -492,11 +492,15 @@ sub generate_storeload_insts
       # be consecutive.
       $addr_name.= chr( ord('a')+ int(26*rand()) );
    }
-   my( $pre_func )= $addr_name . " = global " . $regWidth->getName() . "\n";
 
    my( $dest_reg )= reg_context::getName();
    my( $src_reg )= reg_context::getPrevName(1);
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   my( $pre_func )= $addr_name . " = global " . $regWidth->getName() . 
+	 " " . $regWidth->getRandVal() . "\n";
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $store_flags )= " ";
    if ( rand() < .5 )  {
       $store_flags= "volatile ";
