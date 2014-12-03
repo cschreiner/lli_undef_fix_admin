@@ -462,9 +462,11 @@ sub generate_shift_inst
    my( $operand1 )= reg_context::getPrevName(1);
 
    my( $operand2 );
-   if ( rand() < .5 )  {
-      # operand is a constant
-      $operand2= $regWidth->getRandShiftVal();
+   # operand is a constant
+   $operand2= $regWidth->getRandShiftVal();
+   if ( $operand2 !~ m/^\d+$/ )  {
+      warn $main::scriptname . ": warning: operand2 for a '$opcode' looks " . 
+	    "funny: \"$operand2\". \n";
    }
    
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
@@ -1111,6 +1113,11 @@ sub getRandShiftVal
    my( $perl_this )= @_;
 
    my( $val )= int( rand() * ($perl_this->{'bitwidth'}) );
+   if ( $val !~ m/^\d+$/ )  {;;
+      warn "   val is \"$val\", bitwidth=\"" . 
+	    $perl_this->{'bitwidth'} . "\"\n";;
+   }
+   print "val=\"$val\"\n";;
    return $val;
 }}
 
