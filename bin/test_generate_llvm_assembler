@@ -102,6 +102,8 @@ use POSIX;
 
       # ----------------------------------------------------------------------
       # other stuff
+      use vars qw ( $need_graceful_exit );
+      $need_graceful_exit= $main::FALSE;
 
    }}
 
@@ -131,6 +133,12 @@ if ( scalar(@ARGV) > 0 )  {
       } 
    } 
 }
+
+## ===========================================================================
+##   initializations
+
+$SIG{INT}= \&main::handle_sigINT;
+
 
 ## ===========================================================================
 ##   get command line args
@@ -258,10 +266,12 @@ for ( my $iteration= 0;
 	 $asm_filename;
    system( "echo cmd=$cmd >> $report_filename" );
    ($status, undef, $sig)= system_wrapper( $cmd, "" );
-   if ( $sig == SIGINT or $sig == SIGQUIT or $sig == SIGTERM or 
+   if ( $sig == SIGKILL or $sig == SIGQUIT or $sig == SIGTERM or 
 	 $sig == SIGABRT )  {
       die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
             "cmd=\"$cmd\". \n";
+   } elsif ( $sig == SIGINT )  {
+      handle_sigINT();
    }
    if ( $status != 0 )  {
       system( "echo generate_llvm_assembler exited with status " . 
@@ -272,19 +282,27 @@ for ( my $iteration= 0;
    $cmd= "lli -force-interpreter $asm_filename ". 
          "> $stdout_filename 2> $stderr_filename";
    ($status, undef, $sig)= system_wrapper( $cmd, "" );
-   if ( $sig == SIGINT or $sig == SIGQUIT or $sig == SIGTERM or 
+   if ( $sig == SIGKILL or $sig == SIGQUIT or $sig == SIGTERM or 
 	 $sig == SIGABRT )  {
       die $main::scriptname . ": child terminated with signal \"$sig\", \n" .
             "cmd=\"$cmd\". \n";
+   } elsif ( $sig == SIGINT )  {
+      handle_sigINT();
    }
    $ok="ok";
    if ( $status != 0 )  { $ok= "ERROR"; }
    system( "echo lli exited with status " . 
 	 "$status \\($ok\\) >> $report_filename" );
+
+   if ( $need_graceful_exit )  {
+      print "starting graceful exit... \n";
+      last;
+   }
 }
 
 ## ===========================================================================
-##   
+##   clean up and exit
+exit $main::EXIT_SUCCESS;
 
 ## ===========================================================================
 ##   
@@ -297,6 +315,34 @@ for ( my $iteration= 0;
 
 ## ===========================================================================
 ##   
+
+## ===========================================================================
+## Subroutine handle_sigINT()
+## ===========================================================================
+# Description: called when the program receives an INT signal (aka "SIGINT").
+#	It sets a flag to cause a graceful exit.  If the program is out of 
+#	control, it should be stopped via a SIGKILL, not a SIGINT.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: none
+#   
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub handle_sigINT
+{{
+   #my( )= @_;
+   $main::need_graceful_exit= $main::TRUE;
+   return $main::PERL_SUCCESS;
+}}
+
 
 
 # template 25 lines long
