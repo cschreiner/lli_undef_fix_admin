@@ -94,6 +94,9 @@ function test_one_round()
 # ============================================================================
 # main program
 
+# process command-line args
+arg_max_rounds=$1
+
 # set up
 if [ -d ROUTINE -o -n "`ls run* | head -n1`" ]; then
    echo ${scriptname}: ERROR: the current directory does not appear to be empty.
@@ -104,11 +107,15 @@ mkdir ROUTINE
 # run
 round=0
 while true; do
-  echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  echo round ${round}:
-  test_one_round $round
-  echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  round=$(( $round + 1 ))
+   echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   echo round ${round}:
+   test_one_round $round
+   echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   round=$(( $round + 1 ))
+   if [ $round -ge $arg_max_rounds -a $arg_max_rounds -gt 0 ]; then
+      echo completed $arg_max_rounds rounds.   
+      exit 0
+   fi
 done
 
 
