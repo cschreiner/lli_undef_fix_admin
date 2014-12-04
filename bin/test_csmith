@@ -39,7 +39,7 @@ function test_one_round()
    ( ulimit -t 60; lli -force-interpreter $opt3_ll ) > \
          $opt3_ll.stdout 2> $opt3_ll.stderr
    opt3_status=$?
-   diff -q $opt0_ll.out $opt3_ll.out
+   diff -q $opt0_ll.stdout $opt3_ll.stdout
    diff_status=$?
    
    # print the meat of the report
@@ -58,17 +58,17 @@ function test_one_round()
          echo outputs agree:
  	 echo ==========
  	 echo opt0: 
-         cat $opt0_ll.out
+         cat $opt0_ll.stdout
  	 echo ==========
          echo " "
       else
  	 echo output differs 
  	 echo ==========
  	 echo opt0: 
-         cat $opt0_ll.out
+         cat $opt0_ll.stdout
  	 echo ==========
  	 echo opt3: 
-         cat $opt3_ll.out
+         cat $opt3_ll.stdout
  	 echo ==========
          echo " "
  	 cleanup_flag="false"
