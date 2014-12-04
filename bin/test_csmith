@@ -6,7 +6,7 @@ function test_one_round()
 {
    arg_round=$1
 
-   file_stem=src_${arg_round}
+   file_stem=run${arg_round}
    report_file=${file_stem}.report
    cfile=${file_stem}.c
    opt0_ll=${file_stem}_0.ll
@@ -18,9 +18,9 @@ function test_one_round()
    clang -I$TUUT/all/include/csmith-2.2.0 -S -O3 -emit-llvm $cfile
    mv $file_stem.ll $opt3_ll
 
-   lli -force-interpreter $opt0_ll > $opt0_ll.out
+   lli -force-interpreter $opt0_ll > $opt0_ll.stdout 2> $opt0_ll.stderr
    opt0_status=$?
-   lli -force-interpreter $opt3_ll > $opt3_ll.out
+   lli -force-interpreter $opt3_ll > $opt3_ll.stdout 2> $opt3_ll.stderr
    opt3_status=$?
    diff -q $opt0_ll.out $opt3_ll.out
    diff_status=$?
@@ -56,7 +56,7 @@ function test_one_round()
         echo " "
 	cleanup_flag="false"
      fi
-   ) > $output_file
+   ) | tee $report_file
 
    echo cleanup_flag=$cleanup_flag
    if [ "$cleanup_flag" = "true" -a "true" = "false" ]; then #;;
@@ -64,7 +64,9 @@ function test_one_round()
          mkdir ROUTINE
       fi
       mv $cfile $report_file ROUTINE
-      rm $opt0_ll $opt3_ll $opt0_ll.out $opt3_ll.out
+      for ii in $opt0_ll $opt3_ll; do
+         rm $ii $ii.stdout $ii.stderr
+      done
    fi
    return 0
 } 
