@@ -9,54 +9,70 @@ function test_one_round()
    file_stem=run${arg_round}
    report_file=${file_stem}.report
    cfile=${file_stem}.c
-   opt0_ll=${file_stem}_0.ll
-   opt3_ll=${file_stem}_3.ll
+   opt0_ll=${file_stem}_o0.ll
+   opt3_ll=${file_stem}_o3.ll
+
+   # prepare report
+   (
+     echo report for source file ${cfile}: 
+   ) > | tee $report_file
 
    csmith > $cfile
    clang -I$TUUT/all/include/csmith-2.2.0 -S -O0 -emit-llvm $cfile
+   clang_status=$?
+   if [ "$clang_status" -ne 0 ]; then
+      echo clang exited with status \"$clang_status\" at -O0 >> $report_file
+      return 1
+   fi
    mv $file_stem.ll $opt0_ll
    clang -I$TUUT/all/include/csmith-2.2.0 -S -O3 -emit-llvm $cfile
+   if [ "$clang_status" -ne 0 ]; then
+      echo clang exited with status \"$clang_status\" at -O3 >> $report_file
+      return 1
+   fi
    mv $file_stem.ll $opt3_ll
 
-   lli -force-interpreter $opt0_ll > $opt0_ll.stdout 2> $opt0_ll.stderr
+   ( ulimit -t 60; lli -force-interpreter $opt0_ll ) > \
+         $opt0_ll.stdout 2> $opt0_ll.stderr
    opt0_status=$?
-   lli -force-interpreter $opt3_ll > $opt3_ll.stdout 2> $opt3_ll.stderr
+   ( ulimit -t 60; lli -force-interpreter $opt3_ll ) > \
+         $opt3_ll.stdout 2> $opt3_ll.stderr
    opt3_status=$?
    diff -q $opt0_ll.out $opt3_ll.out
    diff_status=$?
    
-   # prepare report
+   # print the meat of the report
    cleanup_flag="true"
    (
-     echo report for source file ${cfile}: 
-     if [ $opt0_status -eq $opt3_status ]; then
-        echo status agree: $opt0_status 
-     else
-	echo statuses differ for opt0 and opt3 
-	echo "  " opt0 status=$opt0_status
-	echo "  " opt3 status=$opt3_status
-	cleanup_flag="false"
-     fi
-     if [ $diff_status -eq 0 ]; then
-        echo outputs agree:
-	echo ==========
-	echo opt0: 
-        cat $opt0_ll.out
-	echo ==========
-        echo " "
-     else
-	echo output differs 
-	echo ==========
-	echo opt0: 
-        cat $opt0_ll.out
-	echo ==========
-	echo opt3: 
-        cat $opt3_ll.out
-	echo ==========
-        echo " "
-	cleanup_flag="false"
-     fi
-   ) | tee $report_file
+      echo report for source file ${cfile}: 
+      if [ $opt0_status -eq $opt3_status ]; then
+         echo statuses agree: $opt0_status 
+      else
+ 	 echo statuses differ for opt0 and opt3 
+ 	 echo "  " opt0 status=$opt0_status
+ 	 echo "  " opt3 status=$opt3_status
+ 	 cleanup_flag="false"
+      fi
+      if [ $diff_status -eq 0 ]; then
+         echo outputs agree:
+ 	 echo ==========
+ 	 echo opt0: 
+         cat $opt0_ll.out
+ 	 echo ==========
+         echo " "
+      else
+ 	 echo output differs 
+ 	 echo ==========
+ 	 echo opt0: 
+         cat $opt0_ll.out
+ 	 echo ==========
+ 	 echo opt3: 
+         cat $opt3_ll.out
+ 	 echo ==========
+         echo " "
+ 	 cleanup_flag="false"
+      fi
+   ) | tee -a $report_file
 
    echo cleanup_flag=$cleanup_flag
    if [ "$cleanup_flag" = "true" -a "true" = "false" ]; then #;;
