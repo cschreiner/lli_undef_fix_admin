@@ -19,11 +19,11 @@ function test_one_round()
    mv $file_stem.ll $opt3_ll
 
    lli -force-interpreter $opt0_ll > $opt0_ll.out
-   $opt0_status=$?
+   opt0_status=$?
    lli -force-interpreter $opt3_ll > $opt3_ll.out
-   $opt3_status=$?
+   opt3_status=$?
    diff -q $opt0_ll.out $opt3_ll.out
-   $diff_status=$?
+   diff_status=$?
    
    # prepare report
    cleanup_flag="true"
