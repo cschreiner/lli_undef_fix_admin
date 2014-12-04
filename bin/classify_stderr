@@ -7,6 +7,7 @@ num_poison_volatile_mem_writes=0
 num_div_by_zeros=0
 num_rem_by_zeros=0
 num_completed=0
+num_unclassified=0
 
 for errfile in $*; do 
    grep -q 'external function with a poison value' $errfile 
@@ -29,6 +30,7 @@ for errfile in $*; do
       num_completed=$(( $num_completed+1 ))
    else
       echo $errfile is unclassified
+      num_unclassified=$(( $num_unclassified+1 ))
    fi
 done
 
@@ -36,9 +38,15 @@ echo num_poison_ftn_calls=$num_poison_ftn_calls
 echo num_poison_volatile_mem_writes=$num_poison_volatile_mem_writes
 echo num_div_by_zeros=$num_div_by_zeros
 echo num_rem_by_zeros=$num_rem_by_zeros
+echo " "
+num_known_early_exits=$(( $num_poison_ftn_calls + \
+      $num_poison_volatile_mem_writes + $num_div_by_zeros + $num_rem_by_zeros ))
+echo num_known_early_exits=$num_known_early_exits
+echo " "
 echo num_completed=$num_completed
-total=$(( $num_poison_ftn_calls + $num_poison_volatile_mem_writes + \
-      $num_div_by_zeros + $num_rem_by_zeros + $num_completed ))
+echo num_unclassified=$num_unclassified
+echo " "
+total=$(( $num_known_early_exits + $num_completed + $num_unclassified ))
 echo total=$total
 
 
