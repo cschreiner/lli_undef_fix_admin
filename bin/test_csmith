@@ -98,7 +98,7 @@ function test_one_round()
 arg_max_rounds=$1
 
 # set up
-if [ -d ROUTINE -o -n "`ls run* | head -n1`" ]; then
+if [ -d ROUTINE -o -n "`ls | head -n1`" ]; then
    echo ${scriptname}: ERROR: the current directory does not appear to be empty.
    exit 255
 fi
