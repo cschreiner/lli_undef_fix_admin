@@ -15,7 +15,8 @@ function test_one_round()
    # prepare report
    (
      echo report for source file ${cfile}: 
-   ) > | tee $report_file
+     echo date=`date`
+   ) | tee $report_file
 
    csmith > $cfile
    clang -I$TUUT/all/include/csmith-2.2.0 -S -O0 -emit-llvm $cfile
