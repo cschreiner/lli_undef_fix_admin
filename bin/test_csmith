@@ -1,5 +1,7 @@
 #!/bin/bash
 
+scriptname=test_csmith
+
 # ============================================================================
 function test_one_round()
 # ============================================================================
@@ -57,7 +59,7 @@ function test_one_round()
       if [ $diff_status -eq 0 ]; then
          echo outputs agree:
  	 echo ==========
- 	 echo opt0: 
+ 	 echo opt0 and opt3: 
          cat $opt0_ll.stdout
  	 echo ==========
          echo " "
@@ -78,7 +80,8 @@ function test_one_round()
    echo cleanup_flag=$cleanup_flag
    if [ "$cleanup_flag" = "true" ]; then 
       if [ ! -d ROUTINE ]; then
-         mkdir ROUTINE
+         echo ${scriptname}: ERROR: can not find ROUTINE directory
+         exit 255
       fi
       mv $cfile $report_file ROUTINE
       for ii in $opt0_ll $opt3_ll; do
@@ -91,7 +94,22 @@ function test_one_round()
 # ============================================================================
 # main program
 
-test_one_round 1 # TODO: expand this into a loop
+# set up
+if [ -d ROUTINE -o -n "`ls run* | head -n1`" ]; then
+   echo ${scriptname}: ERROR: the current directory does not appear to be empty.
+   exit 255
+fi
+mkdir ROUTINE
+
+# run
+round=0
+while true; do
+  echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  echo round ${round}:
+  test_one_round $round
+  echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  round=$(( $round + 1 ))
+done
 
 
 # ============================================================================
