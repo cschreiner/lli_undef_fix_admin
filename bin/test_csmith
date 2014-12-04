@@ -76,7 +76,7 @@ function test_one_round()
    ) | tee -a $report_file
 
    echo cleanup_flag=$cleanup_flag
-   if [ "$cleanup_flag" = "true" -a "true" = "false" ]; then #;;
+   if [ "$cleanup_flag" = "true" ]; then 
       if [ ! -d ROUTINE ]; then
          mkdir ROUTINE
       fi
