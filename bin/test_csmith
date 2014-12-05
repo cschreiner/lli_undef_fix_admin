@@ -79,7 +79,19 @@ function test_one_round()
       ) | tee -a $report_file
       cleanup_flag="false"
    fi
-
+   if [ -s $opt0_ll.stderr ]; then
+      (
+         echo stderr appeared for o0
+      ) | tee -a $report_file
+      cleanup_flag="false"
+   fi
+   if [ -s $opt3_ll.stderr ]; then
+      (
+         echo stderr appeared for o3
+      ) | tee -a $report_file
+      cleanup_flag="false"
+   fi
+      
    echo cleanup_flag=$cleanup_flag
    if [ "$cleanup_flag" = "true" ]; then 
       if [ ! -d ROUTINE ]; then
