@@ -4,6 +4,10 @@
 # files related to that run.  There are often duplicates, so after
 # expansion, one often wants to sort them and then run through uniq.
 
+# There is a limit of one file per input line, if multiple files are listed
+# on the same line, subsequent files will be ignored.  
+# TODO2: find a way around this.
+
 awk '{ sub(/_.*/, "", $1); sub(/\.*/, "", $1); print $1 "_*   " $1 ".*"; }' \
       /dev/stdin
 
