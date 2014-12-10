@@ -7,6 +7,31 @@
 
 scriptname=lli_undef_fix_workspace
 
+# ==========================================================================
+# read command line args
+arg_shell=false
+need_to_exit=false
+while [ $# -gt 1 ]; do
+   case $1 in
+      --shell)
+         arg_shell=true
+         shift
+         ;;
+      *)
+         echo ${scriptname}: do not recognize option \"$1\"
+         need_to_exit=true
+         shift
+   esac
+done
+
+if [ "$need_to_exit" = "true" ]; then
+   echo ${scriptname}: too many errors, exiting.
+   exit 255
+fi
+
+
+# ==========================================================================
+# set up environment
 export PROJ_ROOT=$EDUUUT/lli_undef_fix3
 if [ ! -d $PROJ_ROOT ]; then
    echo ${scriptname}: can not find project directory.
@@ -22,6 +47,17 @@ fi
 export PATH=$PROJ_ROOT/live/bin:$PROJ_ROOT/admin/bin:$PATH
 
 cd $PROJ_ROOT/git
+
+
+# ==========================================================================
+# create the workspace or equivalent
+
+if [ "$arg_shell" = "true" ]; then
+   bash 
+   exit $?
+fi
+
+# start a bunch of xwindows
 workspace soft
 
 # ==========================================================================
