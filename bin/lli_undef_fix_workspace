@@ -11,7 +11,7 @@ scriptname=lli_undef_fix_workspace
 # read command line args
 arg_shell=false
 need_to_exit=false
-while [ $# -gt 1 ]; do
+while [ $# -ge 1 ]; do
    case $1 in
       --shell)
          arg_shell=true
