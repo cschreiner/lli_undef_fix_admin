@@ -15,7 +15,6 @@ while [ $# -ge 1 ]; do
    case $1 in
       --shell)
          arg_shell=true
-         echo set arg_shell #;;
          shift
          ;;
       *)
@@ -54,9 +53,7 @@ cd $PROJ_ROOT/git
 # create the workspace or equivalent
 
 if [ "$arg_shell" = "true" ]; then
-   echo starting arg_shell #;;
-   bash 
-   exit $?
+   exec bash 
 fi
 
 # start a bunch of xwindows
