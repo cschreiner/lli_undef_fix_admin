@@ -1,0 +1,7 @@
+C11 (C1x) standard:
+http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
+and
+http://www.open-std.org/jtc1/sc22/WG14/www/docs/n1256.pdf
+rationale:
+http://www.open-std.org/jtc1/sc22/wg14/www/docs/n897.pdf
+
