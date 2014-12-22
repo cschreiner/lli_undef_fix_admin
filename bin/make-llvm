@@ -52,12 +52,16 @@ fi
    elapsed_min_rem_s=$(( $elapsed_s % 60 ))
 
    echo " "
-   echo $separator
-   echo build status=$make_status \(should be 0\)
-   printf "build time %d:%2.2d (%d s)\n" \
-	 $elapsed_min $elapsed_min_rem_s $elapsed_s 
-   echo "  " start time=$start_time_hms
-   echo "  " stop time=$stop_time_hms
+   (
+      echo $separator
+      echo build status=$make_status \(should be 0\)
+      printf "build time %d:%2.2d (%d s)\n" \
+	    $elapsed_min $elapsed_min_rem_s $elapsed_s 
+      echo "  " start time=$start_time_hms
+      echo "  " stop time=$stop_time_hms
+   ) | tee -a $PROJ_ROOT/admin/doc/BUILD_time.log
+   (cd $PROJ_ROOT/admin/doc; \
+	 git ci -m"recorded another build time" BUILD_TIME.log )
 
 # ---------------------------------------------------------------------------
 # stop logging output
