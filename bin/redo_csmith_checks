@@ -26,24 +26,30 @@ run_one_case()
    lli_errfile2=${lli_file2}.$timestamp.stderr
 
    (ulimit -t 60; llifi $ll_file1) 1> $lli_outfile1 2> $lli_errfile1
-   status=$?
+   status1=$?
    if [ $status -ne 0 ]; then
       echo ${scriptname}: \
 	    $ll_file1 now fails due to exit status=$status on file1
+      continue
    fi   
    (ulimit -t 60; llifi $ll_file2) 1> $lli_outfile2 2> $lli_errfile2
-   status=$?
+   status2=$?
    if [ $status -ne 0 ]; then
       echo ${scriptname}: \
 	    $ll_file1 now fails due to exit status=$status on file2
-   elif diff -q $lli_outfile1 $lli_outfile2; then
-      if [ -s $lli_errfile1 -o -s $lli_errfile2 ]; then
-	 echo ${scriptname}: $ll_file1 now fails due to stderr
-	 echo "$lli_out1" > $lli_outfile1
-	 echo "$lli_out2" > $lli_outfile2
-      else
-	 echo ${scriptname}: $ll_file1 now passes
-      fi
+      continue
+   fi
+
+   # main checks
+   if [ -s $lli_errfile1 -o -s $lli_errfile2 ]; then
+      echo ${scriptname}: $ll_file1 now fails due to stderr
+      echo "$lli_out1" > $lli_outfile1
+      echo "$lli_out2" > $lli_outfile2
+      continue
+   fi
+   if diff -q $lli_outfile1 $lli_outfile2; then
+      # stdouts are the same
+      echo ${scriptname}: $ll_file1 now passes
    else
       echo ${scriptname}: $ll_file1 now fails due to stdout
       echo "$lli_out1" > $lli_outfile1
