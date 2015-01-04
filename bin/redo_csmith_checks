@@ -1,0 +1,34 @@
+#!/bin/bash
+# re-run csmith-generated test cases to see if a fix to the source
+# code fixes them, too.
+
+scriptname=redo_csmith_checks
+
+# ============================================================================
+run_one_case
+{
+   ll_file1="$1"
+   ll_file2= `cat $ll_file1 | awk '{sub(/o0/, "o3"); print;}'`
+   echo first file="$ll_file1"
+   echo second file="$ll_file2"
+
+   lli_out1=`llifi $ll_file1`
+   lli_out2=`llifi $ll_file2`
+   if [ "$lli_out1" = "$lli_out2" ]; then
+      echo ${scriptname}: $ll_file1 now passes
+   else
+      echo ${scriptname}: $ll_file2 now fails
+   fi
+}
+
+
+# ============================================================================
+
+for ll_file in $*; do
+   run_one_case $ll_file
+done
+
+
+# ============================================================================
+
+
