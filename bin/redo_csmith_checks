@@ -27,16 +27,16 @@ run_one_case()
 
    (ulimit -t 60; llifi $ll_file1) 1> $lli_outfile1 2> $lli_errfile1
    status1=$?
-   if [ $status -ne 0 ]; then
+   if [ $status1 -ne 0 ]; then
       echo ${scriptname}: \
-	    $ll_file1 now fails due to exit status=$status on file1
+	    $ll_file1 now fails due to exit status=$status1 on file1
       continue
    fi   
    (ulimit -t 60; llifi $ll_file2) 1> $lli_outfile2 2> $lli_errfile2
    status2=$?
-   if [ $status -ne 0 ]; then
+   if [ $status2 -ne 0 ]; then
       echo ${scriptname}: \
-	    $ll_file1 now fails due to exit status=$status on file2
+	    $ll_file1 now fails due to exit status=$status2 on file2
       continue
    fi
 
