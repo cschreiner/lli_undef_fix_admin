@@ -9,10 +9,10 @@
 scriptname=redo_csmith_checks
 
 # ============================================================================
-run_one_case
+run_one_case()
 {
    ll_file1="$1"
-   ll_file2= `cat $ll_file1 | awk '{sub(/o0/, "o3"); print;}'`
+   ll_file2=`echo $ll_file1 | awk '{sub(/o0/, "o3"); print;}'`
    echo first file="$ll_file1"
    echo second file="$ll_file2"
 
