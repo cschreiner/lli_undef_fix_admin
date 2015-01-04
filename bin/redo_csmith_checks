@@ -25,13 +25,13 @@ run_one_case()
    lli_errfile1=${lli_file1}.$timestamp.stderr
    lli_errfile2=${lli_file2}.$timestamp.stderr
 
-   llifi $ll_file1 1> $lli_outfile1 2> $lli_errfile1
+   (ulimit -t 60; llifi $ll_file1) 1> $lli_outfile1 2> $lli_errfile1
    status=$?
    if [ $status -ne 0 ]; then
       echo ${scriptname}: \
 	    $ll_file1 now fails due to exit status=$status on file1
    fi   
-   llifi $ll_file2 1> $lli_outfile2 2> $lli_errfile2
+   (ulimit -t 60; llifi $ll_file2) 1> $lli_outfile2 2> $lli_errfile2
    status=$?
    if [ $status -ne 0 ]; then
       echo ${scriptname}: \
