@@ -1,6 +1,10 @@
 #!/bin/bash
-# re-run csmith-generated test cases to see if a fix to the source
+# Re-run csmith-generated test cases to see if a fix to the source
 # code fixes them, too.
+# 
+# Another way to put it:
+# script to re-run lli on csmith test cases and see if recent changes to 
+# code-under-test make them pass or fail
 
 scriptname=redo_csmith_checks
 
