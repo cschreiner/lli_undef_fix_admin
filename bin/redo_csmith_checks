@@ -7,21 +7,35 @@
 # code-under-test make them pass or fail
 
 scriptname=redo_csmith_checks
+timestamp=`date +%Y%b%d_%H%M%S | awk '{print tolower($0);}'`
 
 # ============================================================================
 run_one_case()
 {
    ll_file1="$1"
    ll_file2=`echo $ll_file1 | awk '{sub(/o0/, "o3"); print;}'`
-   echo first file="$ll_file1"
-   echo second file="$ll_file2"
+   # debugging code:
+   #echo first file="$ll_file1"
+   #echo second file="$ll_file2"
 
-   lli_out1=`llifi $ll_file1`
-   lli_out2=`llifi $ll_file2`
+   lli_outfile1=${lli_file1}.$timestamp.stdout
+   lli_outfile2=${lli_file2}.$timestamp.stdout
+   lli_errfile1=${lli_file1}.$timestamp.stderr
+   lli_errfile2=${lli_file2}.$timestamp.stderr
+
+   lli_out1=`llifi $ll_file1 2> $lli_errfile1`
+   lli_out2=`llifi $ll_file2 2> $lli_errfile2`
    if [ "$lli_out1" = "$lli_out2" ]; then
+      if [ -s $lli_errfile1 -o -s $lli_errfile2 ]; then
+	 echo ${scriptname}: $ll_file1 now fails due to stderr
+	 echo "$lli_out1" > $lli_outfile1
+	 echo "$lli_out2" > $lli_outfile2
+      fi
       echo ${scriptname}: $ll_file1 now passes
    else
-      echo ${scriptname}: $ll_file2 now fails
+      echo ${scriptname}: $ll_file1 now fails due to stdout
+      echo "$lli_out1" > $lli_outfile1
+      echo "$lli_out2" > $lli_outfile2
    fi
 }
 
