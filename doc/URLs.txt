@@ -1,7 +1,27 @@
 C11 (C1x) standard:
+-------------------
 http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
 and
 http://www.open-std.org/jtc1/sc22/WG14/www/docs/n1256.pdf
 rationale:
 http://www.open-std.org/jtc1/sc22/wg14/www/docs/n897.pdf
+
+
+LLVM
+----
+http://www.llvm.org/docs/GettingStarted.html#compiling-the-llvm-suite-source-code
+http://www.llvm.org/docs/LangRef.html
+http://llvm.org/docs/doxygen/html/classllvm_1_1User.html
+http://llvm.org/docs/CMake.html#basic-cmake-usage
+
+
+
+distcc
+------
+http://distcc.googlecode.com/svn/trunk/doc/web/index.html
+
+
+
+end of document
+----------------
 
