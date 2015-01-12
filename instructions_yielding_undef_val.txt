@@ -1,0 +1,37 @@
+List of LLVM Instructions that can yield the undef value
+--------------------------------------------------------
+
+llvm.lifetime.start
+llvm.lifetime.end, though it may not be appropriate to set memory to
+	undefined.
+llvm.cttz.*
+llvm.cltz
+fptosi .. to
+fptoui .. to
+load (applies if reading a value with a non-integer number of bytes
+	(e.g. i20) that wasn't written with _exactly_ the same number of bits.
+	Do we need to handle this?
+alloca for allocating 0 bytes
+ashr if the shift amount is >= the width of the integer. Remove the
+	assert protection.
+lshr, ditto.  Remove the assert protection.
+shl, ditto.  Remove the assert protection.
+
+Instructions that can yield undef value but don't apply to this
+project (e.g. they only work with floating point numbers or vectors)
+---------------------------------------------------------------
+sitofp .. to
+uitofp .. to
+fptrunc .. to
+shufflevector
+insertelement
+extractelement
+
+
+See also
+--------
+llvm.init.trampoline sets a condition which can lead to undefined, but
+this appears to be undefined _behavior_, not the undef value.
+
+(end of document)
+
