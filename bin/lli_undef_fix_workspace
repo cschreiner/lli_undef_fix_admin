@@ -69,7 +69,7 @@ right_monitor_width=1680
 right_monitor_height=1050
 
 xterm -sb -title "vmstat xterm" -geometry 82x25+$left_monitor_width-0 \
-      -e "vmstat 5" &
+      -e "vmstat -SM 5" &
 
 (cd $PROJ_ROOT/admin; \
       xterm -sb -fn 8x13 -title "admin xterm" \
