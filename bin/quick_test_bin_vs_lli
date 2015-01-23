@@ -1,4 +1,10 @@
 #!/bin/bash
+# Run csmith on lli_undef_fix in a trivially quick manner.  This is probably
+# not what you want.  Usually, one wants to run this script, instead:
+#
+#	bin/test_csmith
+#
+# Good luck!
 
 separator_half="======================================="
 separator=${separator_half}${separator_half}
