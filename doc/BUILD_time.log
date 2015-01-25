@@ -298,3 +298,8 @@ build status=0 (should be 0)
 build time 1:02 (62 s)
    start time=Sat Jan 24 22:29:02 MST 2015
    stop time=Sat Jan 24 22:30:04 MST 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:16 (16 s)
+   start time=Sat Jan 24 23:07:29 MST 2015
+   stop time=Sat Jan 24 23:07:45 MST 2015
