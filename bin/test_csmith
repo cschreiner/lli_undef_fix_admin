@@ -65,6 +65,14 @@ function test_one_round()
 	 echo ==========
 	 echo " "
       ) | tee -a $report_file
+   elif grep -qEi '\bkilled\b' $opt0_ll.stderr && \
+	 grep -qEi '\bkilled\b' $opt3_ll_stderr; then 
+      # The program was killed , presumably because it had an infinite loop
+      # and exceeded its time limit.
+      mv $cfile $report_file KILLED
+      for ii in $opt0_ll $opt3_ll; do
+         mv $ii $ii.stdout $ii.stderr KILLED
+      done
    else
       (
 	 echo output differs 
@@ -94,11 +102,11 @@ function test_one_round()
       
    echo cleanup_flag=$cleanup_flag
    if [ "$cleanup_flag" = "true" ]; then 
-      if [ ! -d ROUTINE ]; then
-         echo ${scriptname}: ERROR: can not find ROUTINE directory
+      if [ ! -d PASSED ]; then
+         echo ${scriptname}: ERROR: can not find PASSED directory
          exit 255
       fi
-      mv $cfile $report_file ROUTINE
+      mv $cfile $report_file PASSED
       for ii in $opt0_ll $opt3_ll; do
          rm $ii $ii.stdout $ii.stderr
       done
@@ -119,7 +127,8 @@ if [ -d "$date_dir" ]; then
    echo date_dir=\"$date_dir\"
    exit 255
 fi   
-mkdir -p $date_dir/ROUTINE
+mkdir -p $date_dir/PASSED 
+mkdir -p $date_dir/KILLED
 cd $date_dir
 
 # run
