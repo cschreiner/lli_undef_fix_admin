@@ -65,14 +65,6 @@ function test_one_round()
 	 echo ==========
 	 echo " "
       ) | tee -a $report_file
-   elif grep -qEi '\bkilled\b' $opt0_ll.stderr && \
-	 grep -qEi '\bkilled\b' $opt3_ll.stderr; then 
-      # The program was killed , presumably because it had an infinite loop
-      # and exceeded its time limit.
-      mv $cfile $report_file KILLED
-      for ii in $opt0_ll $opt3_ll; do
-         mv $ii $ii.stdout $ii.stderr KILLED
-      done
    else
       (
 	 echo output differs 
@@ -100,7 +92,17 @@ function test_one_round()
       cleanup_flag="false"
    fi
       
+   # clean up runs that were consistently killed
+   if grep -qEi '\bkilled\b' $opt0_ll.stderr && \
+	 grep -qEi '\bkilled\b' $opt3_ll.stderr; then 
+      # The program was killed , presumably because it had an infinite loop
+      # and exceeded its time limit.
+      mv $cfile $report_file KILLED
+      for ii in $opt0_ll $opt3_ll; do
+         mv $ii $ii.stdout $ii.stderr KILLED
+      done
    echo cleanup_flag=$cleanup_flag
+   # clean up runs that passed
    if [ "$cleanup_flag" = "true" ]; then 
       if [ ! -d PASSED ]; then
          echo ${scriptname}: ERROR: can not find PASSED directory
