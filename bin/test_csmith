@@ -66,7 +66,7 @@ function test_one_round()
 	 echo " "
       ) | tee -a $report_file
    elif grep -qEi '\bkilled\b' $opt0_ll.stderr && \
-	 grep -qEi '\bkilled\b' $opt3_ll_stderr; then 
+	 grep -qEi '\bkilled\b' $opt3_ll.stderr; then 
       # The program was killed , presumably because it had an infinite loop
       # and exceeded its time limit.
       mv $cfile $report_file KILLED
