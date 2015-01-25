@@ -101,6 +101,7 @@ function test_one_round()
       for ii in $opt0_ll $opt3_ll; do
          mv $ii $ii.stdout $ii.stderr KILLED
       done
+   fi
    echo cleanup_flag=$cleanup_flag
    # clean up runs that passed
    if [ "$cleanup_flag" = "true" ]; then 
@@ -121,6 +122,9 @@ function test_one_round()
 
 # process command-line args
 arg_max_rounds=$1
+if [ -z "$arg_max_rounds" ]; then
+   arg_max_rounds=0
+fi
 
 # set up
 date_dir=`date +%Y%b%d_%H%M%S`
@@ -141,10 +145,14 @@ while true; do
    test_one_round $round
    echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
    round=$(( $round + 1 ))
+   echo round=\"$round\" #;;
+   echo arg_max_rounds=\"$arg_max_rounds\" #;;
+  
    if [ $round -ge $arg_max_rounds -a $arg_max_rounds -gt 0 ]; then
       echo completed $arg_max_rounds rounds.   
       exit 0
    fi
+   read dummy #;;
 done
 
 
