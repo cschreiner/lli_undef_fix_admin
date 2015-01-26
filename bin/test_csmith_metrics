@@ -1,0 +1,10 @@
+#!/bin/sh
+# Generate metrics from a dir tree created by test_csmith.
+# The current directory is assumed to be the root of the test_csmith output
+# tree.
+
+echo total: `find . -iname \*report | grep -c ^` 
+echo need_investigation: `find . -maxdepth 1 -iname \*report | grep -c ^` 
+echo passed: `find PASSED -iname \*report | grep -c ^` 
+echo killed: `find KILLED -iname \*report | grep -c ^` 
+
