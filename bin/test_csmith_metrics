@@ -3,8 +3,23 @@
 # The current directory is assumed to be the root of the test_csmith output
 # tree.
 
-echo total: `find . -iname \*report | grep -c ^` 
-echo need_investigation: `find . -maxdepth 1 -iname \*report | grep -c ^` 
-echo passed: `find PASSED -iname \*report | grep -c ^` 
-echo killed: `find KILLED -iname \*report | grep -c ^` 
+total=`find . -iname \*report | grep -c ^` 
+need_investigation=`find . -maxdepth 1 -iname \*report | grep -c ^` 
+passed=`find PASSED -iname \*report | grep -c ^` 
+killed=`find KILLED -iname \*report | grep -c ^` 
+
+total_percent=100
+need_investigation_percent=$(( $need_investigation * 100 / $total ))
+passed_percent=$(( $passed * 100 / $total ))
+killed_percent=$(( $killed * 100 / $total ))
+
+echo total: $total \(100%\)
+echo " "
+echo need_investigation: \
+      $need_investigation \($need_investigation_percent%\)
+echo passed: $passed \($passed_percent%\)
+echo killed: $killed \($killed_percent%\)
+echo " "
+echo \(Total percentages may not equal 100 due to rounding.\)
+echo " "
 
