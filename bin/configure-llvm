@@ -46,7 +46,7 @@ fi
 
 # ----------------------------------------------------------------------------
 # configure the build
-$PROJ_ROOT/git/llvm/configure --prefix $PROJ_ROOT/live \
+$PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
       $host_specific_options "$@"
 
 # ----------------------------------------------------------------------------
