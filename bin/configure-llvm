@@ -46,14 +46,32 @@ fi
 
 # ----------------------------------------------------------------------------
 # configure the build
+
+# note: configure requires --disable-bindings to avoid these warnings:
+#    configure: WARNING: --enable-bindings=ocaml specified, but ctypes is not
+#	installed
+#    configure: WARNING: --enable-bindings=ocaml specified, but OUnit 2 is not
+#	installed. Tests will not run
+#    configure: error: Prequisites for bindings not satisfied. Fix them or use
+#	configure --disable-bindings.
+
 $PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
+      --disable-bindings \
       $host_specific_options "$@"
 
 # ----------------------------------------------------------------------------
 # set up stuff derived from the configuration
 
 # lit needs a config-generated file in its test dir hierarchy
-ln -s $BUILD_DIR/test/lit.site.cfg $PROJ_ROOT/git/test 
+LIT_SITE_CFG=$PROJ_ROOT/git/test/lit.site.cfg 
+if [ -e $LIT_SITE_CFG -o -L $LIT_SITE_CFG ]; then
+   echo cleaning up old lit.site.cfg file at:
+   echo "  " \"$LIT_SITE_CFG\"
+   pushd `dirname $LIT_SITE_CFG`
+   cleandir `basename $LIT_SITE_CFG`
+   popd
+fi
+ln -s $BUILD_DIR/test/lit.site.cfg $LIT_SITE_CFG
 
 # ----------------------------------------------------------------------------
 # end of script
