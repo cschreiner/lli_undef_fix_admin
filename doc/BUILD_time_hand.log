@@ -1,4 +1,16 @@
 ====================================================================
+from this build time file:
+-rw-r--r-- 1 cas ssl-cert 126 Sep 29 09:10 /home/cas/post/build_time
+
+we find this record:
+
+with -j 1: build time 23 min:55 (1435 s)
+with -j 3: build time 9 min:04 (544 s)
+
+debug build, with -j 3:
+build time 37:27 (2247 s)
+
+====================================================================
 build status=0 (should be 0)
 build time 63:10 (3790 s)
    start time=Wed Dec 3 09:19:20 MST 2014
