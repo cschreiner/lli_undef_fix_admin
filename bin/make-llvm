@@ -16,7 +16,8 @@ if [ -z "$BUILD_ROOT" ]; then
    BUILD_ROOT=$PROJ_ROOT/llvm.build
 fi
 cd $BUILD_ROOT
-echo pwd=`pwd` #;;
+echo building in directory:
+echo "  " \"`pwd`\"
 if [ -f BUILD.out ]; then
    cleandir BUILD.out
 fi
