@@ -54,9 +54,13 @@ fi
 #	installed. Tests will not run
 #    configure: error: Prequisites for bindings not satisfied. Fix them or use
 #	configure --disable-bindings.
-
+#
+# Note: the OUnit2 warning can be resolved on Ubuntu 14.04 by installing:
+#	libounit-ocaml-dev
+# Note: fixing the ctypes warning can be resolved on Ubuntu 14.04 by
+# 	installing:
+#	libctypes-ocaml		libctypes-ocaml-dev
 $PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
-      --disable-bindings \
       $host_specific_options "$@"
 
 # ----------------------------------------------------------------------------
