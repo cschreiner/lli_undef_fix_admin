@@ -61,6 +61,7 @@ fi
 # 	installing:
 #	libctypes-ocaml		libctypes-ocaml-dev
 $PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
+      --enable-optimized --disable-bindings \
       $host_specific_options "$@"
 
 # ----------------------------------------------------------------------------
