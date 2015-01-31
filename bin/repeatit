@@ -1,0 +1,18 @@
+#!/bin/sh
+# script to run a command over and over again on each of a list of
+# files, printing a visual separator in between each run.
+
+arg_cmd="$1"
+shift
+
+for $arg in $*; do
+   echo ===================================================================
+   echo ${arg}:
+   echo " "
+   $arg_cmd $arg
+   status=$?
+   echo " "
+   echo exit status=\"$status\"
+   echo ===================================================================
+fi
+   
