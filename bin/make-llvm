@@ -67,8 +67,8 @@ fi
 	    $elapsed_min $elapsed_min_rem_s $elapsed_s 
       echo "  " start time=$start_time_hms
       echo "  " stop time=$stop_time_hms
-   ) | tee -a $PROJ_ROOT/admin/doc/BUILD_time.log
-   (cd $PROJ_ROOT/admin/doc; \
+   ) | tee -a $PROJ_ROOT/admin/log/BUILD_time.log
+   (cd $PROJ_ROOT/admin/log; \
 	 git ci -m"recorded another build time" BUILD_time.log )
 
 # ---------------------------------------------------------------------------
