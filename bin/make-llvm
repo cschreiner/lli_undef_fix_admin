@@ -34,7 +34,9 @@ fi
    # Ubuntu 12's 4.8.? compiler (built from a ppa) was optimal on host dyson
    # (4 cores) with 4 processes  Ubuntu 14's 4.8.2 compiler is just using 50%
    # cpu (per vmstat) with 4 processes, so we will try 8.
-   make -j 8 "$@"
+   # TODO: -j 12 is for experimenting with distcc.  Its normal value is 8.
+   # Find some way to allow it to be adjusted for massive parallel builds.
+   make -j 12 "$@"
    make_status=$?
 
    if [ $make_status -eq 0 ]; then
