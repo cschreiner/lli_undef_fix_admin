@@ -1,0 +1,511 @@
+===================================================================
+add_signed.ll:
+ 
+lli: 
+	/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: 
+	llvm::APInt::APInt(const llvm::APInt &): 
+	Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli add_signed.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+add_unsigned.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli add_unsigned.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+ashr.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli ashr.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+div_signed.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli div_signed.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+div_unsigned.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli div_unsigned.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+first.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli first.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+lshr.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli lshr.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+mul_signed.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli mul_signed.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+mul_unsigned.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli mul_unsigned.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+shl_signed.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli shl_signed.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+shl_unsigned.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli shl_unsigned.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+store_poison_n_load.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGlobalValue(llvm::Type*, llvm::Constant*&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGlobal(std::string const&, llvm::SMLoc, unsigned int, bool, unsigned int, unsigned int, llvm::GlobalValue::ThreadLocalMode, bool) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseNamedGlobal() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli store_poison_n_load.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+store_poison_volatile.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGlobalValue(llvm::Type*, llvm::Constant*&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGlobal(std::string const&, llvm::SMLoc, unsigned int, bool, unsigned int, unsigned int, llvm::GlobalValue::ThreadLocalMode, bool) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseNamedGlobal() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli store_poison_volatile.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+sub_signed.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli sub_signed.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
+===================================================================
+sub_unsigned.ll:
+ 
+lli: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/git/include/llvm/ADT/APInt.h:296: llvm::APInt::APInt(const llvm::APInt &): Assertion `BitWidth && "bitwidth too small"' failed.
+#0 0x llvm::sys::PrintStackTrace(_IO_FILE*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __restore_rt (/lib/x86_64-linux-gnu/libpthread.so.0+0x)
+#0 0x gsignal /build/buildd/eglibc-2.19/signal/../nptl/sysdeps/unix/sysv/linux/raise.c:56:0
+#0 0x abort /build/buildd/eglibc-2.19/stdlib/abort.c:91:0
+#0 0x __assert_fail_base /build/buildd/eglibc-2.19/assert/assert.c:92:0
+#0 0x (/lib/x86_64-linux-gnu/libc.so.6+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::ConstantInt::get(llvm::LLVMContext&, llvm::APInt const&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ConvertValIDToValue(llvm::Type*, llvm::ValID&, llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTypeAndValue(llvm::Value*&, llvm::LLParser::PerFunctionState*) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseGetElementPtr(llvm::Instruction*&, llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseBasicBlock(llvm::LLParser::PerFunctionState&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseFunctionBody(llvm::Function&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::ParseTopLevelEntities() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::LLParser::Run() (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssemblyInto(llvm::MemoryBufferRef, llvm::Module&, llvm::SMDiagnostic&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseAssembly(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIR(llvm::MemoryBufferRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x llvm::parseIRFile(llvm::StringRef, llvm::SMDiagnostic&, llvm::LLVMContext&) (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x main (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+#0 0x __libc_start_main /build/buildd/eglibc-2.19/csu/libc-start.c:321:0
+#0 0x _start (/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli+0x)
+Stack dump:
+0.	Program arguments: /uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/live.generic/bin/lli sub_unsigned.ll 
+Aborted (core dumped)
+ 
+exit status="134"
+===================================================================
