@@ -14,5 +14,5 @@ for arg in $*; do
    echo " "
    echo exit status=\"$status\"
    echo ===================================================================
-fi
+done
    
