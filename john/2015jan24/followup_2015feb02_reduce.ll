@@ -9,10 +9,12 @@ define i32 @foo(i32 %x1, i32 %x2) #0 {
 entry:
    %cmp = icmp sgt i32 %x2, 0
    %sub = sub nsw i32 2147483647, %x2
-   %printf.result = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %sub) #3
+   ; CAS: poison detected in %sub
 
    %cmp1 = icmp slt i32 %sub, %x1
+   ; CAS: poison not detected in %cmp1
    %or.cond = and i1 %cmp, %cmp1
+   ; CAS: poison not detected in %or.cond
    br i1 %or.cond, label %lor.end, label %lor.rhs
 
 lor.rhs:                                          ; preds = %entry
