@@ -9,6 +9,8 @@ define i32 @foo(i32 %x1, i32 %x2) #0 {
 entry:
    %cmp = icmp sgt i32 %x2, 0
    %sub = sub nsw i32 2147483647, %x2
+   %printf.result = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %sub) #3
+
    %cmp1 = icmp slt i32 %sub, %x1
    %or.cond = and i1 %cmp, %cmp1
    br i1 %or.cond, label %lor.end, label %lor.rhs
@@ -29,8 +31,7 @@ lor.end:                                          ; preds = %lor.rhs, %entry
 define i32 @main() #1 {
 entry:
    %call = tail call i32 @foo(i32 1, i32 -770027279)
-   %call1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds 
-([4 x i8]* @.str, i64 0, i64 0), i32 %call) #3
+   %call1 = tail call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i64 0, i64 0), i32 %call) #3
    ret i32 0
 }
 
