@@ -25,14 +25,14 @@ fi
 # test for distcc
 distcc=false
 if [ -n "$DISTCC_HOSTS" ]; then
-   echo $CC | grep -q distcc
+   grep -Eq -e '^CC=.*\bdistcc\b' config.log
    cc_uses_distcc=$?
-   echo $CXX | grep -q distcc
+   grep -Eq -e '^CXX=.*\bdistcc\b' config.log
    cxx_uses_distcc=$?
    if [ $cc_uses_distcc==0 -o $cxx_uses_distcc==0 ]; then
       distcc=true
    else
-      echo FYI: CC and CXX prevent distcc, despite DISTCC_HOSTS being set.
+      echo FYI: config file ignores distcc, despite DISTCC_HOSTS being set.
    fi
 fi
 echo using distcc=$distcc
