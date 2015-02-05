@@ -35,27 +35,30 @@ if [ -n "$DISTCC_HOSTS" ]; then
       echo FYI: config file ignores distcc, despite DISTCC_HOSTS being set.
    fi
 fi
-echo using distcc=$distcc
 
 # ---------------------------------------------------------------------------
 # start logging the output
 (
    start_time_hms="`date`"
    start_time=`date +%s`
+   echo FYI: using distcc=$distcc.
 
    # ------------------------------------------------------------------------
    # do the core build
 
-   # Ubuntu 12's 4.8.? compiler (built from a ppa) was optimal on host dyson
-   # (4 cores) with 4 processes  Ubuntu 14's 4.8.2 compiler is just using 50%
-   # cpu (per vmstat) with 4 processes, so we will try 8.
-   # TODO: -j 12 is for experimenting with distcc.  Its normal value is 8.
-   # Find some way to allow it to be adjusted for massive parallel builds.
+   # Note: Ubuntu 12's 4.8.? compiler (built from a ppa) was optimal on host
+   # dyson (4 cores) with 4 processes  Ubuntu 14's 4.8.2 compiler is just
+   # using 50% cpu (per vmstat) with 4 processes, so we will try 8.
+
+   # TODO: find some way to automatically adjust num_procs for massive
+   # parallel builds.
    if [ $distcc == "true" ]; then
       num_procs=15
    else
       num_procs=8
    fi
+   echo FYI: using $num_procs processes.
+
    make -j $num_procs "$@"
    make_status=$?
 
