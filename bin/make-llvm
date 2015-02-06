@@ -42,6 +42,8 @@ fi
    start_time_hms="`date`"
    start_time=`date +%s`
    echo FYI: using distcc=$distcc.
+   echo "  " DISTCC_HOSTS=\"$DISTCC_HOSTS\"
+   echo " "
 
    # ------------------------------------------------------------------------
    # do the core build
