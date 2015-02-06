@@ -22,6 +22,10 @@ if [ -f BUILD.out ]; then
    cleandir BUILD.out
 fi
 
+
+# ---------------------------------------------------------------------------
+# set up distcc-related stuff
+
 # test for distcc
 distcc=false
 if [ -n "$DISTCC_HOSTS" ]; then
@@ -34,6 +38,19 @@ if [ -n "$DISTCC_HOSTS" ]; then
    else
       echo FYI: config file ignores distcc, despite DISTCC_HOSTS being set.
    fi
+fi
+
+# figure out how many processes make should run
+if [ $distcc == "true" ]; then
+   # parse the total number of processes out of the DISTCC_HOSTS env var
+   # which has form hostname/num_procs hostname2/num_procs...
+   # e.g.   "localhost/8 babel/4 bethe 6"
+   # awk program with debugging:
+   #  awk 'BEGIN {RS=" "; FS="/"; total=0;} {total= total+$2; print $2, total;} END { print "total=", total;}'
+   total_distcc_procs=`echo $DISTCC_HOSTS | \
+	 awk 'BEGIN {RS=" "; FS="/"; total=0;} {total= total+$2; } END { print total;}' `
+else
+   total_distcc_procs=0
 fi
 
 # ---------------------------------------------------------------------------
@@ -52,12 +69,17 @@ fi
    # dyson (4 cores) with 4 processes  Ubuntu 14's 4.8.2 compiler is just
    # using 50% cpu (per vmstat) with 4 processes, so we will try 8.
 
-   # TODO: find some way to automatically adjust num_procs for massive
-   # parallel builds.
-   if [ $distcc == "true" ]; then
-      num_procs=22
+   num_procs=0
+   if [ $total_distcc_procs -eq 0 ]; then
+      # count the number of cores on localhost
+      num_procs=`cat /proc/cpuinfo | awk -F : 'BEGIN { tt=0; } /^processor/
+{ tt++; } END { print tt;}'`
+      if [ $num_procs -lt 1 ]; then
+	 num_procs=8
+	 # TODO2: find a good default
+      fi
    else
-      num_procs=8
+      num_procs=$total_distcc_procs;
    fi
    echo FYI: using $num_procs processes.
 
