@@ -12,7 +12,7 @@ fi
 
 while [ $* -gt 1 ]; do
    case "$1" in
-      --pwd)
+      --cwd)
          BUILD_ROOT=`pwd`
          echo building in current directory
          shift
