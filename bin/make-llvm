@@ -55,7 +55,7 @@ fi
    # TODO: find some way to automatically adjust num_procs for massive
    # parallel builds.
    if [ $distcc == "true" ]; then
-      num_procs=15
+      num_procs=22
    else
       num_procs=8
    fi
