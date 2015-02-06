@@ -8,6 +8,24 @@ if [ -z "$PROJ_ROOT" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# parse command-line parameters
+
+while [ $* -gt 1 ]; do
+   case "$1" in
+      --pwd)
+         BUILD_ROOT=`pwd`
+         echo building in current directory
+         shift
+         ;;
+      *)
+         echo ${scriptname}: error: do not understand argument \"$1\"
+         exit 127
+         ;;
+   esac
+done
+
+
+# ---------------------------------------------------------------------------
 # set things up
 
 separator="===================================================================="
