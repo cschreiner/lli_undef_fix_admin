@@ -10,13 +10,11 @@ fi
 # ---------------------------------------------------------------------------
 # parse command-line parameters
 
-echo parsing command-line options, found \"$#\". #;;
 while [ $# -gt 0 ]; do
-   echo "  " parsing \"$1\" #;;
    case "$1" in
       --cwd)
          BUILD_ROOT=`pwd`
-         echo building in current directory
+         echo FYI: '<<<' building in current directory '>>>'
          shift
          ;;
       --make)
