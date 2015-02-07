@@ -1,0 +1,4161 @@
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 19:52:52 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Tue, 27 Jan 2015 18:50:00 -0800
+To: "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>
+Subject: [LLVMdev] RFC: Proposal for Poison Semantics
+
+Hello,
+
+What follows is my attempt to describe how poison works.  Let me know what
+you think.
+
+-- 
+David
+
+
+# LLVM Poison Semantics
+
+Poison is an LLVM concept which exists solely to enable further
+optimization of LLVM IR. The exact behavior of poison has been, to say the
+least, confusing for users, researchers and engineers working with LLVM.
+
+This document hopes to clear up some of the confusion of poison and
+hopefully explain *why* it has its semantics.
+
+## A Quick Introduction to Poison
+
+Let's start with a concrete motivating example in C:
+```
+int isSumGreater(int a, int b) {
+  return a + b > a;
+}
+```
+
+The C specification permits us to optimize the comparison in `isSumGreater`
+to `b > 0` because signed overflow results in undefined behavior.  A
+reasonable translation of `isSumGreater` to LLVM IR could be:
+
+```
+define i32 @isSumGreater(i32 %a, i32 %b) {
+entry:
+  %add = add i32 %a, %b
+  %cmp = icmp sgt i32 %add, %a
+  %conv = zext i1 %cmp to i32
+  ret i32 %conv
+}
+```
+
+However, LLVM cannot determine that `%cmp` should not consider cases where
+`%add` resulted in signed overflow.  We need a way to communicate this
+information to LLVM.
+
+This is where the `nsw` and `nuw` flags come into play.  `nsw` is short for
+"no signed wrap", `nuw` is short for "no unsigned wrap".
+
+With these, we can come up with a new formulation of `%add`: `add i32 nsw
+%a, %b`.
+LLVM can take this into account when it is optimizing the `%cmp` and
+replace it with: `icmp sgt i32 %b, 0`.
+
+## Differences Between LLVM and C/C++
+
+There are some interesting differences between what C++ and C specify and
+how LLVM behaves with respect to performing an operationg which is not
+permitted to overflow.
+
+Perhaps chief among them is that evaluating an expression in C++ or C which
+results performs an overflow is undefined behavior. In LLVM, executing an
+instruction which is marked `nsw` but which violates signed overflow
+results in poison. Values which have no relationship with poisoned values
+are not effected by them.
+
+Let us take the following C program into consideration:
+```
+int calculateImportantResult(int a, int b) {
+  int result = 0;
+  if (a) {
+    result = a + b;
+  }
+  return result;
+}
+```
+
+A straightforward lowering to LLVM IR could be:
+```
+define i32 @calculateImportantResult(i32 %a, i32 %b) {
+entry:
+  %tobool = icmp ne i32 %a, 0
+  br i1 %tobool, label %if.then, label %if.end
+
+if.then:
+  %add = add nsw i32 %a, %b
+  br label %if.end
+
+if.end:
+  %result = phi i32 [ %add, %if.then ], [ 0, %entry ]
+  ret i32 %result
+}
+```
+
+Moving `%add` to the `%entry` block would be preferable and would allow
+further optimizations:
+```
+define i32 @calculateImportantResult(i32 %a, i32 %b) {
+entry:
+  %tobool = icmp ne i32 %a, 0
+  %add = add nsw i32 %a, %b
+  %result = select i1 %tobool, i32 0, i32 %add
+  ret i32 %result
+}
+```
+
+In the original code, the calculation of `%add` was control dependent.
+Now, `%add` might result in signed overflow in violation of the `nsw` flag.
+Despite this, the program should behave as it did before because the
+poisoned value is masked-out by the select. The next section will dive into
+this in greater detail.
+
+# Computation Involving Poison Values
+Poison in a computation results in poison if the result cannot be
+constrained by its non-poison operands.
+
+Examples of this rule which will result in poison:
+```
+  %add = add i32 %x, %always_poison
+  %sub = sub i32 %x, %always_poison
+  %xor = xor i32 %x, %always_poison
+  %mul = mul i32 %always_poison, 1
+```
+
+Examples of this rule which do not result in poison:
+```
+  %or  = or  i32 %always_poison, 2
+  %and = and i32 %always_poison, 2
+  %mul = mul i32 %always_poison, 0
+```
+
+In fact, it would be reasonable to optimize `%or` to `2` and `%and` to
+`0`.  In this respect, poison is not different from `undef`.
+
+The following example is only poison if `%cond` is false:
+```
+  %sel = select i1 %cond, i32 2, %always_poison
+```
+
+### Is it safe to have poison as a `call` argument?
+
+A `call` instruction may or may not result in poison depending on exactly
+how the callee  uses the supplied arguments, it is not necessarily the case
+that `call i32 @someFunction(i32 %always_poison)` results in poison.
+
+LLVM cannot forbid poison from entering `call` arguments without
+prohibiting an optimization pass from outlining code.
+
+### Is it safe to store poison to memory?
+
+`store i32 %always_poison, i32* %mem` does not result in undefined
+behavior. A subsequent load instruction like `%load = load i32* %mem` will
+result in `%load` being a poison value.
+
+### Is it safe to load or store a poison memory location?
+
+No.  Poison works just like `undef` in this respect.
+
+### Does comparing a poison value result in poison?
+
+It depends.  If the comparison couldn't solely be determined by looking at
+the other operand, the result is poison.
+
+For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not
+poison.
+However, `icmp i32 ne %always_poison, 7` is poison.
+
+### What if the condition operand in a `select` is poison?
+
+In the example `%sel = select i1 %always_poison, i1 true, false`, `%sel` is
+either `true` or `false`.  Because, `%sel` depends on `%always_poison` it
+too is poison.
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 20:24:50 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+Date: Tue, 27 Jan 2015 19:22:23 -0800
+From: Chandler Carruth <chandlerc@google.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+
+On Tue, Jan 27, 2015 at 6:50 PM, David Majnemer <david.majnemer@gmail.com>
+wrote:
+
+> Examples of this rule which do not result in poison:
+> ```
+>   %or  = or  i32 %always_poison, 2
+>   %and = and i32 %always_poison, 2
+>   %mul = mul i32 %always_poison, 0
+> ```
+>
+> In fact, it would be reasonable to optimize `%or` to `2` and `%and` to
+> `0`.  In this respect, poison is not different from `undef`.
+>
+
+The last time we discussed this, we were considering poison a property of
+an individual bit much like undef is a property of an indivdual bit. Are
+you no longer proposing those semantics? That is, while %or's second bit is
+clearly not poison, is the first bit (or LSB) poison?
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 20:28:11 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 19:23:12 -0800
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+
+Hi David,
+
+I spent some time thinking about poison semantics this way, but here
+is where I always get stuck:
+
+Consider the IR fragment
+
+  %x = zext i32 %maybe_poison to i64
+  %y = lshr i64 %x 32
+  %ptr = gep %global, %y
+  store 42 to %ptr
+
+If %maybe_poison is poison, then is %y poison?  For all i32 values of
+%maybe_poison, %y is i64 0, so in some sense you can determine the
+value %y without looking at %x.  Given that, the store in the above
+fragment is not undefined behavior even if %maybe_poison is poison.
+However, this means if "%maybe_poison" is "add nuw %m, %n" it cannot
+be optimized to "add nuw (zext %m) (zext %n)" since that will change
+program behavior in an otherwise well-defined program.
+
+One way out of this is to say that zext and sext of a value that is
+dependent on poison is poison.  We'll have to do something similar for
+load shearing.
+
+The above "problem" can also be seen in
+
+> ### Does comparing a poison value result in poison?
+>
+> It depends.  If the comparison couldn't solely be determined by
+> looking at the other operand, the result is poison.
+
+This means we cannot do the C-style optimization "int a = ...; a <
+(a + 1)" ==> "true".  In the case "a + 1" overflows, a is
+INT_SIGNED_MAX.  But if a is INT_SIGNED_MAX, "a < X" is always false,
+for all values of X.  So "a < a + 1" is defined; and it is true for "a
+!= INT_SIGNED_MAX" but false for "a == INT_SIGNED_MAX".  Hence the
+expression cannot be folded to true.
+
+
+I think the reason why poison is hard to formalize is that it
+fundamentally tries to give an N bit value behavior that cannot be
+justified by _any_ N bit value.  It "breaks" llvm's type system.
+
+-- Sanjoy
+
+
+On Tue, Jan 27, 2015 at 6:50 PM, David Majnemer
+<david.majnemer@gmail.com> wrote:
+. . .
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 20:33:42 2015
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Tue, 27 Jan 2015 19:30:56 -0800
+To: Chandler Carruth <chandlerc@google.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+
+On Tue, Jan 27, 2015 at 7:22 PM, Chandler Carruth <chandlerc@google.com>
+wrote:
+
+>
+> On Tue, Jan 27, 2015 at 6:50 PM, David Majnemer <david.majnemer@gmail.com>
+> wrote:
+>
+>> Examples of this rule which do not result in poison:
+>> ```
+>>   %or  = or  i32 %always_poison, 2
+>>   %and = and i32 %always_poison, 2
+>>   %mul = mul i32 %always_poison, 0
+>> ```
+>>
+>> In fact, it would be reasonable to optimize `%or` to `2` and `%and` to
+>> `0`.  In this respect, poison is not different from `undef`.
+>>
+>
+> The last time we discussed this, we were considering poison a property of
+> an individual bit much like undef is a property of an indivdual bit. Are
+> you no longer proposing those semantics? That is, while %or's second bit is
+> clearly not poison, is the first bit (or LSB) poison?
+>
+
+Sorry this wasn't clear.  My intent was to say that bit 1 was set but that
+the other bits were poison.  With this in mind, it is legal to throw the
+poison away if you don't want to keep the or instruction if you replace it
+with a value which has bit 1 set (these semantics are just like undef).
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 20:47:23 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+Date: Tue, 27 Jan 2015 19:44:24 -0800
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+
+On Tue, Jan 27, 2015 at 7:23 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> Hi David,
+>
+> I spent some time thinking about poison semantics this way, but here
+> is where I always get stuck:
+>
+> Consider the IR fragment
+>
+>   %x = zext i32 %maybe_poison to i64
+>   %y = lshr i64 %x 32
+>   %ptr = gep %global, %y
+>   store 42 to %ptr
+>
+> If %maybe_poison is poison, then is %y poison?  For all i32 values of
+> %maybe_poison, %y is i64 0, so in some sense you can determine the
+> value %y without looking at %x.
+
+
+I agree, this makes sense.
+
+
+> Given that, the store in the above
+> fragment is not undefined behavior even if %maybe_poison is poison.
+> However, this means if "%maybe_poison" is "add nuw %m, %n" it cannot
+> be optimized to "add nuw (zext %m) (zext %n)" since that will change
+> program behavior in an otherwise well-defined program.
+>
+
+Hmm, I'm not so sure this is right.
+
+Are we talking about transforming:
+%add = add nuw i32 %x, %y
+%res = zext i32 %add to i64
+
+to:
+%z1 = zext i32 %x to i64
+%z2 = zext i32 %y to i64
+%res = add nuw i64 %z1, %z2
+
+?
+
+This is OK because performing a zext by that many bits cannot result in a
+NUW violation.
+
+
+>
+> One way out of this is to say that zext and sext of a value that is
+> dependent on poison is poison.  We'll have to do something similar for
+> load shearing.
+>
+
+sext must be dependent on the underlying value because it splats the sign
+bit.
+
+
+>
+> The above "problem" can also be seen in
+>
+> > ### Does comparing a poison value result in poison?
+> >
+> > It depends.  If the comparison couldn't solely be determined by
+> > looking at the other operand, the result is poison.
+>
+> This means we cannot do the C-style optimization "int a = ...; a <
+> (a + 1)" ==> "true".  In the case "a + 1" overflows, a is
+> INT_SIGNED_MAX.  But if a is INT_SIGNED_MAX, "a < X" is always false,
+> for all values of X.  So "a < a + 1" is defined; and it is true for "a
+> != INT_SIGNED_MAX" but false for "a == INT_SIGNED_MAX".  Hence the
+> expression cannot be folded to true.
+>
+
+This part sounds tricky, I'm not immediately sure what to do.
+
+
+>
+>
+> I think the reason why poison is hard to formalize is that it
+> fundamentally tries to give an N bit value behavior that cannot be
+> justified by _any_ N bit value.  It "breaks" llvm's type system.
+>
+> -- Sanjoy
+>
+>
+> On Tue, Jan 27, 2015 at 6:50 PM, David Majnemer
+> <david.majnemer@gmail.com> wrote:
+. . .
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 20:49:48 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 9AA906501A1;
+	Tue, 27 Jan 2015 20:49:48 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 20:49:48 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S3lg1p013312;
+	Tue, 27 Jan 2015 21:47:42 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S3jwaR013271
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 21:45:58 -0600
+Received: from mail-wi0-f181.google.com ([209.85.212.181])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YGJZm-0003yL-3w
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 21:45:58 -0600
+Received: by mail-wi0-f181.google.com with SMTP id fb4so9128766wid.2
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 19:45:51 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=U3p2wjtX2sWAkcvsqA7TwyWOKAiYeFPWGbTlLE+83aA=;
+	b=cL91ewmGgEOmrm9toKV4WOqXl6F5aiqA/07sBtAGnCE2G4vJaB1r1e4rM+kEm5WJZO
+	Ts1UhaTs3yWPTsLTZ6UVBPc265TzVH0lG+aApVmwanw9jg7bbnyIXdT0qzPeKL0ih9O5
+	rJe0syNDW+BNVMvjGVAU8xmReF7H2JxHs9GUv6jl9BF14WKGJAXG03AqIMoF1bhewHGy
+	eaG3ycHtr+XKU1Cj5JgHCeMStO6uo7uZedLYvjeVYjsGXEaOFVyWTVhMFwY5M2bv8Raz
+	i5Ftk6CdWVzr0Yvj7e8ux6QaFG8mEw0CTDzj6fEY7sk0w7XAgH1KPQ+9UVIaysJViAu4
+	dPRQ==
+X-Gm-Message-State: ALoCoQnS7K2bUZOQ5EqrZ6ybEEC/zbXloAhuKol2JZ9D80/fCL4yOFnXe9Z8IA27KD7dEa7G9a1i
+X-Received: by 10.194.250.5 with SMTP id yy5mr2329052wjc.133.1422416751733;
+	Tue, 27 Jan 2015 19:45:51 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Tue, 27 Jan 2015 19:45:31 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 19:45:31 -0800
+Message-ID: <CAMiUf7e9oMKuhB3oiKrWa612OP9PVKmnjmFK+TD58-AMSxjgEQ@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+> However, this means if "%maybe_poison" is "add nuw %m, %n" it cannot
+> be optimized to "add nuw (zext %m) (zext %n)" since that will change
+
+I should have been clearer here: "it" == "%x" -- IOW you cannot the
+usual zext of sum == sum of zexts transform.
+
+
+> This means we cannot do the C-style optimization "int a = ...; a <
+> (a + 1)" ==> "true".  In the case "a + 1" overflows, a is
+> INT_SIGNED_MAX.  But if a is INT_SIGNED_MAX, "a < X" is always false,
+
+And also a slight clarification here -- "a + 1" sign-overflows if and
+only if a is INT_SIGNED_MAX.  < is signed less than.  And if a is not
+poison, "a < a + 1" is not poison because precisely in the case where
+"a + 1" is poison, we can determine the result of the compare without
+looking at "a + 1".
+
+> for all values of X.  So "a < a + 1" is defined; and it is true for "a
+> != INT_SIGNED_MAX" but false for "a == INT_SIGNED_MAX".  Hence the
+> expression cannot be folded to true.
+>
+>
+> I think the reason why poison is hard to formalize is that it
+> fundamentally tries to give an N bit value behavior that cannot be
+> justified by _any_ N bit value.  It "breaks" llvm's type system.
+>
+> -- Sanjoy
+>
+>
+> On Tue, Jan 27, 2015 at 6:50 PM, David Majnemer
+> <david.majnemer@gmail.com> wrote:
+>> Hello,
+>>
+>> What follows is my attempt to describe how poison works.  Let me know what
+>> you think.
+>>
+>> --
+>> David
+>>
+>>
+>> # LLVM Poison Semantics
+>>
+>> Poison is an LLVM concept which exists solely to enable further optimization
+>> of LLVM IR. The exact behavior of poison has been, to say the least,
+>> confusing for users, researchers and engineers working with LLVM.
+>>
+>> This document hopes to clear up some of the confusion of poison and
+>> hopefully explain *why* it has its semantics.
+>>
+>> ## A Quick Introduction to Poison
+>>
+>> Let's start with a concrete motivating example in C:
+>> ```
+>> int isSumGreater(int a, int b) {
+>>   return a + b > a;
+>> }
+>> ```
+>>
+>> The C specification permits us to optimize the comparison in `isSumGreater`
+>> to `b > 0` because signed overflow results in undefined behavior.  A
+>> reasonable translation of `isSumGreater` to LLVM IR could be:
+>>
+>> ```
+>> define i32 @isSumGreater(i32 %a, i32 %b) {
+>> entry:
+>>   %add = add i32 %a, %b
+>>   %cmp = icmp sgt i32 %add, %a
+>>   %conv = zext i1 %cmp to i32
+>>   ret i32 %conv
+>> }
+>> ```
+>>
+>> However, LLVM cannot determine that `%cmp` should not consider cases where
+>> `%add` resulted in signed overflow.  We need a way to communicate this
+>> information to LLVM.
+>>
+>> This is where the `nsw` and `nuw` flags come into play.  `nsw` is short for
+>> "no signed wrap", `nuw` is short for "no unsigned wrap".
+>>
+>> With these, we can come up with a new formulation of `%add`: `add i32 nsw
+>> %a, %b`.
+>> LLVM can take this into account when it is optimizing the `%cmp` and replace
+>> it with: `icmp sgt i32 %b, 0`.
+>>
+>> ## Differences Between LLVM and C/C++
+>>
+>> There are some interesting differences between what C++ and C specify and
+>> how LLVM behaves with respect to performing an operationg which is not
+>> permitted to overflow.
+>>
+>> Perhaps chief among them is that evaluating an expression in C++ or C which
+>> results performs an overflow is undefined behavior. In LLVM, executing an
+>> instruction which is marked `nsw` but which violates signed overflow results
+>> in poison. Values which have no relationship with poisoned values are not
+>> effected by them.
+>>
+>> Let us take the following C program into consideration:
+>> ```
+>> int calculateImportantResult(int a, int b) {
+>>   int result = 0;
+>>   if (a) {
+>>     result = a + b;
+>>   }
+>>   return result;
+>> }
+>> ```
+>>
+>> A straightforward lowering to LLVM IR could be:
+>> ```
+>> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+>> entry:
+>>   %tobool = icmp ne i32 %a, 0
+>>   br i1 %tobool, label %if.then, label %if.end
+>>
+>> if.then:
+>>   %add = add nsw i32 %a, %b
+>>   br label %if.end
+>>
+>> if.end:
+>>   %result = phi i32 [ %add, %if.then ], [ 0, %entry ]
+>>   ret i32 %result
+>> }
+>> ```
+>>
+>> Moving `%add` to the `%entry` block would be preferable and would allow
+>> further optimizations:
+>> ```
+>> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+>> entry:
+>>   %tobool = icmp ne i32 %a, 0
+>>   %add = add nsw i32 %a, %b
+>>   %result = select i1 %tobool, i32 0, i32 %add
+>>   ret i32 %result
+>> }
+>> ```
+>>
+>> In the original code, the calculation of `%add` was control dependent.
+>> Now, `%add` might result in signed overflow in violation of the `nsw` flag.
+>> Despite this, the program should behave as it did before because the
+>> poisoned value is masked-out by the select. The next section will dive into
+>> this in greater detail.
+>>
+>> # Computation Involving Poison Values
+>> Poison in a computation results in poison if the result cannot be
+>> constrained by its non-poison operands.
+>>
+>> Examples of this rule which will result in poison:
+>> ```
+>>   %add = add i32 %x, %always_poison
+>>   %sub = sub i32 %x, %always_poison
+>>   %xor = xor i32 %x, %always_poison
+>>   %mul = mul i32 %always_poison, 1
+>> ```
+>>
+>> Examples of this rule which do not result in poison:
+>> ```
+>>   %or  = or  i32 %always_poison, 2
+>>   %and = and i32 %always_poison, 2
+>>   %mul = mul i32 %always_poison, 0
+>> ```
+>>
+>> In fact, it would be reasonable to optimize `%or` to `2` and `%and` to `0`.
+>> In this respect, poison is not different from `undef`.
+>>
+>> The following example is only poison if `%cond` is false:
+>> ```
+>>   %sel = select i1 %cond, i32 2, %always_poison
+>> ```
+>>
+>> ### Is it safe to have poison as a `call` argument?
+>>
+>> A `call` instruction may or may not result in poison depending on exactly
+>> how the callee  uses the supplied arguments, it is not necessarily the case
+>> that `call i32 @someFunction(i32 %always_poison)` results in poison.
+>>
+>> LLVM cannot forbid poison from entering `call` arguments without prohibiting
+>> an optimization pass from outlining code.
+>>
+>> ### Is it safe to store poison to memory?
+>>
+>> `store i32 %always_poison, i32* %mem` does not result in undefined behavior.
+>> A subsequent load instruction like `%load = load i32* %mem` will result in
+>> `%load` being a poison value.
+>>
+>> ### Is it safe to load or store a poison memory location?
+>>
+>> No.  Poison works just like `undef` in this respect.
+>>
+>> ### Does comparing a poison value result in poison?
+>>
+>> It depends.  If the comparison couldn't solely be determined by looking at
+>> the other operand, the result is poison.
+>>
+>> For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not
+>> poison.
+>> However, `icmp i32 ne %always_poison, 7` is poison.
+>>
+>> ### What if the condition operand in a `select` is poison?
+>>
+>> In the example `%sel = select i1 %always_poison, i1 true, false`, `%sel` is
+>> either `true` or `false`.  Because, `%sel` depends on `%always_poison` it
+>> too is poison.
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 21:01:58 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 95ABC6501A2;
+	Tue, 27 Jan 2015 21:01:58 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 21:01:58 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S3xq5b013643;
+	Tue, 27 Jan 2015 21:59:52 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S3xoxn013640
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 21:59:50 -0600
+Received: from mail-wg0-f49.google.com ([74.125.82.49])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YGJnC-0004Mi-9f
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 21:59:50 -0600
+Received: by mail-wg0-f49.google.com with SMTP id k14so18268290wgh.8
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 19:59:44 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=BAGpSBzaPT/WQ2I2oLlirbD1UzTlkj0rtXUfcQAYq3Q=;
+	b=KmJh78OlNuV8evsyQo0ESYUBduN4Arh/1w0fhL0zPQDUMpNCCBOVdJRqUT9sSVEeiV
+	UTRqbqZ+lLktPOR3islZBSKz5lZ/y2TgYVb8X00HaWLYxzI88hdMGK1p7B8bKZsZ+/QF
+	NoH+Bjk2GJmMSY5sJw87WOmxxBWtjMZTUHwX0G/oJkVvKngn4YKhr0YBhkDWZO1iNesA
+	B9UicKjbFn9ohcEQwB8hcGuk6xNdHWUF8qoO2c1ulbexHeh1opK1LHJaJZQzwZP3SGtv
+	GZdGnKwIzS8OG7pWLTj2ZNwH8q+YPlVsVZffr6HcOZUeLfpA1DQI7ZAVYLN+7jXIuY9v
+	06Sg==
+X-Gm-Message-State: ALoCoQnGsq4GWGjdltVdMqSu90F1vo9B3qCkFLptSTzb4SpX9XV8qAeAkt9kJCy5oN9oamROvgQq
+X-Received: by 10.180.72.199 with SMTP id f7mr2613966wiv.53.1422417584154;
+	Tue, 27 Jan 2015 19:59:44 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Tue, 27 Jan 2015 19:59:23 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 19:59:23 -0800
+Message-ID: <CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+On Tue, Jan 27, 2015 at 7:44 PM, David Majnemer
+<david.majnemer@gmail.com> wrote:
+> On Tue, Jan 27, 2015 at 7:23 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+> wrote:
+>>
+>> Hi David,
+>>
+>> I spent some time thinking about poison semantics this way, but here
+>> is where I always get stuck:
+>>
+>> Consider the IR fragment
+>>
+>>   %x = zext i32 %maybe_poison to i64
+>>   %y = lshr i64 %x 32
+>>   %ptr = gep %global, %y
+>>   store 42 to %ptr
+>>
+>> If %maybe_poison is poison, then is %y poison?  For all i32 values of
+>> %maybe_poison, %y is i64 0, so in some sense you can determine the
+>> value %y without looking at %x.
+>
+>
+> I agree, this makes sense.
+>
+>>
+>> Given that, the store in the above
+>> fragment is not undefined behavior even if %maybe_poison is poison.
+>> However, this means if "%maybe_poison" is "add nuw %m, %n" it cannot
+>> be optimized to "add nuw (zext %m) (zext %n)" since that will change
+>> program behavior in an otherwise well-defined program.
+>
+>
+> Hmm, I'm not so sure this is right.
+>
+> Are we talking about transforming:
+> %add = add nuw i32 %x, %y
+> %res = zext i32 %add to i64
+>
+> to:
+> %z1 = zext i32 %x to i64
+> %z2 = zext i32 %y to i64
+> %res = add nuw i64 %z1, %z2
+>
+> ?
+>
+> This is OK because performing a zext by that many bits cannot result in a
+> NUW violation.
+
+No, I'm talking about "zext(add nuw X Y)" ==> "add nuw (zext X) (zext
+Y)".  In the example, replacing %x, a zext of an nuw add with an nuw
+add of zexts changes the behavior of a well-defined program.
+
+> sext must be dependent on the underlying value because it splats the sign
+> bit.
+
+Right, which is why I initially chose zext. :)
+
+But with sexts with you a similar problem:
+
+
+  %t = add nsw <known positive>, <known positive>
+  %t1 = and %t, 0x7fff...
+  %t2 = sext %t1
+  %t3 = lshr %t2, <width of typeof %t>
+  store_to (gep %global, %t2)
+
+Now %t3 is always zero and this program is well-defined if even if %t
+is poison.  However, I cannot reason "%t never overflows, so it is
+always >0 and hence %t1 == %t" since substituting %t1 with %t will
+change the meaning of a well-defined program.
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 21:24:52 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id C819E6501A1;
+	Tue, 27 Jan 2015 21:24:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 21:24:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S4Mu5S014184;
+	Tue, 27 Jan 2015 22:22:56 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S4MsSC014181
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 22:22:54 -0600
+Received: from mail-ie0-f173.google.com ([209.85.223.173])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YGK9W-0004uB-Ep
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 22:22:54 -0600
+Received: by mail-ie0-f173.google.com with SMTP id tr6so19492202ieb.4
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 20:22:49 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=a1YzH8+YgyDA6Tz+cqH6z79aIen7MP0h86Q1RHi59e0=;
+	b=QxZUOFTpIJdlKNbxJ25CBsvOI9ZjjJZ3UmjgtuHdNmgr6bVEOALLxdQAgoX+BxYfTW
+	sx5R2Fsc0xvvMi697RRhVPQLwGe7tNcCJqUpWk11isg2rQvCCUF5HI7TXr3rhP4WYi0U
+	JxXQ4T7vxXjb3OGPKz4oTtGTje1N4yvtt5tWytNAtaXsGnD/7k3HpK3MyOgyGOx+GArD
+	ykoQWgm3gdkB0hMN8rDTDn/q7j+jutOlYeOMEL5rfIlzlO6SjFaShE1ceuOzKvR3KrAL
+	tSPds0wi81GVrnp1ssfoTW/nIJ6GBdoACKW6sTCJ8sARi25swyInOt78FPg3EZD0wPH5
+	rnqA==
+X-Received: by 10.107.165.193 with SMTP id o184mr1654208ioe.90.1422418969186; 
+	Tue, 27 Jan 2015 20:22:49 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Tue, 27 Jan 2015 20:22:09 -0800 (PST)
+In-Reply-To: <CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Tue, 27 Jan 2015 20:22:09 -0800
+Message-ID: <CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============7173402631795722871=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============7173402631795722871==
+Content-Type: multipart/alternative; boundary=001a1141c216615a29050daeb962
+
+--001a1141c216615a29050daeb962
+Content-Type: text/plain; charset=UTF-8
+
+On Tue, Jan 27, 2015 at 7:59 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> On Tue, Jan 27, 2015 at 7:44 PM, David Majnemer
+> <david.majnemer@gmail.com> wrote:
+> > On Tue, Jan 27, 2015 at 7:23 PM, Sanjoy Das <
+> sanjoy@playingwithpointers.com>
+> > wrote:
+> >>
+> >> Hi David,
+> >>
+> >> I spent some time thinking about poison semantics this way, but here
+> >> is where I always get stuck:
+> >>
+> >> Consider the IR fragment
+> >>
+> >>   %x = zext i32 %maybe_poison to i64
+> >>   %y = lshr i64 %x 32
+> >>   %ptr = gep %global, %y
+> >>   store 42 to %ptr
+> >>
+> >> If %maybe_poison is poison, then is %y poison?  For all i32 values of
+> >> %maybe_poison, %y is i64 0, so in some sense you can determine the
+> >> value %y without looking at %x.
+> >
+> >
+> > I agree, this makes sense.
+> >
+> >>
+> >> Given that, the store in the above
+> >> fragment is not undefined behavior even if %maybe_poison is poison.
+> >> However, this means if "%maybe_poison" is "add nuw %m, %n" it cannot
+> >> be optimized to "add nuw (zext %m) (zext %n)" since that will change
+> >> program behavior in an otherwise well-defined program.
+> >
+> >
+> > Hmm, I'm not so sure this is right.
+> >
+> > Are we talking about transforming:
+> > %add = add nuw i32 %x, %y
+> > %res = zext i32 %add to i64
+> >
+> > to:
+> > %z1 = zext i32 %x to i64
+> > %z2 = zext i32 %y to i64
+> > %res = add nuw i64 %z1, %z2
+> >
+> > ?
+> >
+> > This is OK because performing a zext by that many bits cannot result in a
+> > NUW violation.
+>
+> No, I'm talking about "zext(add nuw X Y)" ==> "add nuw (zext X) (zext
+> Y)".  In the example, replacing %x, a zext of an nuw add with an nuw
+> add of zexts changes the behavior of a well-defined program.
+>
+
+Correct me if I am wrong but we are talking about transforming:
+   %maybe_poison = add nuw i32 %a, %b
+   %x = zext i32 %maybe_poison to i64
+   %y = lshr i64 %x 32
+
+To:
+   %za = zext i32 %a to i64
+   %zb = zext i32 %b to i64
+   %x = add nuw i64 %za, %zb
+   %y = lshr i64 %x 32
+
+?
+
+If so, this seems fine in the model given by the RFC.
+
+In the before case:
+%maybe_poison doesn't infect the upper bits of %x with its poison which
+allows %y to have the well defined result 0.
+
+In the after case:
+%za and %zb will have their top 32-bits filled with zeros making it
+impossible for nuw to be violated for %x, %y would have the well defined
+result 0.
+
+
+> > sext must be dependent on the underlying value because it splats the sign
+> > bit.
+>
+> Right, which is why I initially chose zext. :)
+>
+> But with sexts with you a similar problem:
+>
+>
+>   %t = add nsw <known positive>, <known positive>
+>   %t1 = and %t, 0x7fff...
+>   %t2 = sext %t1
+>   %t3 = lshr %t2, <width of typeof %t>
+>   store_to (gep %global, %t2)
+>
+> Now %t3 is always zero and this program is well-defined if even if %t
+> is poison.  However, I cannot reason "%t never overflows, so it is
+> always >0 and hence %t1 == %t" since substituting %t1 with %t will
+> change the meaning of a well-defined program.
+>
+> -- Sanjoy
+>
+
+--001a1141c216615a29050daeb962
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><div class=3D"gmail_quote">On T=
+ue, Jan 27, 2015 at 7:59 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a href=3D"ma=
+ilto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playingwithpo=
+inters.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote" style=
+=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-color:rgb(20=
+4,204,204);border-left-style:solid;padding-left:1ex"><div class=3D""><div c=
+lass=3D"h5">On Tue, Jan 27, 2015 at 7:44 PM, David Majnemer<br>
+&lt;<a href=3D"mailto:david.majnemer@gmail.com">david.majnemer@gmail.com</a=
+>&gt; wrote:<br>
+&gt; On Tue, Jan 27, 2015 at 7:23 PM, Sanjoy Das &lt;<a href=3D"mailto:sanj=
+oy@playingwithpointers.com">sanjoy@playingwithpointers.com</a>&gt;<br>
+&gt; wrote:<br>
+&gt;&gt;<br>
+&gt;&gt; Hi David,<br>
+&gt;&gt;<br>
+&gt;&gt; I spent some time thinking about poison semantics this way, but he=
+re<br>
+&gt;&gt; is where I always get stuck:<br>
+&gt;&gt;<br>
+&gt;&gt; Consider the IR fragment<br>
+&gt;&gt;<br>
+&gt;&gt;=C2=A0 =C2=A0%x =3D zext i32 %maybe_poison to i64<br>
+&gt;&gt;=C2=A0 =C2=A0%y =3D lshr i64 %x 32<br>
+&gt;&gt;=C2=A0 =C2=A0%ptr =3D gep %global, %y<br>
+&gt;&gt;=C2=A0 =C2=A0store 42 to %ptr<br>
+&gt;&gt;<br>
+&gt;&gt; If %maybe_poison is poison, then is %y poison?=C2=A0 For all i32 v=
+alues of<br>
+&gt;&gt; %maybe_poison, %y is i64 0, so in some sense you can determine the=
+<br>
+&gt;&gt; value %y without looking at %x.<br>
+&gt;<br>
+&gt;<br>
+&gt; I agree, this makes sense.<br>
+&gt;<br>
+&gt;&gt;<br>
+&gt;&gt; Given that, the store in the above<br>
+&gt;&gt; fragment is not undefined behavior even if %maybe_poison is poison=
+.<br>
+&gt;&gt; However, this means if &quot;%maybe_poison&quot; is &quot;add nuw =
+%m, %n&quot; it cannot<br>
+&gt;&gt; be optimized to &quot;add nuw (zext %m) (zext %n)&quot; since that=
+ will change<br>
+&gt;&gt; program behavior in an otherwise well-defined program.<br>
+&gt;<br>
+&gt;<br>
+&gt; Hmm, I&#39;m not so sure this is right.<br>
+&gt;<br>
+&gt; Are we talking about transforming:<br>
+&gt; %add =3D add nuw i32 %x, %y<br>
+&gt; %res =3D zext i32 %add to i64<br>
+&gt;<br>
+&gt; to:<br>
+&gt; %z1 =3D zext i32 %x to i64<br>
+&gt; %z2 =3D zext i32 %y to i64<br>
+&gt; %res =3D add nuw i64 %z1, %z2<br>
+&gt;<br>
+&gt; ?<br>
+&gt;<br>
+&gt; This is OK because performing a zext by that many bits cannot result i=
+n a<br>
+&gt; NUW violation.<br>
+<br>
+</div></div>No, I&#39;m talking about &quot;zext(add nuw X Y)&quot; =3D=3D&=
+gt; &quot;add nuw (zext X) (zext<br>
+Y)&quot;.=C2=A0 In the example, replacing %x, a zext of an nuw add with an =
+nuw<br>
+add of zexts changes the behavior of a well-defined program.<br></blockquot=
+e><div><br></div><div>Correct me if I am wrong but we are talking about tra=
+nsforming:</div><div><div>=C2=A0 =C2=A0%maybe_poison =3D add nuw i32 %a, %b=
+</div><div>=C2=A0 =C2=A0%x =3D zext i32 %maybe_poison to i64</div><div>=C2=
+=A0 =C2=A0%y =3D lshr i64 %x 32</div></div><div>=C2=A0</div><div>To:</div><=
+div>=C2=A0 =C2=A0%za =3D zext i32 %a to i64</div><div></div><div>=C2=A0 =C2=
+=A0%zb =3D zext i32 %b to i64</div><div></div><div>=C2=A0 =C2=A0%x =3D add =
+nuw i64 %za, %zb<br></div><div><div>=C2=A0 =C2=A0%y =3D lshr i64 %x 32<br><=
+/div></div><div><br></div><div>?</div><div><br></div><div>If so, this seems=
+ fine in the model given by the RFC.</div><div><br></div><div>In the before=
+ case:</div><div>%maybe_poison doesn&#39;t infect the upper bits of %x with=
+ its poison which allows %y to have the well defined result 0.</div><div><b=
+r></div><div>In the after case:</div><div>%za and %zb will have their top 3=
+2-bits filled with zeros making it impossible for nuw to be violated for %x=
+, %y would have the well defined result 0.</div><div><br></div><blockquote =
+class=3D"gmail_quote" style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1=
+px;border-left-color:rgb(204,204,204);border-left-style:solid;padding-left:=
+1ex">
+<span class=3D""><br>
+&gt; sext must be dependent on the underlying value because it splats the s=
+ign<br>
+&gt; bit.<br>
+<br>
+</span>Right, which is why I initially chose zext. :)<br>
+<br>
+But with sexts with you a similar problem:<br>
+<br>
+<br>
+=C2=A0 %t =3D add nsw &lt;known positive&gt;, &lt;known positive&gt;<br>
+=C2=A0 %t1 =3D and %t, 0x7fff...<br>
+=C2=A0 %t2 =3D sext %t1<br>
+=C2=A0 %t3 =3D lshr %t2, &lt;width of typeof %t&gt;<br>
+=C2=A0 store_to (gep %global, %t2)<br>
+<br>
+Now %t3 is always zero and this program is well-defined if even if %t<br>
+is poison.=C2=A0 However, I cannot reason &quot;%t never overflows, so it i=
+s<br>
+always &gt;0 and hence %t1 =3D=3D %t&quot; since substituting %t1 with %t w=
+ill<br>
+change the meaning of a well-defined program.<br>
+<span class=3D""><font color=3D"#888888"><br>
+-- Sanjoy<br>
+</font></span></blockquote></div><br></div></div>
+
+--001a1141c216615a29050daeb962--
+
+--===============7173402631795722871==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============7173402631795722871==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 21:34:43 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id E48F66501A1;
+	Tue, 27 Jan 2015 21:34:43 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 21:34:43 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S4WeYS014879;
+	Tue, 27 Jan 2015 22:32:40 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S4WcJM014873
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 22:32:38 -0600
+Received: from mail-we0-f176.google.com ([74.125.82.176])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YGKIw-0005iM-Ei
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 22:32:38 -0600
+Received: by mail-we0-f176.google.com with SMTP id w62so18518605wes.7
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 20:32:32 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=/DhZjfVv4TSJVs6YJQKjXUIQsNNSiDW9jqLXad48PaM=;
+	b=OlFeylLiz9VYDSYr79t9tYZCGJE8BdWluozzD8oopxEHBVN/+dzJOEEsb6GLnm0IkW
+	V+iKZCAZC+RdGEwWuqHj7DjYSB2CcPTfaOKmIK3trdx7cxAx+fywBh9zRelz6hdfNwi1
+	dV9DTzSyKiNjrUp4fjjHpGZz8LRz9AjM0JaOoc+RkJSt+5AN0phTdwAwnKgBAfs7PmzY
+	mOANLMc1RaO4UKEMBZjxrCIQU9hqbNacg9pfIB4BNLB9K+Bv+Tn/p/o27HJmXk7M19GG
+	ZvQaLkgcAFgIvwp5DWxBk4GvopanTORpc16bRswMnRPLwfsuPTg88qQ9ZyrlHFf5Di7U
+	/9nA==
+X-Gm-Message-State: ALoCoQkxN8mVIHSpDMKq3gMssOxXRYtd+UCMtb5jC0os6EyoYkF4OCPTJP70cldkSt8+TqqTD4Ih
+X-Received: by 10.180.95.97 with SMTP id dj1mr2763437wib.43.1422419552354;
+	Tue, 27 Jan 2015 20:32:32 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Tue, 27 Jan 2015 20:32:11 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 20:32:11 -0800
+Message-ID: <CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+>
+> Correct me if I am wrong but we are talking about transforming:
+>    %maybe_poison = add nuw i32 %a, %b
+>    %x = zext i32 %maybe_poison to i64
+>    %y = lshr i64 %x 32
+>
+> To:
+>    %za = zext i32 %a to i64
+>    %zb = zext i32 %b to i64
+>    %x = add nuw i64 %za, %zb
+>    %y = lshr i64 %x 32
+>
+> ?
+>
+> If so, this seems fine in the model given by the RFC.
+>
+> In the before case:
+> %maybe_poison doesn't infect the upper bits of %x with its poison which
+> allows %y to have the well defined result 0.
+>
+> In the after case:
+> %za and %zb will have their top 32-bits filled with zeros making it
+> impossible for nuw to be violated for %x, %y would have the well defined
+> result 0.
+>
+
+If both %a and %b are 2^32-1, won't %y be 0 in the first case and 1 in
+the second?  The reason why we can get away with this _now_ is because
+the first program has UB and hence anything can happen, including
+storing to &a[1] instead &a[0].  But with the semantics in the RFC,
+the first program is well-defined and is storing to &a[0] so we cannot
+change it to store to &a[1] instead.
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 21:47:23 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 8651165019C;
+	Tue, 27 Jan 2015 21:47:23 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 21:47:23 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S4jNbH015389;
+	Tue, 27 Jan 2015 22:45:23 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S4jL37015386
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 22:45:21 -0600
+Received: from mail-ie0-f179.google.com ([209.85.223.179])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YGKVF-0006CN-Ja
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 22:45:21 -0600
+Received: by mail-ie0-f179.google.com with SMTP id x19so19596190ier.10
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 20:45:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=FXT8IWrVZTxT9ULsy3aVXgEsWMIYgPNfr20AOKeY/r8=;
+	b=ZHtHU8paGUGn5xYXrM4w1K1Ruf+YCZwWsFu8Fqxp8ufBKD1gm+VN++CexeyYFOKnvw
+	5XA1+6Y25MrDttzSXC9E61cqhHUM3/X8TuaURYVrN9M2WPXWw4uTGPZBytZOXGoaWDTS
+	JyTESdlhMk4E1TyHOiX1PpC0JyKN3dNXeo82W+9RfdK11Vopu2FV70Z4yLoiwplm7KFs
+	mtDSQex1h2aVRjeRr+inFHYHoCOYdGt5ARt4DtTNfOfaX2bFXdEvz4I/KZSo9E1XLxlt
+	lZDtb7bXHf8uh4WBe9hHsXAroNSR7DH3y+1sfOg0OdmtJnFpEYfpx3ICPVl71iPjHnn7
+	qKQg==
+X-Received: by 10.43.100.67 with SMTP id cv3mr1485715icc.92.1422420316368;
+	Tue, 27 Jan 2015 20:45:16 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Tue, 27 Jan 2015 20:44:36 -0800 (PST)
+In-Reply-To: <CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Tue, 27 Jan 2015 20:44:36 -0800
+Message-ID: <CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============2625520468550230887=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============2625520468550230887==
+Content-Type: multipart/alternative; boundary=bcaec5171e81adb944050daf09a7
+
+--bcaec5171e81adb944050daf09a7
+Content-Type: text/plain; charset=UTF-8
+
+On Tue, Jan 27, 2015 at 8:32 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> >
+> > Correct me if I am wrong but we are talking about transforming:
+> >    %maybe_poison = add nuw i32 %a, %b
+> >    %x = zext i32 %maybe_poison to i64
+> >    %y = lshr i64 %x 32
+> >
+> > To:
+> >    %za = zext i32 %a to i64
+> >    %zb = zext i32 %b to i64
+> >    %x = add nuw i64 %za, %zb
+> >    %y = lshr i64 %x 32
+> >
+> > ?
+> >
+> > If so, this seems fine in the model given by the RFC.
+> >
+> > In the before case:
+> > %maybe_poison doesn't infect the upper bits of %x with its poison which
+> > allows %y to have the well defined result 0.
+> >
+> > In the after case:
+> > %za and %zb will have their top 32-bits filled with zeros making it
+> > impossible for nuw to be violated for %x, %y would have the well defined
+> > result 0.
+> >
+>
+> If both %a and %b are 2^32-1, won't %y be 0 in the first case and 1 in
+> the second?
+
+
+Ah, yes.  You are right, we cannot always assume that %y would be zero in
+the second case.
+This wouldn't be the first time we've lost information that we could use to
+optimize a program by transforming it.
+
+Do you think this result would be problematic?  It seems consistent with
+the RFC and LLVM's current behavior.
+
+--bcaec5171e81adb944050daf09a7
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Tue, Jan 27, 2015 at 8:32 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a hr=
+ef=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playi=
+ngwithpointers.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quot=
+e" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">=
+<span class=3D"">&gt;<br>
+&gt; Correct me if I am wrong but we are talking about transforming:<br>
+&gt;=C2=A0 =C2=A0 %maybe_poison =3D add nuw i32 %a, %b<br>
+&gt;=C2=A0 =C2=A0 %x =3D zext i32 %maybe_poison to i64<br>
+&gt;=C2=A0 =C2=A0 %y =3D lshr i64 %x 32<br>
+&gt;<br>
+&gt; To:<br>
+&gt;=C2=A0 =C2=A0 %za =3D zext i32 %a to i64<br>
+&gt;=C2=A0 =C2=A0 %zb =3D zext i32 %b to i64<br>
+&gt;=C2=A0 =C2=A0 %x =3D add nuw i64 %za, %zb<br>
+&gt;=C2=A0 =C2=A0 %y =3D lshr i64 %x 32<br>
+&gt;<br>
+&gt; ?<br>
+&gt;<br>
+&gt; If so, this seems fine in the model given by the RFC.<br>
+&gt;<br>
+&gt; In the before case:<br>
+&gt; %maybe_poison doesn&#39;t infect the upper bits of %x with its poison =
+which<br>
+&gt; allows %y to have the well defined result 0.<br>
+&gt;<br>
+&gt; In the after case:<br>
+&gt; %za and %zb will have their top 32-bits filled with zeros making it<br=
+>
+&gt; impossible for nuw to be violated for %x, %y would have the well defin=
+ed<br>
+&gt; result 0.<br>
+&gt;<br>
+<br>
+</span>If both %a and %b are 2^32-1, won&#39;t %y be 0 in the first case an=
+d 1 in<br>
+the second?</blockquote><div><br></div><div>Ah, yes.=C2=A0 You are right, w=
+e cannot always assume that %y would be zero in the second case.</div><div>=
+This wouldn&#39;t be the first time we&#39;ve lost information that we coul=
+d use to optimize a program by transforming it.</div><div><br></div><div>Do=
+ you think this result would be problematic?=C2=A0 It seems consistent with=
+ the RFC and LLVM&#39;s current behavior.</div><div><br></div></div></div><=
+/div>
+
+--bcaec5171e81adb944050daf09a7--
+
+--===============2625520468550230887==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============2625520468550230887==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 22:01:16 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 2E85F65019F;
+	Tue, 27 Jan 2015 22:01:16 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 22:01:15 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S4x5Dp015738;
+	Tue, 27 Jan 2015 22:59:05 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S4x346015734
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 22:59:03 -0600
+Received: from mail-wi0-f172.google.com ([209.85.212.172])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YGKiV-0006bp-J1
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 22:59:03 -0600
+Received: by mail-wi0-f172.google.com with SMTP id h11so9243628wiw.5
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 20:58:57 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=o0EI1nOzVT14JMhtqcgf8cIg4OW2ZiortjAGOTGx1kw=;
+	b=DrRUfT/yuoWH71H4XhvYY2Qfj0vx9Yz3hbn9hIj5zRKnCcOr1tWe+PTUvdGT1AO3Jv
+	/GqDN947DQp3TPZ0iF9fgxb+k+4GaCj15ywEaz5IklMpeSRAu+62hOnft5HDf1PvPa/H
+	+KFaS8byLs7Dft6HZFH8pZAyqVwtzypQlyEX2udCjNfEZPoIsnf0YGqgisLq1RX4My+K
+	rD+fBXz+0qg543E7xggyp8CGdU1JwWwxrFpws8Gx+Eqn+z6R8Mowj20Nsq4ptTTZQmfv
+	MWAx8aS1Wcwf8vER6gdz71VGkZP8E6dVfyqhjVwiIEhsHnl+PD3iw0hHaexom4+5MQY8
+	V3PA==
+X-Gm-Message-State: ALoCoQmjHJYY1v0LCPQ5Y7tNHJGRtlSA3xG+Y7XY/y251sLtjOkTg+i5QpDFq7SAo1Y8wlDG6Z3m
+X-Received: by 10.194.237.41 with SMTP id uz9mr3299123wjc.80.1422421137150;
+	Tue, 27 Jan 2015 20:58:57 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Tue, 27 Jan 2015 20:58:36 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 20:58:36 -0800
+Message-ID: <CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+> Ah, yes.  You are right, we cannot always assume that %y would be zero in
+> the second case.
+> This wouldn't be the first time we've lost information that we could use to
+> optimize a program by transforming it.
+>
+> Do you think this result would be problematic?  It seems consistent with the
+> RFC and LLVM's current behavior.
+>
+
+The problem is not that we're losing information, the problem is that
+we're changing the behavior of a well-defined program.
+
+I'll try to put the whole argument in one place:
+
+We start with
+
+  %x = add nuw i32 %m, %n
+  %y = zext i32 %x to i64
+  %s = lshr i64 %y, 32
+  %addr = gep %some_global, %s
+  store i32 42, i32* %addr
+
+In the above program, for all values of %x, %s is 0.  This means the
+program is well-defined when %x is poison (since you don't need to
+look at %x to determine the value of %addr, in the same sense as you
+don't need to look at X to determine the value of "and X, 0"); and it
+stores 42 to &(%some_global)[0].  Specifically, the above program is
+well defined for "%m = %n = 2^32-1".
+
+Now if we do the usual transform of "zext (add nuw X Y)" => "add nuw
+(zext X) (zext Y)" then we get
+
+  %m.wide = zext i32 %m to i64
+  %n.wide = zext i32 %n to i64
+  %z = add nuw i64 %m.wide, %n.wide
+  %s = lshr i64 %y, 32
+  %addr = gep %some_global, %s
+  store i32 42, i32* %addr
+
+The new program does *not* have the same behavior as the old program
+for "%m = %n = 2^32-1".  We have changed the behavior of a
+well-defined program by doing the "zext (add nuw X Y)" => "add nuw
+(zext X) (zext Y)" transform.
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 22:14:18 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 33BB86501A3;
+	Tue, 27 Jan 2015 22:14:18 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 22:14:17 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S5CG8j016298;
+	Tue, 27 Jan 2015 23:12:16 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S5CF92016295
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 23:12:15 -0600
+Received: from mail-wi0-f180.google.com ([209.85.212.180])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YGKvH-0006x8-9f
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 23:12:15 -0600
+Received: by mail-wi0-f180.google.com with SMTP id h11so9335873wiw.1
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 21:12:09 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=mXSXZajHpk3Ykh9fzFCTombS/yDrl8mgMPMXim0EO/U=;
+	b=JaXXXRwOAJgczVJ3ww0w1EVkO4QBqhaaKH8gTSIiuAnGcgNgAjmtoGPIW8MAi0tMo1
+	WgkyDv9YqJqJbCH3aVByei1Eb7YH9tUU/VHONyItWnTJMtsh8lH3eA+HRCSdssbv5LYU
+	8BMz9m3L/04n2OC+vaRYloNd9e9teWo8NnC0PJ0kmcNbd6DnBTvFmfTkj52AIhXvbl2U
+	evp6T2/zugPfEUeZTC1qEGo3w+FnXEE4Gc64butlx9brXnghjoA7jVsMw4w1Fa+OmMps
+	o7A8ZBSGMom6gnR/YY+O/AzuCXHYRpXqJBqLz62paPrZeXRYcdKQpKyf+lwyjBiry0ow
+	Ggwg==
+X-Gm-Message-State: ALoCoQnpTudTwGp+i4q7n4fotLjNqgwveOmPTbW8rRhfnHk7NSat8uPnHq/3wLvxOceiAjM5nzFB
+X-Received: by 10.194.94.1 with SMTP id cy1mr2904840wjb.127.1422421929071;
+	Tue, 27 Jan 2015 21:12:09 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Tue, 27 Jan 2015 21:11:48 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 21:11:48 -0800
+Message-ID: <CAMiUf7c3_nph-98v65Vv6sZ6h3_-htfhXPTKPU79EUOdRurbzg@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+> Now if we do the usual transform of "zext (add nuw X Y)" => "add nuw
+> (zext X) (zext Y)" then we get
+>
+>   %m.wide = zext i32 %m to i64
+>   %n.wide = zext i32 %n to i64
+>   %z = add nuw i64 %m.wide, %n.wide
+>   %s = lshr i64 %y, 32
+>   %addr = gep %some_global, %s
+>   store i32 42, i32* %addr
+
+I made a typo here: the lshr should be "%s = lshr i64 %z, 32".  Its
+value will be 1 for %m = %n = 2^32-1, and the transformed program will
+store 42 to &(%some_global)[1].
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 22:22:52 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 368836501A2;
+	Tue, 27 Jan 2015 22:22:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 22:22:51 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S5KoNA016454;
+	Tue, 27 Jan 2015 23:20:50 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S5KnAj016450
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 23:20:49 -0600
+Received: from mail-vc0-f173.google.com ([209.85.220.173])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <chandlerc@google.com>)
+	id 1YGL3Z-00072X-2U
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 23:20:49 -0600
+Received: by mail-vc0-f173.google.com with SMTP id id10so6138054vcb.4
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 21:20:42 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20120113;
+	h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+	:cc:content-type;
+	bh=Ykts69yj3OE7cEIKvZzYEfBi+4OCOvIQZM/H6Cc63UE=;
+	b=NgKAcHnzFX/YlRKB68zeh/vwTGrV5TqANGDiI/LUg7nAXAvBu22BwtpL8u4trkW9Fq
+	maxsCs/Y/BecdRONOXjSWbb3r/xINAVdhlJX2kEZpXHQzk7mwyj/+FUtVt+M+uI7vhXB
+	i2yRPkUGdNMtFYPMS/U6sN0JB3W/C6Ox6Z5pucVBlci8FAGR5YVT3c61H7e130Rmleg2
+	T18h106QZvwBzkQoTpcY90S/Glqm/by2yPBwCyCGEuMVJOirdpx1DyXuRTqjgC7lfPRG
+	2NlxGREg9x1jCNAVmqGSW4MGoOcdoGD+QW31/OQZT9u2yzDf/i+EiktOMzAZ0Z/Lzzcx
+	pDow==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:date
+	:message-id:subject:from:to:cc:content-type;
+	bh=Ykts69yj3OE7cEIKvZzYEfBi+4OCOvIQZM/H6Cc63UE=;
+	b=VMCsSlHs/X6SgFiJKh+10C8RUglJwhEsWRCYuYc8q0qktcySjpR/mu9PkzsuXLt8Yn
+	RIyi762miiB2TVDdswxuDXpLTg/4wrU7La+sIdz2kRLma/ustRVagRsxx1jJTvAtIFyH
+	JWtr4qkszHIAHK8Hok48vFFcjx1aaHoxx8yCRv5aVFgO6Ha4FSaafm0ZJRDb0jPeqQ0w
+	+j0FYk8XvU46hq4p46lYcB55sdaNiSMUzslcn0FWr6l+OGOvzIS7AgzlgtMboS9ZDtCn
+	XaqAnjkiKf5PM0yX3fyP5KN82xMPLFDksLdcSIUD7xKE5L+p9+o9OKTBGwfSR6JPoNPQ
+	2FQQ==
+X-Gm-Message-State: ALoCoQkeQDNuTlJ09/bw/8VISBwF9epj0lg79zuzE8eui3gSFDxK6Jid8K4g/1FpAFeeAXQf2JiC
+MIME-Version: 1.0
+X-Received: by 10.221.65.66 with SMTP id xl2mr1020868vcb.76.1422422442622;
+	Tue, 27 Jan 2015 21:20:42 -0800 (PST)
+Received: by 10.52.34.230 with HTTP; Tue, 27 Jan 2015 21:20:42 -0800 (PST)
+In-Reply-To: <CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+Date: Tue, 27 Jan 2015 21:20:42 -0800
+Message-ID: <CAGCO0KjkcM5hnOS_roK3c1xO3Lsb1zU2heazC6BEYFFwhbe0TQ@mail.gmail.com>
+From: Chandler Carruth <chandlerc@google.com>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============5936495064407321294=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============5936495064407321294==
+Content-Type: multipart/alternative; boundary=001a1133486269e00e050daf8874
+
+--001a1133486269e00e050daf8874
+Content-Type: text/plain; charset=UTF-8
+
+On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> > Ah, yes.  You are right, we cannot always assume that %y would be zero in
+> > the second case.
+> > This wouldn't be the first time we've lost information that we could use
+> to
+> > optimize a program by transforming it.
+> >
+> > Do you think this result would be problematic?  It seems consistent with
+> the
+> > RFC and LLVM's current behavior.
+> >
+>
+> The problem is not that we're losing information, the problem is that
+> we're changing the behavior of a well-defined program.
+>
+> I'll try to put the whole argument in one place:
+>
+> We start with
+>
+>   %x = add nuw i32 %m, %n
+>   %y = zext i32 %x to i64
+>   %s = lshr i64 %y, 32
+>   %addr = gep %some_global, %s
+>   store i32 42, i32* %addr
+>
+> In the above program, for all values of %x, %s is 0.  This means the
+> program is well-defined when %x is poison (since you don't need to
+> look at %x to determine the value of %addr, in the same sense as you
+> don't need to look at X to determine the value of "and X, 0"); and it
+> stores 42 to &(%some_global)[0].  Specifically, the above program is
+> well defined for "%m = %n = 2^32-1".
+
+
+I don't follow this last sentence.
+
+if the definition of NUW is that zext-ing the result is equivalent to
+zext-ing the inputs and doing the operation at a higher bitwidth (my
+understanding), then %m and %n cannot hold those values, that would violate
+the NUW flag.
+
+Either my understanding of th edefinition holds, or the transformation you
+are proposing isn't valid IMO.
+
+--001a1133486269e00e050daf8874
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><br><div class=3D"gmail_quote">=
+On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a href=
+=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playing=
+withpointers.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote"=
+ style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><s=
+pan class=3D"">&gt; Ah, yes.=C2=A0 You are right, we cannot always assume t=
+hat %y would be zero in<br>
+&gt; the second case.<br>
+&gt; This wouldn&#39;t be the first time we&#39;ve lost information that we=
+ could use to<br>
+&gt; optimize a program by transforming it.<br>
+&gt;<br>
+&gt; Do you think this result would be problematic?=C2=A0 It seems consiste=
+nt with the<br>
+&gt; RFC and LLVM&#39;s current behavior.<br>
+&gt;<br>
+<br>
+</span>The problem is not that we&#39;re losing information, the problem is=
+ that<br>
+we&#39;re changing the behavior of a well-defined program.<br>
+<br>
+I&#39;ll try to put the whole argument in one place:<br>
+<br>
+We start with<br>
+<br>
+=C2=A0 %x =3D add nuw i32 %m, %n<br>
+=C2=A0 %y =3D zext i32 %x to i64<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+In the above program, for all values of %x, %s is 0.=C2=A0 This means the<b=
+r>
+program is well-defined when %x is poison (since you don&#39;t need to<br>
+look at %x to determine the value of %addr, in the same sense as you<br>
+don&#39;t need to look at X to determine the value of &quot;and X, 0&quot;)=
+; and it<br>
+stores 42 to &amp;(%some_global)[0].=C2=A0 Specifically, the above program =
+is<br>
+well defined for &quot;%m =3D %n =3D 2^32-1&quot;.</blockquote></div><br>I =
+don&#39;t follow this last sentence.</div><div class=3D"gmail_extra"><br></=
+div><div class=3D"gmail_extra">if the definition of NUW is that zext-ing th=
+e result is equivalent to zext-ing the inputs and doing the operation at a =
+higher bitwidth (my understanding), then %m and %n cannot hold those values=
+, that would violate the NUW flag.</div><div class=3D"gmail_extra"><br></di=
+v><div class=3D"gmail_extra">Either my understanding of th edefinition hold=
+s, or the transformation you are proposing isn&#39;t valid IMO.</div></div>
+
+--001a1133486269e00e050daf8874--
+
+--===============5936495064407321294==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============5936495064407321294==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 22:41:20 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id AC4156501A2;
+	Tue, 27 Jan 2015 22:41:20 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 22:41:20 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S5cuds016809;
+	Tue, 27 Jan 2015 23:38:56 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S5cspc016805
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 27 Jan 2015 23:38:54 -0600
+Received: from mail-we0-f176.google.com ([74.125.82.176])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YGLL4-0007uf-JP
+	for llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 23:38:54 -0600
+Received: by mail-we0-f176.google.com with SMTP id w62so18693498wes.7
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 21:38:48 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=cL5ksuQsE4OVPT9tA/cxN1cHAZ/gBdtlx2rgUYnKOsU=;
+	b=GWYAjwym+DuxQyp0KOS/idrED3+oc9FRXMULz8xKze72X83Pyp23L/SxqCRyULeiyH
+	OGrboMjbn9/A/jmrNx4Xb47Hmj+nyzWx9fStIvgB+eEFGWNUna5Qn17an/G6PtUAepAD
+	l9mSeEPmmQRcDhOLVnOUCKdZiC5BpaTytwCSdoBohe7cJeSfv6siY3hdvOcttWhpirHc
+	k6vYT06pavDKqZawh/uEGpRMmvk94wSrBHlhGtEiSLcdhyc5HOigrDVgoVuBhwbseQVk
+	Pjn2DLhxtA2Dly7ZiLhKf+j74Ir+v5OvdP6HtilUfT/UFOL170HPBthlcNCpZtL/1qnD
+	rggA==
+X-Gm-Message-State: ALoCoQnkjqcAOJBifr7ZAr0izPTZ7zno3VTUZVMzaWuxH9VG+CUwlewMpYevzpSrQJ/f+9rnyvVB
+X-Received: by 10.194.242.6 with SMTP id wm6mr3462442wjc.7.1422423528430; Tue,
+	27 Jan 2015 21:38:48 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Tue, 27 Jan 2015 21:38:27 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAGCO0KjkcM5hnOS_roK3c1xO3Lsb1zU2heazC6BEYFFwhbe0TQ@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAGCO0KjkcM5hnOS_roK3c1xO3Lsb1zU2heazC6BEYFFwhbe0TQ@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Tue, 27 Jan 2015 21:38:27 -0800
+Message-ID: <CAMiUf7cApBzoFtjfub5C8E46V1jCwBXjzPqh9XLVyYefX0pTQA@mail.gmail.com>
+To: Chandler Carruth <chandlerc@google.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+> if the definition of NUW is that zext-ing the result is equivalent to
+> zext-ing the inputs and doing the operation at a higher bitwidth (my
+> understanding), then %m and %n cannot hold those values, that would violate
+> the NUW flag.
+
+The problem to solve is adequately defining "cannot hold".  In the
+strictest sense, you could say if %m = %n = 2^31 - 1 then the program
+has UB; in effect defining "cannot hold" in the same way a location
+you're loading from "cannot be" non-deferenceable.  But, as David points
+out, that would mean you cannot hoist arithmetic with the nuw/nsw tags
+intact:
+
+  if (foo)
+   %t = add nuw X Y
+
+since it could be that (X != 2^32-1 && Y != 2^32-1) only if foo ==
+true.  Arithmetic with no-wrap flags effectively are side-effecting
+operations in this scheme.
+
+The RFC tries to formalize a weaker notion of "cannot hold" that
+justifies treating arithmetic like arithmetic.  I'm trying to show
+that the notion of poison value in this RFC is too weak; and allows
+for certain programs to be well-defined (like the example I just
+showed) which change meaning in the face of transforms we'd like to be
+able to do.
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 23:21:07 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_SIGNED,
+	HK_RANDOM_ENVFROM,T_DKIM_INVALID autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 9301965019F;
+	Tue, 27 Jan 2015 23:21:07 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 23:21:07 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S6J9fZ017889;
+	Wed, 28 Jan 2015 00:19:09 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S6J7WD017886
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 28 Jan 2015 00:19:07 -0600
+Received: from mail-out2.apple.com ([17.151.62.25] helo=mail-in2.apple.com)
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <mehdi.amini@apple.com>)
+	id 1YGLxz-0000Tj-DZ
+	for llvmdev@cs.uiuc.edu; Wed, 28 Jan 2015 00:19:07 -0600
+DKIM-Signature: v=1; a=rsa-sha256; d=apple.com; s=mailout2048s;
+	c=relaxed/simple; 
+	q=dns/txt; i=@apple.com; t=1422425940; x=2286339540;
+	h=From:Sender:Reply-To:Subject:Date:Message-id:To:Cc:MIME-version:Content-type:
+	Content-transfer-encoding:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:In-reply-to:References:List-Id:
+	List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=L32k7fDescXI9Pb134VIigtbT2IHXP/1pwly3wQ4aAw=;
+	b=ubeI9mmUktv1P62Atep8Q6Ru2NpicG5/efMdvtDUqRYZTVLrqzy/xiXH9Opcybxy
+	JmKU21ZB9na3FfskHBN2zJo5pwKUPyneatODemnY8U3hNnJJFER/yT3vnMXve7jS
+	Fdg/qn5Q90NOTrkfTGvR5HAr6bQ+NaSFzKqxUpvCmPAGRVRBvaIWYlzrG9QJGp7i
+	uTKWltX+HAkW3YyFzAhoJjA5b8bT8eefntULSYFNJauMBWZEKzo/MATXBO6NTMHC
+	eLOfjfsprS+gG5VA4PcIN/tv1VD/HWJExYSqDWKBYSGYRR006k8ePKgLH6uhiVN5
+	Xq8DDjOiPmAHbMWvrkJKSg==;
+Received: from relay8.apple.com (relay8.apple.com [17.128.113.102])
+	by mail-in2.apple.com (Apple Secure Mail Relay) with SMTP id
+	7F.8D.00537.45F78C45; Tue, 27 Jan 2015 22:19:00 -0800 (PST)
+X-AuditID: 11973e11-f79e16d000000219-c8-54c87f5408f2
+Received: from sesame.apple.com (sesame.apple.com [17.128.115.128])
+	(using TLS with cipher RC4-MD5 (128/128 bits))
+	(Client did not present a certificate)
+	by relay8.apple.com (Apple SCV relay) with SMTP id 55.EF.23906.95F78C45;
+	Tue, 27 Jan 2015 22:19:05 -0800 (PST)
+Received: from [17.153.29.64] (unknown [17.153.29.64])
+	by sesame.apple.com (Oracle Communications Messaging Server 7.0.5.30.0
+	64bit (built Oct 22 2013)) with ESMTPSA id
+	<0NIV00255IVO9P00@sesame.apple.com> for
+	llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 22:19:00 -0800 (PST)
+MIME-version: 1.0 (Mac OS X Mail 8.2 \(2070.4\))
+From: Mehdi Amini <mehdi.amini@apple.com>
+In-reply-to: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+Date: Tue, 27 Jan 2015 22:18:59 -0800
+Message-id: <B8AB1A43-5AD3-402C-8ECD-E31867137C3F@apple.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+X-Mailer: Apple Mail (2.2070.4)
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFtrILMWRmVeSWpSXmKPExsUi2FCYphtSfyLEYOsPY4vH05ewODB6zPo6
+	iSmAMYrLJiU1J7MstUjfLoEr48/VLUwFTwwqNl2eyNLA+Fa1i5GTQ0LARGLV8XPMELaYxIV7
+	69m6GLk4hAT2MUrM3dnPDlO081k3C0Sij0ni5POpjBDORCaJh01tQBkODmYBdYkpU3JBGngF
+	DCSOr2wEaxYWsJRY+b6REcRmE9CU6NrfChbnFAiWeN+znw3EZhFQlbjevgSshllAX+LdyX5m
+	CFtb4sm7C6wQM20kuqYuA7OFBAIkvu3aA2aLCOhKTLwygwniUHmJN3tng30gIfCRVWLu6W1M
+	ExiFZyGcNwvJebOQrFjAyLyKUSg3MTNHNzPPSC+xoCAnVS85P3cTIyiMp9sJ7mA8vsrqEKMA
+	B6MSD+8LsxMhQqyJZcWVuYcYpTlYlMR5DayPhggJpCeWpGanphakFsUXleakFh9iZOLglGpg
+	XDt5kccunaUuUpwfT7THaHx7tMF33x493zd10xPO+Vj//G575Fn1S/X1Bp+fz3c92cIgd/7M
+	iYOR0a18D+aKBl2sZDedM93lfvOcldpdhv+rElnv7Nl/tn+TU4c154XybUo7lVU37stT3fFy
+	QsFvt5ApHKqPTf+mRVouULvy/4jdC5H6Y0k5bkosxRmJhlrMRcWJACegFpBEAgAA
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFlrCLMWRmVeSWpSXmKPExsUi2FDcoBtZfyLE4PgbQYvH05ewODB6zPo6
+	iSmAMYrLJiU1J7MstUjfLoEr48/VLUwFTwwqNl2eyNLA+Fa1i5GTQ0LARGLns24WCFtM4sK9
+	9WxdjFwcQgJ9TBInn09lhHAmMkk8bGoDquLgYBZQl5gyJRekgVfAQOL4ykZ2EFtYwFJi5ftG
+	RhCbTUBTomt/K1icUyBY4n3PfjYQm0VAVeJ6+xKwGmYBfYl3J/uZIWxtiSfvLrBCzLSR6Jq6
+	DMwWEgiQ+LZrD5gtIqArMfHKDCaIQ+Ul3uydzTaBUWAWwkWzkFw0C8nUBYzMqxgFilJzEist
+	9BILCnJS9ZLzczcxgsOuMG0HY9Nyq0OMAhyMSjy8M6xPhAixJpYVV+YeYpTgYFYS4X2rARTi
+	TUmsrEotyo8vKs1JLT7EKM3BoiTOu/bAsRAhgfTEktTs1NSC1CKYLBMHp1QD4zZ55hUaC36/
+	O+zULfpdx/aMU0TI+iQNUeMkUdnWPW/err2Vv83l+rwTvRLvFxxaah126Nfqqc4hF4xDCnke
+	By16nmNT9lIg/WXPgVL+riq3kio5o59fpvmEXE1qVpc5a/xr+bdkxbpnfv1PvrmySNjnTA15
+	XZExc+v0ha8/nDrw8sr1579/LVNiKc5INNRiLipOBADU05oDNwIAAA==
+X-MIME-Autoconverted: from quoted-printable to 8bit by
+	dcs-maillist2.engr.illinois.edu id t0S6J7WD017886
+Cc: "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+Cj4gT24gSmFuIDI3LCAyMDE1LCBhdCA2OjUwIFBNLCBEYXZpZCBNYWpuZW1lciA8ZGF2aWQubWFq
+bmVtZXJAZ21haWwuY29tPiB3cm90ZToKPiAKPiBIZWxsbywKPiAKPiBXaGF0IGZvbGxvd3MgaXMg
+bXkgYXR0ZW1wdCB0byBkZXNjcmliZSBob3cgcG9pc29uIHdvcmtzLiAgTGV0IG1lIGtub3cgd2hh
+dCB5b3UgdGhpbmsuCj4gCj4gLS0gCj4gRGF2aWQKPiAKPiAKPiAjIExMVk0gUG9pc29uIFNlbWFu
+dGljcwo+IAo+IFBvaXNvbiBpcyBhbiBMTFZNIGNvbmNlcHQgd2hpY2ggZXhpc3RzIHNvbGVseSB0
+byBlbmFibGUgZnVydGhlciBvcHRpbWl6YXRpb24gb2YgTExWTSBJUi4gVGhlIGV4YWN0IGJlaGF2
+aW9yIG9mIHBvaXNvbiBoYXMgYmVlbiwgdG8gc2F5IHRoZSBsZWFzdCwgY29uZnVzaW5nIGZvciB1
+c2VycywgcmVzZWFyY2hlcnMgYW5kIGVuZ2luZWVycyB3b3JraW5nIHdpdGggTExWTS4KPiAKPiBU
+aGlzIGRvY3VtZW50IGhvcGVzIHRvIGNsZWFyIHVwIHNvbWUgb2YgdGhlIGNvbmZ1c2lvbiBvZiBw
+b2lzb24gYW5kIGhvcGVmdWxseSBleHBsYWluICp3aHkqIGl0IGhhcyBpdHMgc2VtYW50aWNzLgo+
+IAo+ICMjIEEgUXVpY2sgSW50cm9kdWN0aW9uIHRvIFBvaXNvbgo+IAo+IExldCdzIHN0YXJ0IHdp
+dGggYSBjb25jcmV0ZSBtb3RpdmF0aW5nIGV4YW1wbGUgaW4gQzoKPiBgYGAKPiBpbnQgaXNTdW1H
+cmVhdGVyKGludCBhLCBpbnQgYikgewo+ICAgcmV0dXJuIGEgKyBiID4gYTsKPiB9Cj4gYGBgCj4g
+Cj4gVGhlIEMgc3BlY2lmaWNhdGlvbiBwZXJtaXRzIHVzIHRvIG9wdGltaXplIHRoZSBjb21wYXJp
+c29uIGluIGBpc1N1bUdyZWF0ZXJgIHRvIGBiID4gMGAgYmVjYXVzZSBzaWduZWQgb3ZlcmZsb3cg
+cmVzdWx0cyBpbiB1bmRlZmluZWQgYmVoYXZpb3IuICBBIHJlYXNvbmFibGUgdHJhbnNsYXRpb24g
+b2YgYGlzU3VtR3JlYXRlcmAgdG8gTExWTSBJUiBjb3VsZCBiZToKClR5cG86IAogICB0byBgYiA+
+IDBgCnNob3VsZCBiZSAKICB0byBgYSArIGIgPiAwYApJSVVDLgoKSSBtZW50aW9uIGluIGNhc2Ug
+eW91IGludGVuZCB0byBwdWJsaXNoIHRoaXMgaW4gdGhlIGRvYy4KCgrigJQgCk1laGRpCgoKCgo+
+IAo+IGBgYAo+IGRlZmluZSBpMzIgQGlzU3VtR3JlYXRlcihpMzIgJWEsIGkzMiAlYikgewo+IGVu
+dHJ5Ogo+ICAgJWFkZCA9IGFkZCBpMzIgJWEsICViCj4gICAlY21wID0gaWNtcCBzZ3QgaTMyICVh
+ZGQsICVhCj4gICAlY29udiA9IHpleHQgaTEgJWNtcCB0byBpMzIKPiAgIHJldCBpMzIgJWNvbnYK
+PiB9Cj4gYGBgCj4gCj4gSG93ZXZlciwgTExWTSBjYW5ub3QgZGV0ZXJtaW5lIHRoYXQgYCVjbXBg
+IHNob3VsZCBub3QgY29uc2lkZXIgY2FzZXMgd2hlcmUgYCVhZGRgIHJlc3VsdGVkIGluIHNpZ25l
+ZCBvdmVyZmxvdy4gIFdlIG5lZWQgYSB3YXkgdG8gY29tbXVuaWNhdGUgdGhpcyBpbmZvcm1hdGlv
+biB0byBMTFZNLgo+IAo+IFRoaXMgaXMgd2hlcmUgdGhlIGBuc3dgIGFuZCBgbnV3YCBmbGFncyBj
+b21lIGludG8gcGxheS4gIGBuc3dgIGlzIHNob3J0IGZvciAibm8gc2lnbmVkIHdyYXAiLCBgbnV3
+YCBpcyBzaG9ydCBmb3IgIm5vIHVuc2lnbmVkIHdyYXAiLgo+IAo+IFdpdGggdGhlc2UsIHdlIGNh
+biBjb21lIHVwIHdpdGggYSBuZXcgZm9ybXVsYXRpb24gb2YgYCVhZGRgOiBgYWRkIGkzMiBuc3cg
+JWEsICViYC4KPiBMTFZNIGNhbiB0YWtlIHRoaXMgaW50byBhY2NvdW50IHdoZW4gaXQgaXMgb3B0
+aW1pemluZyB0aGUgYCVjbXBgIGFuZCByZXBsYWNlIGl0IHdpdGg6IGBpY21wIHNndCBpMzIgJWIs
+IDBgLgo+IAo+ICMjIERpZmZlcmVuY2VzIEJldHdlZW4gTExWTSBhbmQgQy9DKysKPiAKPiBUaGVy
+ZSBhcmUgc29tZSBpbnRlcmVzdGluZyBkaWZmZXJlbmNlcyBiZXR3ZWVuIHdoYXQgQysrIGFuZCBD
+IHNwZWNpZnkgYW5kIGhvdyBMTFZNIGJlaGF2ZXMgd2l0aCByZXNwZWN0IHRvIHBlcmZvcm1pbmcg
+YW4gb3BlcmF0aW9uZyB3aGljaCBpcyBub3QgcGVybWl0dGVkIHRvIG92ZXJmbG93LiAgCj4gCj4g
+UGVyaGFwcyBjaGllZiBhbW9uZyB0aGVtIGlzIHRoYXQgZXZhbHVhdGluZyBhbiBleHByZXNzaW9u
+IGluIEMrKyBvciBDIHdoaWNoIHJlc3VsdHMgcGVyZm9ybXMgYW4gb3ZlcmZsb3cgaXMgdW5kZWZp
+bmVkIGJlaGF2aW9yLiBJbiBMTFZNLCBleGVjdXRpbmcgYW4gaW5zdHJ1Y3Rpb24gd2hpY2ggaXMg
+bWFya2VkIGBuc3dgIGJ1dCB3aGljaCB2aW9sYXRlcyBzaWduZWQgb3ZlcmZsb3cgcmVzdWx0cyBp
+biBwb2lzb24uIFZhbHVlcyB3aGljaCBoYXZlIG5vIHJlbGF0aW9uc2hpcCB3aXRoIHBvaXNvbmVk
+IHZhbHVlcyBhcmUgbm90IGVmZmVjdGVkIGJ5IHRoZW0uCj4gCj4gTGV0IHVzIHRha2UgdGhlIGZv
+bGxvd2luZyBDIHByb2dyYW0gaW50byBjb25zaWRlcmF0aW9uOgo+IGBgYAo+IGludCBjYWxjdWxh
+dGVJbXBvcnRhbnRSZXN1bHQoaW50IGEsIGludCBiKSB7Cj4gICBpbnQgcmVzdWx0ID0gMDsKPiAg
+IGlmIChhKSB7Cj4gICAgIHJlc3VsdCA9IGEgKyBiOwo+ICAgfQo+ICAgcmV0dXJuIHJlc3VsdDsK
+PiB9Cj4gYGBgCj4gCj4gQSBzdHJhaWdodGZvcndhcmQgbG93ZXJpbmcgdG8gTExWTSBJUiBjb3Vs
+ZCBiZToKPiBgYGAKPiBkZWZpbmUgaTMyIEBjYWxjdWxhdGVJbXBvcnRhbnRSZXN1bHQoaTMyICVh
+LCBpMzIgJWIpIHsKPiBlbnRyeToKPiAgICV0b2Jvb2wgPSBpY21wIG5lIGkzMiAlYSwgMAo+ICAg
+YnIgaTEgJXRvYm9vbCwgbGFiZWwgJWlmLnRoZW4sIGxhYmVsICVpZi5lbmQKPiAKPiBpZi50aGVu
+Ogo+ICAgJWFkZCA9IGFkZCBuc3cgaTMyICVhLCAlYgo+ICAgYnIgbGFiZWwgJWlmLmVuZAo+IAo+
+IGlmLmVuZDoKPiAgICVyZXN1bHQgPSBwaGkgaTMyIFsgJWFkZCwgJWlmLnRoZW4gXSwgWyAwLCAl
+ZW50cnkgXQo+ICAgcmV0IGkzMiAlcmVzdWx0Cj4gfQo+IGBgYAo+IAo+IE1vdmluZyBgJWFkZGAg
+dG8gdGhlIGAlZW50cnlgIGJsb2NrIHdvdWxkIGJlIHByZWZlcmFibGUgYW5kIHdvdWxkIGFsbG93
+IGZ1cnRoZXIgb3B0aW1pemF0aW9uczoKPiBgYGAKPiBkZWZpbmUgaTMyIEBjYWxjdWxhdGVJbXBv
+cnRhbnRSZXN1bHQoaTMyICVhLCBpMzIgJWIpIHsKPiBlbnRyeToKPiAgICV0b2Jvb2wgPSBpY21w
+IG5lIGkzMiAlYSwgMAo+ICAgJWFkZCA9IGFkZCBuc3cgaTMyICVhLCAlYgo+ICAgJXJlc3VsdCA9
+IHNlbGVjdCBpMSAldG9ib29sLCBpMzIgMCwgaTMyICVhZGQKPiAgIHJldCBpMzIgJXJlc3VsdAo+
+IH0KPiBgYGAKPiAKPiBJbiB0aGUgb3JpZ2luYWwgY29kZSwgdGhlIGNhbGN1bGF0aW9uIG9mIGAl
+YWRkYCB3YXMgY29udHJvbCBkZXBlbmRlbnQuCj4gTm93LCBgJWFkZGAgbWlnaHQgcmVzdWx0IGlu
+IHNpZ25lZCBvdmVyZmxvdyBpbiB2aW9sYXRpb24gb2YgdGhlIGBuc3dgIGZsYWcuCj4gRGVzcGl0
+ZSB0aGlzLCB0aGUgcHJvZ3JhbSBzaG91bGQgYmVoYXZlIGFzIGl0IGRpZCBiZWZvcmUgYmVjYXVz
+ZSB0aGUgcG9pc29uZWQgdmFsdWUgaXMgbWFza2VkLW91dCBieSB0aGUgc2VsZWN0LiBUaGUgbmV4
+dCBzZWN0aW9uIHdpbGwgZGl2ZSBpbnRvIHRoaXMgaW4gZ3JlYXRlciBkZXRhaWwuCj4gCj4gIyBD
+b21wdXRhdGlvbiBJbnZvbHZpbmcgUG9pc29uIFZhbHVlcwo+IFBvaXNvbiBpbiBhIGNvbXB1dGF0
+aW9uIHJlc3VsdHMgaW4gcG9pc29uIGlmIHRoZSByZXN1bHQgY2Fubm90IGJlIGNvbnN0cmFpbmVk
+IGJ5IGl0cyBub24tcG9pc29uIG9wZXJhbmRzLgo+IAo+IEV4YW1wbGVzIG9mIHRoaXMgcnVsZSB3
+aGljaCB3aWxsIHJlc3VsdCBpbiBwb2lzb246Cj4gYGBgCj4gICAlYWRkID0gYWRkIGkzMiAleCwg
+JWFsd2F5c19wb2lzb24KPiAgICVzdWIgPSBzdWIgaTMyICV4LCAlYWx3YXlzX3BvaXNvbgo+ICAg
+JXhvciA9IHhvciBpMzIgJXgsICVhbHdheXNfcG9pc29uCj4gICAlbXVsID0gbXVsIGkzMiAlYWx3
+YXlzX3BvaXNvbiwgMQo+IGBgYAo+IAo+IEV4YW1wbGVzIG9mIHRoaXMgcnVsZSB3aGljaCBkbyBu
+b3QgcmVzdWx0IGluIHBvaXNvbjoKPiBgYGAKPiAgICVvciAgPSBvciAgaTMyICVhbHdheXNfcG9p
+c29uLCAyCj4gICAlYW5kID0gYW5kIGkzMiAlYWx3YXlzX3BvaXNvbiwgMgo+ICAgJW11bCA9IG11
+bCBpMzIgJWFsd2F5c19wb2lzb24sIDAKPiBgYGAKPiAKPiBJbiBmYWN0LCBpdCB3b3VsZCBiZSBy
+ZWFzb25hYmxlIHRvIG9wdGltaXplIGAlb3JgIHRvIGAyYCBhbmQgYCVhbmRgIHRvIGAwYC4gIElu
+IHRoaXMgcmVzcGVjdCwgcG9pc29uIGlzIG5vdCBkaWZmZXJlbnQgZnJvbSBgdW5kZWZgLgo+IAo+
+IFRoZSBmb2xsb3dpbmcgZXhhbXBsZSBpcyBvbmx5IHBvaXNvbiBpZiBgJWNvbmRgIGlzIGZhbHNl
+Ogo+IGBgYAo+ICAgJXNlbCA9IHNlbGVjdCBpMSAlY29uZCwgaTMyIDIsICVhbHdheXNfcG9pc29u
+Cj4gYGBgCj4gCj4gIyMjIElzIGl0IHNhZmUgdG8gaGF2ZSBwb2lzb24gYXMgYSBgY2FsbGAgYXJn
+dW1lbnQ/Cj4gCj4gQSBgY2FsbGAgaW5zdHJ1Y3Rpb24gbWF5IG9yIG1heSBub3QgcmVzdWx0IGlu
+IHBvaXNvbiBkZXBlbmRpbmcgb24gZXhhY3RseSBob3cgdGhlIGNhbGxlZSAgdXNlcyB0aGUgc3Vw
+cGxpZWQgYXJndW1lbnRzLCBpdCBpcyBub3QgbmVjZXNzYXJpbHkgdGhlIGNhc2UgdGhhdCBgY2Fs
+bCBpMzIgQHNvbWVGdW5jdGlvbihpMzIgJWFsd2F5c19wb2lzb24pYCByZXN1bHRzIGluIHBvaXNv
+bi4KPiAKPiBMTFZNIGNhbm5vdCBmb3JiaWQgcG9pc29uIGZyb20gZW50ZXJpbmcgYGNhbGxgIGFy
+Z3VtZW50cyB3aXRob3V0IHByb2hpYml0aW5nIGFuIG9wdGltaXphdGlvbiBwYXNzIGZyb20gb3V0
+bGluaW5nIGNvZGUuCj4gCj4gIyMjIElzIGl0IHNhZmUgdG8gc3RvcmUgcG9pc29uIHRvIG1lbW9y
+eT8KPiAKPiBgc3RvcmUgaTMyICVhbHdheXNfcG9pc29uLCBpMzIqICVtZW1gIGRvZXMgbm90IHJl
+c3VsdCBpbiB1bmRlZmluZWQgYmVoYXZpb3IuIEEgc3Vic2VxdWVudCBsb2FkIGluc3RydWN0aW9u
+IGxpa2UgYCVsb2FkID0gbG9hZCBpMzIqICVtZW1gIHdpbGwgcmVzdWx0IGluIGAlbG9hZGAgYmVp
+bmcgYSBwb2lzb24gdmFsdWUuCj4gCj4gIyMjIElzIGl0IHNhZmUgdG8gbG9hZCBvciBzdG9yZSBh
+IHBvaXNvbiBtZW1vcnkgbG9jYXRpb24/Cj4gCj4gTm8uICBQb2lzb24gd29ya3MganVzdCBsaWtl
+IGB1bmRlZmAgaW4gdGhpcyByZXNwZWN0Lgo+IAo+ICMjIyBEb2VzIGNvbXBhcmluZyBhIHBvaXNv
+biB2YWx1ZSByZXN1bHQgaW4gcG9pc29uPwo+IAo+IEl0IGRlcGVuZHMuICBJZiB0aGUgY29tcGFy
+aXNvbiBjb3VsZG4ndCBzb2xlbHkgYmUgZGV0ZXJtaW5lZCBieSBsb29raW5nIGF0IHRoZSBvdGhl
+ciBvcGVyYW5kLCB0aGUgcmVzdWx0IGlzIHBvaXNvbi4KPiAKPiBGb3IgZXhhbXBsZSwgYGljbXAg
+aTMyIHVsZSAlYWx3YXlzX3BvaXNvbiwgNDI5NDk2NzI5NWAgaXMgYHRydWVgLCBub3QgcG9pc29u
+Lgo+IEhvd2V2ZXIsIGBpY21wIGkzMiBuZSAlYWx3YXlzX3BvaXNvbiwgN2AgaXMgcG9pc29uLgo+
+IAo+ICMjIyBXaGF0IGlmIHRoZSBjb25kaXRpb24gb3BlcmFuZCBpbiBhIGBzZWxlY3RgIGlzIHBv
+aXNvbj8KPiAKPiBJbiB0aGUgZXhhbXBsZSBgJXNlbCA9IHNlbGVjdCBpMSAlYWx3YXlzX3BvaXNv
+biwgaTEgdHJ1ZSwgZmFsc2VgLCBgJXNlbGAgaXMgZWl0aGVyIGB0cnVlYCBvciBgZmFsc2VgLiAg
+QmVjYXVzZSwgYCVzZWxgIGRlcGVuZHMgb24gYCVhbHdheXNfcG9pc29uYCBpdCB0b28gaXMgcG9p
+c29uLgo+IF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCj4g
+TExWTSBEZXZlbG9wZXJzIG1haWxpbmcgbGlzdAo+IExMVk1kZXZAY3MudWl1Yy5lZHUgICAgICAg
+ICBodHRwOi8vbGx2bS5jcy51aXVjLmVkdQo+IGh0dHA6Ly9saXN0cy5jcy51aXVjLmVkdS9tYWls
+bWFuL2xpc3RpbmZvL2xsdm1kZXYKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fXwpMTFZNIERldmVsb3BlcnMgbWFpbGluZyBsaXN0CkxMVk1kZXZAY3MudWl1
+Yy5lZHUgICAgICAgICBodHRwOi8vbGx2bS5jcy51aXVjLmVkdQpodHRwOi8vbGlzdHMuY3MudWl1
+Yy5lZHUvbWFpbG1hbi9saXN0aW5mby9sbHZtZGV2Cg==
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 23:32:26 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 8BC8A6501A1;
+	Tue, 27 Jan 2015 23:32:26 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 23:32:26 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S6UMYG018280;
+	Wed, 28 Jan 2015 00:30:22 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S6UKjX018276
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 28 Jan 2015 00:30:20 -0600
+Received: from mail-ie0-f170.google.com ([209.85.223.170])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YGM8q-0001SO-5u
+	for llvmdev@cs.uiuc.edu; Wed, 28 Jan 2015 00:30:20 -0600
+Received: by mail-ie0-f170.google.com with SMTP id y20so19971598ier.1
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 22:30:15 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=9XytUY7u9lQers3a31IPiqhZANcQ2CEyGZZh/7X+Tpg=;
+	b=PqUM9x5qMzbC4OHb2gTOPRJCA3J46kACh2TVvFxL9f2gH1NhyklUVj060h3stj0Gd1
+	4rL1X9ZVbRjsZKwYjfkiGvVkTS/Cni/JcUljwEA7hovkzcXCtMTPFdNxZJdZop+Rhubl
+	ZUvV2o0iG8aVUFI4ciqH84WrSOStt38kF9ULfgHVZNm6HtT4fQocF/EUDgn5B0G7PiR+
+	upuC4Juf1MIhD8Bk3jq3LqUBJTjHBz/L0wZBiB8m2AnxZNk7t5AZORHmBhk3c6Y5rHoT
+	IUH0n+D9My7i7GIuh0gFSMmo3T70aVQ1ErP42wvTluF6gKtIgvJeahLWDNoBJr56HY3r
+	APQQ==
+X-Received: by 10.50.36.104 with SMTP id p8mr1876002igj.16.1422426614839; Tue,
+	27 Jan 2015 22:30:14 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Tue, 27 Jan 2015 22:29:34 -0800 (PST)
+In-Reply-To: <B8AB1A43-5AD3-402C-8ECD-E31867137C3F@apple.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<B8AB1A43-5AD3-402C-8ECD-E31867137C3F@apple.com>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Tue, 27 Jan 2015 22:29:34 -0800
+Message-ID: <CAL7bZ_ePv+QYW-WM-A2jS86i8B_9=XYxtziZ92yA6VJ4-jOn0A@mail.gmail.com>
+To: Mehdi Amini <mehdi.amini@apple.com>
+Cc: "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============5336879342535448923=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============5336879342535448923==
+Content-Type: multipart/alternative; boundary=089e01182faa18c275050db081e6
+
+--089e01182faa18c275050db081e6
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, Jan 27, 2015 at 10:18 PM, Mehdi Amini <mehdi.amini@apple.com> wrote=
+:
+
+>
+> > On Jan 27, 2015, at 6:50 PM, David Majnemer <david.majnemer@gmail.com>
+> wrote:
+> >
+> > Hello,
+> >
+> > What follows is my attempt to describe how poison works.  Let me know
+> what you think.
+> >
+> > --
+> > David
+> >
+> >
+> > # LLVM Poison Semantics
+> >
+> > Poison is an LLVM concept which exists solely to enable further
+> optimization of LLVM IR. The exact behavior of poison has been, to say th=
+e
+> least, confusing for users, researchers and engineers working with LLVM.
+> >
+> > This document hopes to clear up some of the confusion of poison and
+> hopefully explain *why* it has its semantics.
+> >
+> > ## A Quick Introduction to Poison
+> >
+> > Let's start with a concrete motivating example in C:
+> > ```
+> > int isSumGreater(int a, int b) {
+> >   return a + b > a;
+> > }
+> > ```
+> >
+> > The C specification permits us to optimize the comparison in
+> `isSumGreater` to `b > 0` because signed overflow results in undefined
+> behavior.  A reasonable translation of `isSumGreater` to LLVM IR could be=
+:
+>
+> Typo:
+>    to `b > 0`
+> should be
+>   to `a + b > 0`
+> IIUC.
+>
+> I mention in case you intend to publish this in the doc.
+>
+
+I intended what I wrote.  We perform this optimization in InstCombine
+today:
+http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/InstCombine/I=
+nstCombineCompares.cpp?revision=3D226783&view=3Dmarkup#l3193
+
+
+>
+>
+> =E2=80=94
+> Mehdi
+>
+>
+>
+>
+> >
+> > ```
+> > define i32 @isSumGreater(i32 %a, i32 %b) {
+> > entry:
+> >   %add =3D add i32 %a, %b
+> >   %cmp =3D icmp sgt i32 %add, %a
+> >   %conv =3D zext i1 %cmp to i32
+> >   ret i32 %conv
+> > }
+> > ```
+> >
+> > However, LLVM cannot determine that `%cmp` should not consider cases
+> where `%add` resulted in signed overflow.  We need a way to communicate
+> this information to LLVM.
+> >
+> > This is where the `nsw` and `nuw` flags come into play.  `nsw` is short
+> for "no signed wrap", `nuw` is short for "no unsigned wrap".
+> >
+> > With these, we can come up with a new formulation of `%add`: `add i32
+> nsw %a, %b`.
+> > LLVM can take this into account when it is optimizing the `%cmp` and
+> replace it with: `icmp sgt i32 %b, 0`.
+> >
+> > ## Differences Between LLVM and C/C++
+> >
+> > There are some interesting differences between what C++ and C specify
+> and how LLVM behaves with respect to performing an operationg which is no=
+t
+> permitted to overflow.
+> >
+> > Perhaps chief among them is that evaluating an expression in C++ or C
+> which results performs an overflow is undefined behavior. In LLVM,
+> executing an instruction which is marked `nsw` but which violates signed
+> overflow results in poison. Values which have no relationship with poison=
+ed
+> values are not effected by them.
+> >
+> > Let us take the following C program into consideration:
+> > ```
+> > int calculateImportantResult(int a, int b) {
+> >   int result =3D 0;
+> >   if (a) {
+> >     result =3D a + b;
+> >   }
+> >   return result;
+> > }
+> > ```
+> >
+> > A straightforward lowering to LLVM IR could be:
+> > ```
+> > define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> > entry:
+> >   %tobool =3D icmp ne i32 %a, 0
+> >   br i1 %tobool, label %if.then, label %if.end
+> >
+> > if.then:
+> >   %add =3D add nsw i32 %a, %b
+> >   br label %if.end
+> >
+> > if.end:
+> >   %result =3D phi i32 [ %add, %if.then ], [ 0, %entry ]
+> >   ret i32 %result
+> > }
+> > ```
+> >
+> > Moving `%add` to the `%entry` block would be preferable and would allow
+> further optimizations:
+> > ```
+> > define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> > entry:
+> >   %tobool =3D icmp ne i32 %a, 0
+> >   %add =3D add nsw i32 %a, %b
+> >   %result =3D select i1 %tobool, i32 0, i32 %add
+> >   ret i32 %result
+> > }
+> > ```
+> >
+> > In the original code, the calculation of `%add` was control dependent.
+> > Now, `%add` might result in signed overflow in violation of the `nsw`
+> flag.
+> > Despite this, the program should behave as it did before because the
+> poisoned value is masked-out by the select. The next section will dive in=
+to
+> this in greater detail.
+> >
+> > # Computation Involving Poison Values
+> > Poison in a computation results in poison if the result cannot be
+> constrained by its non-poison operands.
+> >
+> > Examples of this rule which will result in poison:
+> > ```
+> >   %add =3D add i32 %x, %always_poison
+> >   %sub =3D sub i32 %x, %always_poison
+> >   %xor =3D xor i32 %x, %always_poison
+> >   %mul =3D mul i32 %always_poison, 1
+> > ```
+> >
+> > Examples of this rule which do not result in poison:
+> > ```
+> >   %or  =3D or  i32 %always_poison, 2
+> >   %and =3D and i32 %always_poison, 2
+> >   %mul =3D mul i32 %always_poison, 0
+> > ```
+> >
+> > In fact, it would be reasonable to optimize `%or` to `2` and `%and` to
+> `0`.  In this respect, poison is not different from `undef`.
+> >
+> > The following example is only poison if `%cond` is false:
+> > ```
+> >   %sel =3D select i1 %cond, i32 2, %always_poison
+> > ```
+> >
+> > ### Is it safe to have poison as a `call` argument?
+> >
+> > A `call` instruction may or may not result in poison depending on
+> exactly how the callee  uses the supplied arguments, it is not necessaril=
+y
+> the case that `call i32 @someFunction(i32 %always_poison)` results in
+> poison.
+> >
+> > LLVM cannot forbid poison from entering `call` arguments without
+> prohibiting an optimization pass from outlining code.
+> >
+> > ### Is it safe to store poison to memory?
+> >
+> > `store i32 %always_poison, i32* %mem` does not result in undefined
+> behavior. A subsequent load instruction like `%load =3D load i32* %mem` w=
+ill
+> result in `%load` being a poison value.
+> >
+> > ### Is it safe to load or store a poison memory location?
+> >
+> > No.  Poison works just like `undef` in this respect.
+> >
+> > ### Does comparing a poison value result in poison?
+> >
+> > It depends.  If the comparison couldn't solely be determined by looking
+> at the other operand, the result is poison.
+> >
+> > For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not
+> poison.
+> > However, `icmp i32 ne %always_poison, 7` is poison.
+> >
+> > ### What if the condition operand in a `select` is poison?
+> >
+> > In the example `%sel =3D select i1 %always_poison, i1 true, false`, `%s=
+el`
+> is either `true` or `false`.  Because, `%sel` depends on `%always_poison`
+> it too is poison.
+> > _______________________________________________
+> > LLVM Developers mailing list
+> > LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+> > http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+>
+>
+
+--089e01182faa18c275050db081e6
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><div class=3D"gmail_quote">On T=
+ue, Jan 27, 2015 at 10:18 PM, Mehdi Amini <span dir=3D"ltr">&lt;<a href=3D"=
+mailto:mehdi.amini@apple.com" target=3D"_blank">mehdi.amini@apple.com</a>&g=
+t;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0px 0=
+px 0px 0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);borde=
+r-left-style:solid;padding-left:1ex"><span class=3D""><br>
+&gt; On Jan 27, 2015, at 6:50 PM, David Majnemer &lt;<a href=3D"mailto:davi=
+d.majnemer@gmail.com">david.majnemer@gmail.com</a>&gt; wrote:<br>
+&gt;<br>
+&gt; Hello,<br>
+&gt;<br>
+&gt; What follows is my attempt to describe how poison works.=C2=A0 Let me =
+know what you think.<br>
+&gt;<br>
+&gt; --<br>
+&gt; David<br>
+&gt;<br>
+&gt;<br>
+&gt; # LLVM Poison Semantics<br>
+&gt;<br>
+&gt; Poison is an LLVM concept which exists solely to enable further optimi=
+zation of LLVM IR. The exact behavior of poison has been, to say the least,=
+ confusing for users, researchers and engineers working with LLVM.<br>
+&gt;<br>
+&gt; This document hopes to clear up some of the confusion of poison and ho=
+pefully explain *why* it has its semantics.<br>
+&gt;<br>
+&gt; ## A Quick Introduction to Poison<br>
+&gt;<br>
+&gt; Let&#39;s start with a concrete motivating example in C:<br>
+&gt; ```<br>
+&gt; int isSumGreater(int a, int b) {<br>
+&gt;=C2=A0 =C2=A0return a + b &gt; a;<br>
+&gt; }<br>
+&gt; ```<br>
+&gt;<br>
+&gt; The C specification permits us to optimize the comparison in `isSumGre=
+ater` to `b &gt; 0` because signed overflow results in undefined behavior.=
+=C2=A0 A reasonable translation of `isSumGreater` to LLVM IR could be:<br>
+<br>
+</span>Typo:<br>
+=C2=A0 =C2=A0to `b &gt; 0`<br>
+should be<br>
+=C2=A0 to `a + b &gt; 0`<br>
+IIUC.<br>
+<br>
+I mention in case you intend to publish this in the doc.<br></blockquote><d=
+iv><br></div><div>I intended what I wrote.=C2=A0 We perform this optimizati=
+on in InstCombine today:=C2=A0<a href=3D"http://llvm.org/viewvc/llvm-projec=
+t/llvm/trunk/lib/Transforms/InstCombine/InstCombineCompares.cpp?revision=3D=
+226783&amp;view=3Dmarkup#l3193">http://llvm.org/viewvc/llvm-project/llvm/tr=
+unk/lib/Transforms/InstCombine/InstCombineCompares.cpp?revision=3D226783&am=
+p;view=3Dmarkup#l3193</a></div><div>=C2=A0</div><blockquote class=3D"gmail_=
+quote" style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-=
+color:rgb(204,204,204);border-left-style:solid;padding-left:1ex">
+<br>
+<br>
+=E2=80=94<br>
+Mehdi<br>
+<div><div class=3D"h5"><br>
+<br>
+<br>
+<br>
+&gt;<br>
+&gt; ```<br>
+&gt; define i32 @isSumGreater(i32 %a, i32 %b) {<br>
+&gt; entry:<br>
+&gt;=C2=A0 =C2=A0%add =3D add i32 %a, %b<br>
+&gt;=C2=A0 =C2=A0%cmp =3D icmp sgt i32 %add, %a<br>
+&gt;=C2=A0 =C2=A0%conv =3D zext i1 %cmp to i32<br>
+&gt;=C2=A0 =C2=A0ret i32 %conv<br>
+&gt; }<br>
+&gt; ```<br>
+&gt;<br>
+&gt; However, LLVM cannot determine that `%cmp` should not consider cases w=
+here `%add` resulted in signed overflow.=C2=A0 We need a way to communicate=
+ this information to LLVM.<br>
+&gt;<br>
+&gt; This is where the `nsw` and `nuw` flags come into play.=C2=A0 `nsw` is=
+ short for &quot;no signed wrap&quot;, `nuw` is short for &quot;no unsigned=
+ wrap&quot;.<br>
+&gt;<br>
+&gt; With these, we can come up with a new formulation of `%add`: `add i32 =
+nsw %a, %b`.<br>
+&gt; LLVM can take this into account when it is optimizing the `%cmp` and r=
+eplace it with: `icmp sgt i32 %b, 0`.<br>
+&gt;<br>
+&gt; ## Differences Between LLVM and C/C++<br>
+&gt;<br>
+&gt; There are some interesting differences between what C++ and C specify =
+and how LLVM behaves with respect to performing an operationg which is not =
+permitted to overflow.<br>
+&gt;<br>
+&gt; Perhaps chief among them is that evaluating an expression in C++ or C =
+which results performs an overflow is undefined behavior. In LLVM, executin=
+g an instruction which is marked `nsw` but which violates signed overflow r=
+esults in poison. Values which have no relationship with poisoned values ar=
+e not effected by them.<br>
+&gt;<br>
+&gt; Let us take the following C program into consideration:<br>
+&gt; ```<br>
+&gt; int calculateImportantResult(int a, int b) {<br>
+&gt;=C2=A0 =C2=A0int result =3D 0;<br>
+&gt;=C2=A0 =C2=A0if (a) {<br>
+&gt;=C2=A0 =C2=A0 =C2=A0result =3D a + b;<br>
+&gt;=C2=A0 =C2=A0}<br>
+&gt;=C2=A0 =C2=A0return result;<br>
+&gt; }<br>
+&gt; ```<br>
+&gt;<br>
+&gt; A straightforward lowering to LLVM IR could be:<br>
+&gt; ```<br>
+&gt; define i32 @calculateImportantResult(i32 %a, i32 %b) {<br>
+&gt; entry:<br>
+&gt;=C2=A0 =C2=A0%tobool =3D icmp ne i32 %a, 0<br>
+&gt;=C2=A0 =C2=A0br i1 %tobool, label %if.then, label %if.end<br>
+&gt;<br>
+&gt; if.then:<br>
+&gt;=C2=A0 =C2=A0%add =3D add nsw i32 %a, %b<br>
+&gt;=C2=A0 =C2=A0br label %if.end<br>
+&gt;<br>
+&gt; if.end:<br>
+&gt;=C2=A0 =C2=A0%result =3D phi i32 [ %add, %if.then ], [ 0, %entry ]<br>
+&gt;=C2=A0 =C2=A0ret i32 %result<br>
+&gt; }<br>
+&gt; ```<br>
+&gt;<br>
+&gt; Moving `%add` to the `%entry` block would be preferable and would allo=
+w further optimizations:<br>
+&gt; ```<br>
+&gt; define i32 @calculateImportantResult(i32 %a, i32 %b) {<br>
+&gt; entry:<br>
+&gt;=C2=A0 =C2=A0%tobool =3D icmp ne i32 %a, 0<br>
+&gt;=C2=A0 =C2=A0%add =3D add nsw i32 %a, %b<br>
+&gt;=C2=A0 =C2=A0%result =3D select i1 %tobool, i32 0, i32 %add<br>
+&gt;=C2=A0 =C2=A0ret i32 %result<br>
+&gt; }<br>
+&gt; ```<br>
+&gt;<br>
+&gt; In the original code, the calculation of `%add` was control dependent.=
+<br>
+&gt; Now, `%add` might result in signed overflow in violation of the `nsw` =
+flag.<br>
+&gt; Despite this, the program should behave as it did before because the p=
+oisoned value is masked-out by the select. The next section will dive into =
+this in greater detail.<br>
+&gt;<br>
+&gt; # Computation Involving Poison Values<br>
+&gt; Poison in a computation results in poison if the result cannot be cons=
+trained by its non-poison operands.<br>
+&gt;<br>
+&gt; Examples of this rule which will result in poison:<br>
+&gt; ```<br>
+&gt;=C2=A0 =C2=A0%add =3D add i32 %x, %always_poison<br>
+&gt;=C2=A0 =C2=A0%sub =3D sub i32 %x, %always_poison<br>
+&gt;=C2=A0 =C2=A0%xor =3D xor i32 %x, %always_poison<br>
+&gt;=C2=A0 =C2=A0%mul =3D mul i32 %always_poison, 1<br>
+&gt; ```<br>
+&gt;<br>
+&gt; Examples of this rule which do not result in poison:<br>
+&gt; ```<br>
+&gt;=C2=A0 =C2=A0%or=C2=A0 =3D or=C2=A0 i32 %always_poison, 2<br>
+&gt;=C2=A0 =C2=A0%and =3D and i32 %always_poison, 2<br>
+&gt;=C2=A0 =C2=A0%mul =3D mul i32 %always_poison, 0<br>
+&gt; ```<br>
+&gt;<br>
+&gt; In fact, it would be reasonable to optimize `%or` to `2` and `%and` to=
+ `0`.=C2=A0 In this respect, poison is not different from `undef`.<br>
+&gt;<br>
+&gt; The following example is only poison if `%cond` is false:<br>
+&gt; ```<br>
+&gt;=C2=A0 =C2=A0%sel =3D select i1 %cond, i32 2, %always_poison<br>
+&gt; ```<br>
+&gt;<br>
+&gt; ### Is it safe to have poison as a `call` argument?<br>
+&gt;<br>
+&gt; A `call` instruction may or may not result in poison depending on exac=
+tly how the callee=C2=A0 uses the supplied arguments, it is not necessarily=
+ the case that `call i32 @someFunction(i32 %always_poison)` results in pois=
+on.<br>
+&gt;<br>
+&gt; LLVM cannot forbid poison from entering `call` arguments without prohi=
+biting an optimization pass from outlining code.<br>
+&gt;<br>
+&gt; ### Is it safe to store poison to memory?<br>
+&gt;<br>
+&gt; `store i32 %always_poison, i32* %mem` does not result in undefined beh=
+avior. A subsequent load instruction like `%load =3D load i32* %mem` will r=
+esult in `%load` being a poison value.<br>
+&gt;<br>
+&gt; ### Is it safe to load or store a poison memory location?<br>
+&gt;<br>
+&gt; No.=C2=A0 Poison works just like `undef` in this respect.<br>
+&gt;<br>
+&gt; ### Does comparing a poison value result in poison?<br>
+&gt;<br>
+&gt; It depends.=C2=A0 If the comparison couldn&#39;t solely be determined =
+by looking at the other operand, the result is poison.<br>
+&gt;<br>
+&gt; For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not =
+poison.<br>
+&gt; However, `icmp i32 ne %always_poison, 7` is poison.<br>
+&gt;<br>
+&gt; ### What if the condition operand in a `select` is poison?<br>
+&gt;<br>
+&gt; In the example `%sel =3D select i1 %always_poison, i1 true, false`, `%=
+sel` is either `true` or `false`.=C2=A0 Because, `%sel` depends on `%always=
+_poison` it too is poison.<br>
+</div></div>&gt; _______________________________________________<br>
+&gt; LLVM Developers mailing list<br>
+&gt; <a href=3D"mailto:LLVMdev@cs.uiuc.edu">LLVMdev@cs.uiuc.edu</a>=C2=A0 =
+=C2=A0 =C2=A0 =C2=A0 =C2=A0<a href=3D"http://llvm.cs.uiuc.edu" target=3D"_b=
+lank">http://llvm.cs.uiuc.edu</a><br>
+&gt; <a href=3D"http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev" target=
+=3D"_blank">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a><br>
+<br>
+</blockquote></div><br></div></div>
+
+--089e01182faa18c275050db081e6--
+
+--===============5336879342535448923==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============5336879342535448923==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 23:45:12 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_SIGNED,
+	HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 60D876501A2;
+	Tue, 27 Jan 2015 23:45:12 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 23:45:12 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S6h7Fm018756;
+	Wed, 28 Jan 2015 00:43:07 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S6h6XJ018753
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 28 Jan 2015 00:43:06 -0600
+Received: from mail-out4.apple.com ([17.151.62.26] helo=mail-in4.apple.com)
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <mehdi.amini@apple.com>)
+	id 1YGMLB-00020p-PJ
+	for llvmdev@cs.uiuc.edu; Wed, 28 Jan 2015 00:43:06 -0600
+DKIM-Signature: v=1; a=rsa-sha256; d=apple.com; s=mailout2048s;
+	c=relaxed/simple; 
+	q=dns/txt; i=@apple.com; t=1422427378; x=2286340978;
+	h=From:Sender:Reply-To:Subject:Date:Message-id:To:Cc:MIME-version:Content-type:
+	Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:In-reply-to:References:List-Id:
+	List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=360DB0EibZTEEukHBiG7/UtYnzc9QuUfp0fgPdagpow=;
+	b=LePHxsrtwi84thSa0kU/7/oGvbT4hfBipxd+dXqGylJcePQyf2xJ/P7Z8KKSGNa1
+	6cm2vwpy7FpGslEnLxhmWNJ0cpden2a5yiDqnskgOzwS1LvYQGHRBomdOZpoNek7
+	RcerEhXRdF5HuzcrdCH/bEJy15nr1273RYFdF2nhR5h2hxs98KWhIUYjqQ2Xi5xx
+	y14fqqh2xUdTDrVQn6Lms8ijNSfUhmFzzrQU+77TwOnYCvahINjmO99kL5M5IL0d
+	YGG3U4Yj2QC99HcfqCt2QSY1TSLXwHm5Vwb14HcU73ZAXbYgY2+wm43sbSsaQz7K
+	rFdTQTSXzFRpVXVB1RT6yA==;
+Received: from relay2.apple.com (relay2.apple.com [17.128.113.67])
+	by mail-in4.apple.com (Apple Secure Mail Relay) with SMTP id
+	D7.A1.12706.2F488C45; Tue, 27 Jan 2015 22:42:58 -0800 (PST)
+X-AuditID: 11973e12-f79d66d0000031a2-b0-54c884f2458c
+Received: from sesame.apple.com (sesame.apple.com [17.128.115.128])
+	(using TLS with cipher RC4-MD5 (128/128 bits))
+	(Client did not present a certificate)
+	by relay2.apple.com (Apple SCV relay) with SMTP id 0F.0B.31944.9E488C45;
+	Tue, 27 Jan 2015 22:42:49 -0800 (PST)
+Received: from [17.153.29.64] (unknown [17.153.29.64])
+	by sesame.apple.com (Oracle Communications Messaging Server 7.0.5.30.0
+	64bit (built Oct 22 2013)) with ESMTPSA id
+	<0NIV00281JZM9P10@sesame.apple.com> for
+	llvmdev@cs.uiuc.edu; Tue, 27 Jan 2015 22:42:58 -0800 (PST)
+MIME-version: 1.0 (Mac OS X Mail 8.2 \(2070.4\))
+From: Mehdi Amini <mehdi.amini@apple.com>
+In-reply-to: <CAL7bZ_ePv+QYW-WM-A2jS86i8B_9=XYxtziZ92yA6VJ4-jOn0A@mail.gmail.com>
+Date: Tue, 27 Jan 2015 22:42:57 -0800
+Message-id: <9CD8CF6A-2E78-448A-8AF4-ED2CCEFA738B@apple.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<B8AB1A43-5AD3-402C-8ECD-E31867137C3F@apple.com>
+	<CAL7bZ_ePv+QYW-WM-A2jS86i8B_9=XYxtziZ92yA6VJ4-jOn0A@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+X-Mailer: Apple Mail (2.2070.4)
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFjrJLMWRmVeSWpSXmKPExsUi2FDorPup5USIwYezVhaPpy9hcWD0mPV1
+	ElMAYxSXTUpqTmZZapG+XQJXRnv3cdaC6zMYK9a02jYwzqzrYuTkkBAwkVjYNpUNwhaTuHBv
+	PZDNxSEksJdR4sSs66xdjBxgRb07kiDifUwSL46dZIFwJjJJ/F4wiRWkm1kgSeLgrAWMIDav
+	gIHE8ZWN7CC2sIClxMr3jWBxNgFNia79rewgQzkFgiX+/ZQECbMIqEq0PprICDFGX+LdyX5m
+	iDE2Eu3zDjFD7DrDKHFj4kWwmSICuhITr8xggrhaXuLN3tlQHzSySRyc7DKBUWgWkpNmITkJ
+	Iq4tsWzha2YIW1Nif/dyFkxxDYnObxNZFzCyrWIUyk3MzNHNzDPRSywoyEnVS87P3cQICvvp
+	dkI7GE+tsjrEKMDBqMTD+8LsRIgQa2JZcWXuIUZpDhYlcV5D66MhQgLpiSWp2ampBalF8UWl
+	OanFhxiZODilGhhbD9vV33lfeTG283Hottxexl3FazjaF5Qt8J78Z27qhNdMftY/RPNkkytm
+	qZT/42nfob9ttrb+irNmj+N/P1tcyXVq/5J40+cT91znU3onzlJVNufBie/ua8VzHkUIcz9a
+	3vp7ekgtd8xH15wDllF6hVqRP+MVXCX0n75+Unc7X132Ydd6xiIlluKMREMt5qLiRABvbfdW
+	XAIAAA==
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFtrLLMWRmVeSWpSXmKPExsUi2FDcoPuy5USIwf0ZUhaPpy9hcWD0mPV1
+	ElMAYxSXTUpqTmZZapG+XQJXRnv3cdaC6zMYK9a02jYwzqzrYuTgkBAwkejdkdTFyAlkiklc
+	uLeerYuRi0NIoI9J4sWxkywQzkQmid8LJrGCVDELJEkcnLWAEcTmFTCQOL6ykR3EFhawlFj5
+	vhEsziagKdG1v5UdZAGnQLDEv5+SIGEWAVWJ1kcTGSHG6Eu8O9nPDDHGRqJ93iFmiF1nGCVu
+	TLwINlNEQFdi4pUZTBDXyUu82TubbQIj/ywkZ8xCcgZEXFti2cLXzBC2psT+7uUsmOIaEp3f
+	JrIuYGRbxShQlJqTWGmkl1hQkJOql5yfu4kRHKiFzjsYjy2zOsQowMGoxMP7wuxEiBBrYllx
+	Ze4hRgkOZiUR3rcaQCHelMTKqtSi/Pii0pzU4kOM0hwsSuK88w8cCxESSE8sSc1OTS1ILYLJ
+	MnFwSjUwyr192Xq6lnex9Zl5n8WZHDllDdP97rfrZyQ7nhJv7nX1Plnn8/LC/+tGMQu0Cq4L
+	tEQGPP08z9f+1D8GxaeTz07zd3+gsnTevKv+3Tb2t9L5Zky7duZsu9D5yy/W7rvbcU6Dt+fM
+	kpaELp75R7nc/jD/Lj65/LfPyZA6y/iPhfvWuinsUGfcpMRSnJFoqMVcVJwIAAExC5pQAgAA
+Cc: "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============0558716803589377056=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+
+--===============0558716803589377056==
+Content-type: multipart/alternative;
+ boundary="Apple-Mail=_F21F3DDD-B91A-4F24-9EF0-56ABFABEC651"
+
+
+--Apple-Mail=_F21F3DDD-B91A-4F24-9EF0-56ABFABEC651
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=utf-8
+
+
+> On Jan 27, 2015, at 10:29 PM, David Majnemer =
+<david.majnemer@gmail.com> wrote:
+>=20
+> On Tue, Jan 27, 2015 at 10:18 PM, Mehdi Amini <mehdi.amini@apple.com =
+<mailto:mehdi.amini@apple.com>> wrote:
+>=20
+> > On Jan 27, 2015, at 6:50 PM, David Majnemer =
+<david.majnemer@gmail.com <mailto:david.majnemer@gmail.com>> wrote:
+> >
+> > Hello,
+> >
+> > What follows is my attempt to describe how poison works.  Let me =
+know what you think.
+> >
+> > --
+> > David
+> >
+> >
+> > # LLVM Poison Semantics
+> >
+> > Poison is an LLVM concept which exists solely to enable further =
+optimization of LLVM IR. The exact behavior of poison has been, to say =
+the least, confusing for users, researchers and engineers working with =
+LLVM.
+> >
+> > This document hopes to clear up some of the confusion of poison and =
+hopefully explain *why* it has its semantics.
+> >
+> > ## A Quick Introduction to Poison
+> >
+> > Let's start with a concrete motivating example in C:
+> > ```
+> > int isSumGreater(int a, int b) {
+> >   return a + b > a;
+> > }
+> > ```
+> >
+> > The C specification permits us to optimize the comparison in =
+`isSumGreater` to `b > 0` because signed overflow results in undefined =
+behavior.  A reasonable translation of `isSumGreater` to LLVM IR could =
+be:
+>=20
+> Typo:
+>    to `b > 0`
+> should be
+>   to `a + b > 0`
+> IIUC.
+>=20
+> I mention in case you intend to publish this in the doc.
+>=20
+> I intended what I wrote.  We perform this optimization in InstCombine =
+today: =
+http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/InstCombine/=
+InstCombineCompares.cpp?revision=3D226783&view=3Dmarkup#l3193 =
+<http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/InstCombine=
+/InstCombineCompares.cpp?revision=3D226783&view=3Dmarkup#l3193>
+Yeah sorry I was completely wrong.
+
+Mehdi
+
+
+> =20
+>=20
+>=20
+> =E2=80=94
+> Mehdi
+>=20
+>=20
+>=20
+>=20
+> >
+> > ```
+> > define i32 @isSumGreater(i32 %a, i32 %b) {
+> > entry:
+> >   %add =3D add i32 %a, %b
+> >   %cmp =3D icmp sgt i32 %add, %a
+> >   %conv =3D zext i1 %cmp to i32
+> >   ret i32 %conv
+> > }
+> > ```
+> >
+> > However, LLVM cannot determine that `%cmp` should not consider cases =
+where `%add` resulted in signed overflow.  We need a way to communicate =
+this information to LLVM.
+> >
+> > This is where the `nsw` and `nuw` flags come into play.  `nsw` is =
+short for "no signed wrap", `nuw` is short for "no unsigned wrap".
+> >
+> > With these, we can come up with a new formulation of `%add`: `add =
+i32 nsw %a, %b`.
+> > LLVM can take this into account when it is optimizing the `%cmp` and =
+replace it with: `icmp sgt i32 %b, 0`.
+> >
+> > ## Differences Between LLVM and C/C++
+> >
+> > There are some interesting differences between what C++ and C =
+specify and how LLVM behaves with respect to performing an operationg =
+which is not permitted to overflow.
+> >
+> > Perhaps chief among them is that evaluating an expression in C++ or =
+C which results performs an overflow is undefined behavior. In LLVM, =
+executing an instruction which is marked `nsw` but which violates signed =
+overflow results in poison. Values which have no relationship with =
+poisoned values are not effected by them.
+> >
+> > Let us take the following C program into consideration:
+> > ```
+> > int calculateImportantResult(int a, int b) {
+> >   int result =3D 0;
+> >   if (a) {
+> >     result =3D a + b;
+> >   }
+> >   return result;
+> > }
+> > ```
+> >
+> > A straightforward lowering to LLVM IR could be:
+> > ```
+> > define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> > entry:
+> >   %tobool =3D icmp ne i32 %a, 0
+> >   br i1 %tobool, label %if.then, label %if.end
+> >
+> > if.then:
+> >   %add =3D add nsw i32 %a, %b
+> >   br label %if.end
+> >
+> > if.end:
+> >   %result =3D phi i32 [ %add, %if.then ], [ 0, %entry ]
+> >   ret i32 %result
+> > }
+> > ```
+> >
+> > Moving `%add` to the `%entry` block would be preferable and would =
+allow further optimizations:
+> > ```
+> > define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> > entry:
+> >   %tobool =3D icmp ne i32 %a, 0
+> >   %add =3D add nsw i32 %a, %b
+> >   %result =3D select i1 %tobool, i32 0, i32 %add
+> >   ret i32 %result
+> > }
+> > ```
+> >
+> > In the original code, the calculation of `%add` was control =
+dependent.
+> > Now, `%add` might result in signed overflow in violation of the =
+`nsw` flag.
+> > Despite this, the program should behave as it did before because the =
+poisoned value is masked-out by the select. The next section will dive =
+into this in greater detail.
+> >
+> > # Computation Involving Poison Values
+> > Poison in a computation results in poison if the result cannot be =
+constrained by its non-poison operands.
+> >
+> > Examples of this rule which will result in poison:
+> > ```
+> >   %add =3D add i32 %x, %always_poison
+> >   %sub =3D sub i32 %x, %always_poison
+> >   %xor =3D xor i32 %x, %always_poison
+> >   %mul =3D mul i32 %always_poison, 1
+> > ```
+> >
+> > Examples of this rule which do not result in poison:
+> > ```
+> >   %or  =3D or  i32 %always_poison, 2
+> >   %and =3D and i32 %always_poison, 2
+> >   %mul =3D mul i32 %always_poison, 0
+> > ```
+> >
+> > In fact, it would be reasonable to optimize `%or` to `2` and `%and` =
+to `0`.  In this respect, poison is not different from `undef`.
+> >
+> > The following example is only poison if `%cond` is false:
+> > ```
+> >   %sel =3D select i1 %cond, i32 2, %always_poison
+> > ```
+> >
+> > ### Is it safe to have poison as a `call` argument?
+> >
+> > A `call` instruction may or may not result in poison depending on =
+exactly how the callee  uses the supplied arguments, it is not =
+necessarily the case that `call i32 @someFunction(i32 %always_poison)` =
+results in poison.
+> >
+> > LLVM cannot forbid poison from entering `call` arguments without =
+prohibiting an optimization pass from outlining code.
+> >
+> > ### Is it safe to store poison to memory?
+> >
+> > `store i32 %always_poison, i32* %mem` does not result in undefined =
+behavior. A subsequent load instruction like `%load =3D load i32* %mem` =
+will result in `%load` being a poison value.
+> >
+> > ### Is it safe to load or store a poison memory location?
+> >
+> > No.  Poison works just like `undef` in this respect.
+> >
+> > ### Does comparing a poison value result in poison?
+> >
+> > It depends.  If the comparison couldn't solely be determined by =
+looking at the other operand, the result is poison.
+> >
+> > For example, `icmp i32 ule %always_poison, 4294967295` is `true`, =
+not poison.
+> > However, `icmp i32 ne %always_poison, 7` is poison.
+> >
+> > ### What if the condition operand in a `select` is poison?
+> >
+> > In the example `%sel =3D select i1 %always_poison, i1 true, false`, =
+`%sel` is either `true` or `false`.  Because, `%sel` depends on =
+`%always_poison` it too is poison.
+> > _______________________________________________
+> > LLVM Developers mailing list
+> > LLVMdev@cs.uiuc.edu <mailto:LLVMdev@cs.uiuc.edu>         =
+http://llvm.cs.uiuc.edu <http://llvm.cs.uiuc.edu/>
+> > http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev =
+<http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>
+>=20
+>=20
+
+
+--Apple-Mail=_F21F3DDD-B91A-4F24-9EF0-56ABFABEC651
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html;
+	charset=utf-8
+
+<html><head><meta http-equiv=3D"Content-Type" content=3D"text/html =
+charset=3Dutf-8"></head><body style=3D"word-wrap: break-word; =
+-webkit-nbsp-mode: space; -webkit-line-break: after-white-space;" =
+class=3D""><br class=3D""><div><blockquote type=3D"cite" class=3D""><div =
+class=3D"">On Jan 27, 2015, at 10:29 PM, David Majnemer &lt;<a =
+href=3D"mailto:david.majnemer@gmail.com" =
+class=3D"">david.majnemer@gmail.com</a>&gt; wrote:</div><br =
+class=3D"Apple-interchange-newline"><div class=3D""><div dir=3D"ltr" =
+class=3D""><div class=3D"gmail_extra"><div class=3D"gmail_quote">On Tue, =
+Jan 27, 2015 at 10:18 PM, Mehdi Amini <span dir=3D"ltr" class=3D"">&lt;<a =
+href=3D"mailto:mehdi.amini@apple.com" target=3D"_blank" =
+class=3D"">mehdi.amini@apple.com</a>&gt;</span> wrote:<br =
+class=3D""><blockquote class=3D"gmail_quote" style=3D"margin:0px 0px 0px =
+0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);border-left=
+-style:solid;padding-left:1ex"><span class=3D""><br class=3D"">
+&gt; On Jan 27, 2015, at 6:50 PM, David Majnemer &lt;<a =
+href=3D"mailto:david.majnemer@gmail.com" =
+class=3D"">david.majnemer@gmail.com</a>&gt; wrote:<br class=3D"">
+&gt;<br class=3D"">
+&gt; Hello,<br class=3D"">
+&gt;<br class=3D"">
+&gt; What follows is my attempt to describe how poison works.&nbsp; Let =
+me know what you think.<br class=3D"">
+&gt;<br class=3D"">
+&gt; --<br class=3D"">
+&gt; David<br class=3D"">
+&gt;<br class=3D"">
+&gt;<br class=3D"">
+&gt; # LLVM Poison Semantics<br class=3D"">
+&gt;<br class=3D"">
+&gt; Poison is an LLVM concept which exists solely to enable further =
+optimization of LLVM IR. The exact behavior of poison has been, to say =
+the least, confusing for users, researchers and engineers working with =
+LLVM.<br class=3D"">
+&gt;<br class=3D"">
+&gt; This document hopes to clear up some of the confusion of poison and =
+hopefully explain *why* it has its semantics.<br class=3D"">
+&gt;<br class=3D"">
+&gt; ## A Quick Introduction to Poison<br class=3D"">
+&gt;<br class=3D"">
+&gt; Let's start with a concrete motivating example in C:<br class=3D"">
+&gt; ```<br class=3D"">
+&gt; int isSumGreater(int a, int b) {<br class=3D"">
+&gt;&nbsp; &nbsp;return a + b &gt; a;<br class=3D"">
+&gt; }<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; The C specification permits us to optimize the comparison in =
+`isSumGreater` to `b &gt; 0` because signed overflow results in =
+undefined behavior.&nbsp; A reasonable translation of `isSumGreater` to =
+LLVM IR could be:<br class=3D"">
+<br class=3D"">
+</span>Typo:<br class=3D"">
+&nbsp; &nbsp;to `b &gt; 0`<br class=3D"">
+should be<br class=3D"">
+&nbsp; to `a + b &gt; 0`<br class=3D"">
+IIUC.<br class=3D"">
+<br class=3D"">
+I mention in case you intend to publish this in the doc.<br =
+class=3D""></blockquote><div class=3D""><br class=3D""></div><div =
+class=3D"">I intended what I wrote.&nbsp; We perform this optimization =
+in InstCombine today:&nbsp;<a =
+href=3D"http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/Inst=
+Combine/InstCombineCompares.cpp?revision=3D226783&amp;view=3Dmarkup#l3193"=
+ =
+class=3D"">http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/I=
+nstCombine/InstCombineCompares.cpp?revision=3D226783&amp;view=3Dmarkup#l31=
+93</a></div></div></div></div></div></blockquote><div><br =
+class=3D""></div><div>Yeah sorry I was completely wrong.</div><div><br =
+class=3D""></div><div>Mehdi</div><div><br class=3D""></div><br =
+class=3D""><blockquote type=3D"cite" class=3D""><div class=3D""><div =
+dir=3D"ltr" class=3D""><div class=3D"gmail_extra"><div =
+class=3D"gmail_quote"><div class=3D"">&nbsp;</div><blockquote =
+class=3D"gmail_quote" style=3D"margin:0px 0px 0px =
+0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);border-left=
+-style:solid;padding-left:1ex">
+<br class=3D"">
+<br class=3D"">
+=E2=80=94<br class=3D"">
+Mehdi<br class=3D"">
+<div class=3D""><div class=3D"h5"><br class=3D"">
+<br class=3D"">
+<br class=3D"">
+<br class=3D"">
+&gt;<br class=3D"">
+&gt; ```<br class=3D"">
+&gt; define i32 @isSumGreater(i32 %a, i32 %b) {<br class=3D"">
+&gt; entry:<br class=3D"">
+&gt;&nbsp; &nbsp;%add =3D add i32 %a, %b<br class=3D"">
+&gt;&nbsp; &nbsp;%cmp =3D icmp sgt i32 %add, %a<br class=3D"">
+&gt;&nbsp; &nbsp;%conv =3D zext i1 %cmp to i32<br class=3D"">
+&gt;&nbsp; &nbsp;ret i32 %conv<br class=3D"">
+&gt; }<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; However, LLVM cannot determine that `%cmp` should not consider =
+cases where `%add` resulted in signed overflow.&nbsp; We need a way to =
+communicate this information to LLVM.<br class=3D"">
+&gt;<br class=3D"">
+&gt; This is where the `nsw` and `nuw` flags come into play.&nbsp; `nsw` =
+is short for "no signed wrap", `nuw` is short for "no unsigned wrap".<br =
+class=3D"">
+&gt;<br class=3D"">
+&gt; With these, we can come up with a new formulation of `%add`: `add =
+i32 nsw %a, %b`.<br class=3D"">
+&gt; LLVM can take this into account when it is optimizing the `%cmp` =
+and replace it with: `icmp sgt i32 %b, 0`.<br class=3D"">
+&gt;<br class=3D"">
+&gt; ## Differences Between LLVM and C/C++<br class=3D"">
+&gt;<br class=3D"">
+&gt; There are some interesting differences between what C++ and C =
+specify and how LLVM behaves with respect to performing an operationg =
+which is not permitted to overflow.<br class=3D"">
+&gt;<br class=3D"">
+&gt; Perhaps chief among them is that evaluating an expression in C++ or =
+C which results performs an overflow is undefined behavior. In LLVM, =
+executing an instruction which is marked `nsw` but which violates signed =
+overflow results in poison. Values which have no relationship with =
+poisoned values are not effected by them.<br class=3D"">
+&gt;<br class=3D"">
+&gt; Let us take the following C program into consideration:<br =
+class=3D"">
+&gt; ```<br class=3D"">
+&gt; int calculateImportantResult(int a, int b) {<br class=3D"">
+&gt;&nbsp; &nbsp;int result =3D 0;<br class=3D"">
+&gt;&nbsp; &nbsp;if (a) {<br class=3D"">
+&gt;&nbsp; &nbsp; &nbsp;result =3D a + b;<br class=3D"">
+&gt;&nbsp; &nbsp;}<br class=3D"">
+&gt;&nbsp; &nbsp;return result;<br class=3D"">
+&gt; }<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; A straightforward lowering to LLVM IR could be:<br class=3D"">
+&gt; ```<br class=3D"">
+&gt; define i32 @calculateImportantResult(i32 %a, i32 %b) {<br class=3D"">=
+
+&gt; entry:<br class=3D"">
+&gt;&nbsp; &nbsp;%tobool =3D icmp ne i32 %a, 0<br class=3D"">
+&gt;&nbsp; &nbsp;br i1 %tobool, label %if.then, label %if.end<br =
+class=3D"">
+&gt;<br class=3D"">
+&gt; if.then:<br class=3D"">
+&gt;&nbsp; &nbsp;%add =3D add nsw i32 %a, %b<br class=3D"">
+&gt;&nbsp; &nbsp;br label %if.end<br class=3D"">
+&gt;<br class=3D"">
+&gt; if.end:<br class=3D"">
+&gt;&nbsp; &nbsp;%result =3D phi i32 [ %add, %if.then ], [ 0, %entry =
+]<br class=3D"">
+&gt;&nbsp; &nbsp;ret i32 %result<br class=3D"">
+&gt; }<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; Moving `%add` to the `%entry` block would be preferable and would =
+allow further optimizations:<br class=3D"">
+&gt; ```<br class=3D"">
+&gt; define i32 @calculateImportantResult(i32 %a, i32 %b) {<br class=3D"">=
+
+&gt; entry:<br class=3D"">
+&gt;&nbsp; &nbsp;%tobool =3D icmp ne i32 %a, 0<br class=3D"">
+&gt;&nbsp; &nbsp;%add =3D add nsw i32 %a, %b<br class=3D"">
+&gt;&nbsp; &nbsp;%result =3D select i1 %tobool, i32 0, i32 %add<br =
+class=3D"">
+&gt;&nbsp; &nbsp;ret i32 %result<br class=3D"">
+&gt; }<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; In the original code, the calculation of `%add` was control =
+dependent.<br class=3D"">
+&gt; Now, `%add` might result in signed overflow in violation of the =
+`nsw` flag.<br class=3D"">
+&gt; Despite this, the program should behave as it did before because =
+the poisoned value is masked-out by the select. The next section will =
+dive into this in greater detail.<br class=3D"">
+&gt;<br class=3D"">
+&gt; # Computation Involving Poison Values<br class=3D"">
+&gt; Poison in a computation results in poison if the result cannot be =
+constrained by its non-poison operands.<br class=3D"">
+&gt;<br class=3D"">
+&gt; Examples of this rule which will result in poison:<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;&nbsp; &nbsp;%add =3D add i32 %x, %always_poison<br class=3D"">
+&gt;&nbsp; &nbsp;%sub =3D sub i32 %x, %always_poison<br class=3D"">
+&gt;&nbsp; &nbsp;%xor =3D xor i32 %x, %always_poison<br class=3D"">
+&gt;&nbsp; &nbsp;%mul =3D mul i32 %always_poison, 1<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; Examples of this rule which do not result in poison:<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;&nbsp; &nbsp;%or&nbsp; =3D or&nbsp; i32 %always_poison, 2<br =
+class=3D"">
+&gt;&nbsp; &nbsp;%and =3D and i32 %always_poison, 2<br class=3D"">
+&gt;&nbsp; &nbsp;%mul =3D mul i32 %always_poison, 0<br class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; In fact, it would be reasonable to optimize `%or` to `2` and `%and` =
+to `0`.&nbsp; In this respect, poison is not different from `undef`.<br =
+class=3D"">
+&gt;<br class=3D"">
+&gt; The following example is only poison if `%cond` is false:<br =
+class=3D"">
+&gt; ```<br class=3D"">
+&gt;&nbsp; &nbsp;%sel =3D select i1 %cond, i32 2, %always_poison<br =
+class=3D"">
+&gt; ```<br class=3D"">
+&gt;<br class=3D"">
+&gt; ### Is it safe to have poison as a `call` argument?<br class=3D"">
+&gt;<br class=3D"">
+&gt; A `call` instruction may or may not result in poison depending on =
+exactly how the callee&nbsp; uses the supplied arguments, it is not =
+necessarily the case that `call i32 @someFunction(i32 %always_poison)` =
+results in poison.<br class=3D"">
+&gt;<br class=3D"">
+&gt; LLVM cannot forbid poison from entering `call` arguments without =
+prohibiting an optimization pass from outlining code.<br class=3D"">
+&gt;<br class=3D"">
+&gt; ### Is it safe to store poison to memory?<br class=3D"">
+&gt;<br class=3D"">
+&gt; `store i32 %always_poison, i32* %mem` does not result in undefined =
+behavior. A subsequent load instruction like `%load =3D load i32* %mem` =
+will result in `%load` being a poison value.<br class=3D"">
+&gt;<br class=3D"">
+&gt; ### Is it safe to load or store a poison memory location?<br =
+class=3D"">
+&gt;<br class=3D"">
+&gt; No.&nbsp; Poison works just like `undef` in this respect.<br =
+class=3D"">
+&gt;<br class=3D"">
+&gt; ### Does comparing a poison value result in poison?<br class=3D"">
+&gt;<br class=3D"">
+&gt; It depends.&nbsp; If the comparison couldn't solely be determined =
+by looking at the other operand, the result is poison.<br class=3D"">
+&gt;<br class=3D"">
+&gt; For example, `icmp i32 ule %always_poison, 4294967295` is `true`, =
+not poison.<br class=3D"">
+&gt; However, `icmp i32 ne %always_poison, 7` is poison.<br class=3D"">
+&gt;<br class=3D"">
+&gt; ### What if the condition operand in a `select` is poison?<br =
+class=3D"">
+&gt;<br class=3D"">
+&gt; In the example `%sel =3D select i1 %always_poison, i1 true, false`, =
+`%sel` is either `true` or `false`.&nbsp; Because, `%sel` depends on =
+`%always_poison` it too is poison.<br class=3D"">
+</div></div>&gt; _______________________________________________<br =
+class=3D"">
+&gt; LLVM Developers mailing list<br class=3D"">
+&gt; <a href=3D"mailto:LLVMdev@cs.uiuc.edu" =
+class=3D"">LLVMdev@cs.uiuc.edu</a>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a =
+href=3D"http://llvm.cs.uiuc.edu/" target=3D"_blank" =
+class=3D"">http://llvm.cs.uiuc.edu</a><br class=3D"">
+&gt; <a href=3D"http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev" =
+target=3D"_blank" =
+class=3D"">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a><br =
+class=3D"">
+<br class=3D"">
+</blockquote></div><br class=3D""></div></div>
+</div></blockquote></div><br class=3D""></body></html>=
+
+--Apple-Mail=_F21F3DDD-B91A-4F24-9EF0-56ABFABEC651--
+
+--===============0558716803589377056==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============0558716803589377056==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Tue Jan 27 23:49:49 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 9922C6501A2;
+	Tue, 27 Jan 2015 23:49:49 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue, 27 Jan 2015 23:49:49 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0S6lhDb018869;
+	Wed, 28 Jan 2015 00:47:43 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0S6lgVi018866
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 28 Jan 2015 00:47:42 -0600
+Received: from mail-vc0-f181.google.com ([209.85.220.181])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <chandlerc@google.com>)
+	id 1YGMPd-00029E-Rs
+	for llvmdev@cs.uiuc.edu; Wed, 28 Jan 2015 00:47:41 -0600
+Received: by mail-vc0-f181.google.com with SMTP id id10so6211396vcb.12
+	for <llvmdev@cs.uiuc.edu>; Tue, 27 Jan 2015 22:47:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20120113;
+	h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+	:cc:content-type;
+	bh=R1RFj+yaQuMyEfspiAYWXRF0HRj2HtP/CHatneFI7xs=;
+	b=L9F9WNWr8xQRqWFDlVsh2KGUCMRGzlj2CsYedDlO8Ak+FGuahjT0ChZbk8mNiBZ546
+	Q4IKwCmu+XKUH6NY6cjGiCCU4+Num40VRN9FiybstqeS+EkEIv7tezNrDmQ+yZtQFnUQ
+	SMFfA0YVGsMitkJSwtj7SmcVbnPLztpCgIIhuE79ZFqpcxnH8o3zoe9Zw8MAZPIfOGi3
+	j9okYG8xbWQEgDE2wtW6ayTNjbv6sAVYPcOQF37aPk8LSvU+VHNv+NjElXtwwaudonDp
+	oSsJjpMwD9J4LSyP5KnLEy9HbFBQRrPZzI2WFGwm27h7m52n6+mZWX+JhS+U4pgLT/R2
+	F+RA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:date
+	:message-id:subject:from:to:cc:content-type;
+	bh=R1RFj+yaQuMyEfspiAYWXRF0HRj2HtP/CHatneFI7xs=;
+	b=WKVpN3xpVDEywSKP8zRA2fsyQ+7tnVBxfeap1i0YMVFwWQTUSPdwOXj/29QRMNMyIJ
+	dc14S7Nvri2atHX/hQqp4VTpyjmXqQl9S7MiMIue/Z0vN6RgWBHWdg5a994bmUwVzwWj
+	LHgAkmUrZhxRFQyVsADxROYk9TPSgQVdfTXA7ZzF966M3D9R34t4HIG53L7uFcnn89Cz
+	/pd4RBTvRK+/fv7muN8q/GjvCMFEzXzCdSx/U3Jz4fsKK9F9l4ledbaCBYzhxJSqjbdN
+	7bkbAP2IuWVO0+67tCcjVgM+WyPBKI8GYneHP36H6mZkeyBh4o6kMaDMIBBymIAarzZl
+	RsCw==
+X-Gm-Message-State: ALoCoQl9cn3X8kfelEzWetzwLIBX3qwONZyvXMK3jN3Gq5WQ953E4gIe6K9wjmDYBeK+atncubTx
+MIME-Version: 1.0
+X-Received: by 10.220.84.8 with SMTP id h8mr1119102vcl.66.1422427656253; Tue,
+	27 Jan 2015 22:47:36 -0800 (PST)
+Received: by 10.52.34.230 with HTTP; Tue, 27 Jan 2015 22:47:34 -0800 (PST)
+In-Reply-To: <CAMiUf7cApBzoFtjfub5C8E46V1jCwBXjzPqh9XLVyYefX0pTQA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAGCO0KjkcM5hnOS_roK3c1xO3Lsb1zU2heazC6BEYFFwhbe0TQ@mail.gmail.com>
+	<CAMiUf7cApBzoFtjfub5C8E46V1jCwBXjzPqh9XLVyYefX0pTQA@mail.gmail.com>
+Date: Tue, 27 Jan 2015 22:47:34 -0800
+Message-ID: <CAGCO0KiMCaX-0U5kSKrBcQxjSrEO1QMC3DS+7K2vCZh52q_+Ag@mail.gmail.com>
+From: Chandler Carruth <chandlerc@google.com>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============6796956367540671237=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============6796956367540671237==
+Content-Type: multipart/alternative; boundary=047d7b471f062b930a050db0bffa
+
+--047d7b471f062b930a050db0bffa
+Content-Type: text/plain; charset=UTF-8
+
+On Tue, Jan 27, 2015 at 9:38 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> > if the definition of NUW is that zext-ing the result is equivalent to
+> > zext-ing the inputs and doing the operation at a higher bitwidth (my
+> > understanding), then %m and %n cannot hold those values, that would
+> violate
+> > the NUW flag.
+>
+> The problem to solve is adequately defining "cannot hold".  In the
+> strictest sense, you could say if %m = %n = 2^31 - 1 then the program
+> has UB; in effect defining "cannot hold" in the same way a location
+> you're loading from "cannot be" non-deferenceable.  But, as David points
+> out, that would mean you cannot hoist arithmetic with the nuw/nsw tags
+> intact:
+>
+>   if (foo)
+>    %t = add nuw X Y
+>
+> since it could be that (X != 2^32-1 && Y != 2^32-1) only if foo ==
+> true.  Arithmetic with no-wrap flags effectively are side-effecting
+> operations in this scheme.
+>
+> The RFC tries to formalize a weaker notion of "cannot hold" that
+> justifies treating arithmetic like arithmetic.
+
+
+Yes, quite familiar.
+
+
+>   I'm trying to show
+> that the notion of poison value in this RFC is too weak; and allows
+> for certain programs to be well-defined (like the example I just
+> showed) which change meaning in the face of transforms we'd like to be
+> able to do.
+
+
+I see, this is a case where the RFC as it stands strips poison too soon.
+
+Going to ponder this, I feel like this should be something we can
+incorporate into the model.
+
+--047d7b471f062b930a050db0bffa
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><br><div class=3D"gmail_quote">=
+On Tue, Jan 27, 2015 at 9:38 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a href=
+=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playing=
+withpointers.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote"=
+ style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><s=
+pan class=3D"">&gt; if the definition of NUW is that zext-ing the result is=
+ equivalent to<br>
+&gt; zext-ing the inputs and doing the operation at a higher bitwidth (my<b=
+r>
+&gt; understanding), then %m and %n cannot hold those values, that would vi=
+olate<br>
+&gt; the NUW flag.<br>
+<br>
+</span>The problem to solve is adequately defining &quot;cannot hold&quot;.=
+=C2=A0 In the<br>
+strictest sense, you could say if %m =3D %n =3D 2^31 - 1 then the program<b=
+r>
+has UB; in effect defining &quot;cannot hold&quot; in the same way a locati=
+on<br>
+you&#39;re loading from &quot;cannot be&quot; non-deferenceable.=C2=A0 But,=
+ as David points<br>
+out, that would mean you cannot hoist arithmetic with the nuw/nsw tags<br>
+intact:<br>
+<br>
+=C2=A0 if (foo)<br>
+=C2=A0 =C2=A0%t =3D add nuw X Y<br>
+<br>
+since it could be that (X !=3D 2^32-1 &amp;&amp; Y !=3D 2^32-1) only if foo=
+ =3D=3D<br>
+true.=C2=A0 Arithmetic with no-wrap flags effectively are side-effecting<br=
+>
+operations in this scheme.<br>
+<br>
+The RFC tries to formalize a weaker notion of &quot;cannot hold&quot; that<=
+br>
+justifies treating arithmetic like arithmetic.</blockquote><div><br></div><=
+div>Yes, quite familiar.</div><div>=C2=A0</div><blockquote class=3D"gmail_q=
+uote" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1e=
+x">=C2=A0 I&#39;m trying to show<br>
+that the notion of poison value in this RFC is too weak; and allows<br>
+for certain programs to be well-defined (like the example I just<br>
+showed) which change meaning in the face of transforms we&#39;d like to be<=
+br>
+able to do.</blockquote></div><br>I see, this is a case where the RFC as it=
+ stands strips poison too soon.</div><div class=3D"gmail_extra"><br></div><=
+div class=3D"gmail_extra">Going to ponder this, I feel like this should be =
+something we can incorporate into the model.</div></div>
+
+--047d7b471f062b930a050db0bffa--
+
+--===============6796956367540671237==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============6796956367540671237==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Wed Jan 28 03:07:22 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=DKIM_SIGNED,HK_RANDOM_ENVFROM,
+	HTML_MESSAGE,T_DKIM_INVALID autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id BEB276501A2;
+	Wed, 28 Jan 2015 03:07:22 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed, 28 Jan 2015 03:07:22 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0SA5EEc025139;
+	Wed, 28 Jan 2015 04:05:14 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0SA5ClB025136
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 28 Jan 2015 04:05:13 -0600
+Received: from mail-wi0-f178.google.com ([209.85.212.178])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <bruce.hoult@gmail.com>)
+	id 1YGPUm-00019f-Ox
+	for llvmdev@cs.uiuc.edu; Wed, 28 Jan 2015 04:05:12 -0600
+Received: by mail-wi0-f178.google.com with SMTP id bs8so2313330wib.5
+	for <llvmdev@cs.uiuc.edu>; Wed, 28 Jan 2015 02:05:06 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:sender:in-reply-to:references:date:message-id:subject
+	:from:to:cc:content-type;
+	bh=cng4cB5uQjqjL175W0ZVXdPE+IrB4q7uwFYSD3Bk+9k=;
+	b=uFAgFq9+Lkpl26Szu9IALXf2cOTCETlkPnvSW3Eb5f8dtL5dcdBXq3D+Y5wphpUDF6
+	bUjrhov9neSPUuAo9d0k/zjd+AuEbAuV04uxMvcA1XyEcR/Pox9erKNDOwIvkF4+sET+
+	dlY3O7edkinRKDJC/bWOXqTitttXgAybPDyDabTd/Q2iJHe5OKukkCImcPCw5kfKuLT8
+	hSb2/xCADVpuwCTemHVKa8jczEpkRcKl+hFe8VvfJhJBQBp9t3er4Cpe34C4orvaIN6G
+	YuzEJaEWSuN7ZRFeADIziytNgusYyjbLP77i448nns0haGBLdcS7Q8TFr5Yf2fz3ca60
+	phUQ==
+MIME-Version: 1.0
+X-Received: by 10.180.39.35 with SMTP id m3mr5306159wik.3.1422439506814; Wed,
+	28 Jan 2015 02:05:06 -0800 (PST)
+Received: by 10.27.78.133 with HTTP; Wed, 28 Jan 2015 02:05:06 -0800 (PST)
+In-Reply-To: <B8AB1A43-5AD3-402C-8ECD-E31867137C3F@apple.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<B8AB1A43-5AD3-402C-8ECD-E31867137C3F@apple.com>
+Date: Wed, 28 Jan 2015 23:05:06 +1300
+X-Google-Sender-Auth: PQCQqso-6KZbgxkOXBP8yahuLMc
+Message-ID: <CAMU+EkyrNihtEgpTF=7DcwP90O3Q-k=G-sOt_YBsdhYxJua1Eg@mail.gmail.com>
+From: Bruce Hoult <bruce@hoult.org>
+To: Mehdi Amini <mehdi.amini@apple.com>
+Cc: "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============9166791454444637484=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============9166791454444637484==
+Content-Type: multipart/alternative; boundary=001a1134c90284acab050db3816f
+
+--001a1134c90284acab050db3816f
+Content-Type: text/plain; charset=UTF-8
+
+On Wed, Jan 28, 2015 at 7:18 PM, Mehdi Amini <mehdi.amini@apple.com> wrote:
+
+>
+> > On Jan 27, 2015, at 6:50 PM, David Majnemer <david.majnemer@gmail.com>
+> wrote:
+> > Let's start with a concrete motivating example in C:
+> > ```
+> > int isSumGreater(int a, int b) {
+> >   return a + b > a;
+> > }
+> > ```
+> >
+> > The C specification permits us to optimize the comparison in
+> `isSumGreater` to `b > 0` because signed overflow results in undefined
+> behavior.  A reasonable translation of `isSumGreater` to LLVM IR could be:
+>
+> Typo:
+>    to `b > 0`
+> should be
+>   to `a + b > 0`
+> IIUC.
+>
+
+Let a = -10 and b = 1
+
+a + b > a  ===  -10 + 1 > -10  ===  -9 > -10  === true
+
+b > 0 === 1 > 0 === true
+
+All good.
+
+Your version:
+
+a + b > 0  === -10 + 1 > 0 === -9 > 0 === false
+
+Small problem.
+
+--001a1134c90284acab050db3816f
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><div class=3D"gmail_quote">On W=
+ed, Jan 28, 2015 at 7:18 PM, Mehdi Amini <span dir=3D"ltr">&lt;<a href=3D"m=
+ailto:mehdi.amini@apple.com" target=3D"_blank">mehdi.amini@apple.com</a>&gt=
+;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 =
+.8ex;border-left:1px #ccc solid;padding-left:1ex"><span class=3D""><br>
+&gt; On Jan 27, 2015, at 6:50 PM, David Majnemer &lt;<a href=3D"mailto:davi=
+d.majnemer@gmail.com">david.majnemer@gmail.com</a>&gt; wrote:<br>&gt; Let&#=
+39;s start with a concrete motivating example in C:<br>
+&gt; ```<br>
+&gt; int isSumGreater(int a, int b) {<br>
+&gt;=C2=A0 =C2=A0return a + b &gt; a;<br>
+&gt; }<br>
+&gt; ```<br>
+&gt;<br>
+&gt; The C specification permits us to optimize the comparison in `isSumGre=
+ater` to `b &gt; 0` because signed overflow results in undefined behavior.=
+=C2=A0 A reasonable translation of `isSumGreater` to LLVM IR could be:<br>
+<br>
+</span>Typo:<br>
+=C2=A0 =C2=A0to `b &gt; 0`<br>
+should be<br>
+=C2=A0 to `a + b &gt; 0`<br>
+IIUC.<br></blockquote><div><br></div><div>Let a =3D -10 and b =3D 1</div><d=
+iv><br></div><div>a + b &gt; a =C2=A0=3D=3D=3D =C2=A0-10 + 1 &gt; -10 =C2=
+=A0=3D=3D=3D =C2=A0-9 &gt; -10 =C2=A0=3D=3D=3D true</div><div><br></div><di=
+v>b &gt; 0 =3D=3D=3D 1 &gt; 0 =3D=3D=3D true</div><div><br></div><div>All g=
+ood.</div><div><br></div><div>Your version:</div><div><br></div><div>a + b =
+&gt; 0 =C2=A0=3D=3D=3D -10 + 1 &gt; 0 =3D=3D=3D -9 &gt; 0 =3D=3D=3D false</=
+div><div><br></div><div>Small problem.</div><div><br></div></div></div></di=
+v>
+
+--001a1134c90284acab050db3816f--
+
+--===============9166791454444637484==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============9166791454444637484==--
+
+=============================================================================
+
+From llvmdev-bounces@cs.uiuc.edu Wed Jan 28 08:05:13 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 6D8326501A3;
+	Wed, 28 Jan 2015 08:05:13 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed, 28 Jan 2015 08:05:13 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t0SF365O003943;
+	Wed, 28 Jan 2015 09:03:06 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t0SF35VZ003940
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 28 Jan 2015 09:03:05 -0600
+Received: from mail-pa0-f53.google.com ([209.85.220.53])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:RC4-SHA:128)
+	(Exim 4.72) (envelope-from <chisophugis@gmail.com>)
+	id 1YGU92-0004AV-Vr
+	for llvmdev@cs.uiuc.edu; Wed, 28 Jan 2015 09:03:05 -0600
+Received: by mail-pa0-f53.google.com with SMTP id kx10so26159298pab.12
+	for <llvmdev@cs.uiuc.edu>; Wed, 28 Jan 2015 07:02:59 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+	:cc:content-type;
+	bh=z3XIK5v1BFrnwVlr+gqAAId1tkdZKktqBumUL2TH/ZY=;
+	b=hPb6FmtYLNTYgX6OoHyF40xtS2+x4sIWO+KWutEBUizhBg8YbKkDda+9kwaxhoKIQ2
+	0xb++u76atL2Q/+v3OO8pfJp7ej3gFisIiYgkMlVL7/ouujZmgDm74rviGb7tuq6+UPY
+	2xRQ2nd+D9ZjELGwulbSiuPPbxeNvErqEuvUgaoOvY+MDI1Xd/caqUP0VZcwm1b3M4fH
+	XlljP/dgb/awkbDhn8BY2YY9nXJm2kepFLuHosfq/g+hzLgkWZLa2BPHD1ClwOnEjDvy
+	0uFqSBbOIkLVyJ29umIw2VDuZ+W9sB3ROI7nowZlkdfDc+VDJLkx1dwXFZRdFO3Q5M5c
+	BQBw==
+MIME-Version: 1.0
+X-Received: by 10.68.208.65 with SMTP id mc1mr6286755pbc.111.1422457379294;
+	Wed, 28 Jan 2015 07:02:59 -0800 (PST)
+Received: by 10.66.83.39 with HTTP; Wed, 28 Jan 2015 07:02:59 -0800 (PST)
+In-Reply-To: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+Date: Wed, 28 Jan 2015 15:02:59 +0000
+Message-ID: <CAHnXoakT0X5f7ova84iLb4Whq8YGF_2KO+6dssbcOp1CXypVMA@mail.gmail.com>
+From: Sean Silva <chisophugis@gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============7698000879797236090=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============7698000879797236090==
+Content-Type: multipart/alternative; boundary=047d7b0723fccd1293050db7aa28
+
+--047d7b0723fccd1293050db7aa28
+Content-Type: text/plain; charset=UTF-8
+
+Could you maybe provide an example where replacing `%always_poison` with
+`undef` will change the meaning? At least for me, the thing that I'm most
+unclear about is how poison differs from undef.
+
+-- Sean Silva
+
+On Wed, Jan 28, 2015 at 2:50 AM, David Majnemer <david.majnemer@gmail.com>
+wrote:
+
+> Hello,
+>
+> What follows is my attempt to describe how poison works.  Let me know what
+> you think.
+>
+> --
+> David
+>
+>
+> # LLVM Poison Semantics
+>
+> Poison is an LLVM concept which exists solely to enable further
+> optimization of LLVM IR. The exact behavior of poison has been, to say the
+> least, confusing for users, researchers and engineers working with LLVM.
+>
+> This document hopes to clear up some of the confusion of poison and
+> hopefully explain *why* it has its semantics.
+>
+> ## A Quick Introduction to Poison
+>
+> Let's start with a concrete motivating example in C:
+> ```
+> int isSumGreater(int a, int b) {
+>   return a + b > a;
+> }
+> ```
+>
+> The C specification permits us to optimize the comparison in
+> `isSumGreater` to `b > 0` because signed overflow results in undefined
+> behavior.  A reasonable translation of `isSumGreater` to LLVM IR could be:
+>
+> ```
+> define i32 @isSumGreater(i32 %a, i32 %b) {
+> entry:
+>   %add = add i32 %a, %b
+>   %cmp = icmp sgt i32 %add, %a
+>   %conv = zext i1 %cmp to i32
+>   ret i32 %conv
+> }
+> ```
+>
+> However, LLVM cannot determine that `%cmp` should not consider cases where
+> `%add` resulted in signed overflow.  We need a way to communicate this
+> information to LLVM.
+>
+> This is where the `nsw` and `nuw` flags come into play.  `nsw` is short
+> for "no signed wrap", `nuw` is short for "no unsigned wrap".
+>
+> With these, we can come up with a new formulation of `%add`: `add i32 nsw
+> %a, %b`.
+> LLVM can take this into account when it is optimizing the `%cmp` and
+> replace it with: `icmp sgt i32 %b, 0`.
+>
+> ## Differences Between LLVM and C/C++
+>
+> There are some interesting differences between what C++ and C specify and
+> how LLVM behaves with respect to performing an operationg which is not
+> permitted to overflow.
+>
+> Perhaps chief among them is that evaluating an expression in C++ or C
+> which results performs an overflow is undefined behavior. In LLVM,
+> executing an instruction which is marked `nsw` but which violates signed
+> overflow results in poison. Values which have no relationship with poisoned
+> values are not effected by them.
+>
+> Let us take the following C program into consideration:
+> ```
+> int calculateImportantResult(int a, int b) {
+>   int result = 0;
+>   if (a) {
+>     result = a + b;
+>   }
+>   return result;
+> }
+> ```
+>
+> A straightforward lowering to LLVM IR could be:
+> ```
+> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> entry:
+>   %tobool = icmp ne i32 %a, 0
+>   br i1 %tobool, label %if.then, label %if.end
+>
+> if.then:
+>   %add = add nsw i32 %a, %b
+>   br label %if.end
+>
+> if.end:
+>   %result = phi i32 [ %add, %if.then ], [ 0, %entry ]
+>   ret i32 %result
+> }
+> ```
+>
+> Moving `%add` to the `%entry` block would be preferable and would allow
+> further optimizations:
+> ```
+> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> entry:
+>   %tobool = icmp ne i32 %a, 0
+>   %add = add nsw i32 %a, %b
+>   %result = select i1 %tobool, i32 0, i32 %add
+>   ret i32 %result
+> }
+> ```
+>
+> In the original code, the calculation of `%add` was control dependent.
+> Now, `%add` might result in signed overflow in violation of the `nsw` flag.
+> Despite this, the program should behave as it did before because the
+> poisoned value is masked-out by the select. The next section will dive into
+> this in greater detail.
+>
+> # Computation Involving Poison Values
+> Poison in a computation results in poison if the result cannot be
+> constrained by its non-poison operands.
+>
+> Examples of this rule which will result in poison:
+> ```
+>   %add = add i32 %x, %always_poison
+>   %sub = sub i32 %x, %always_poison
+>   %xor = xor i32 %x, %always_poison
+>   %mul = mul i32 %always_poison, 1
+> ```
+>
+> Examples of this rule which do not result in poison:
+> ```
+>   %or  = or  i32 %always_poison, 2
+>   %and = and i32 %always_poison, 2
+>   %mul = mul i32 %always_poison, 0
+> ```
+>
+> In fact, it would be reasonable to optimize `%or` to `2` and `%and` to
+> `0`.  In this respect, poison is not different from `undef`.
+>
+> The following example is only poison if `%cond` is false:
+> ```
+>   %sel = select i1 %cond, i32 2, %always_poison
+> ```
+>
+> ### Is it safe to have poison as a `call` argument?
+>
+> A `call` instruction may or may not result in poison depending on exactly
+> how the callee  uses the supplied arguments, it is not necessarily the case
+> that `call i32 @someFunction(i32 %always_poison)` results in poison.
+>
+> LLVM cannot forbid poison from entering `call` arguments without
+> prohibiting an optimization pass from outlining code.
+>
+> ### Is it safe to store poison to memory?
+>
+> `store i32 %always_poison, i32* %mem` does not result in undefined
+> behavior. A subsequent load instruction like `%load = load i32* %mem` will
+> result in `%load` being a poison value.
+>
+> ### Is it safe to load or store a poison memory location?
+>
+> No.  Poison works just like `undef` in this respect.
+>
+> ### Does comparing a poison value result in poison?
+>
+> It depends.  If the comparison couldn't solely be determined by looking at
+> the other operand, the result is poison.
+>
+> For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not
+> poison.
+> However, `icmp i32 ne %always_poison, 7` is poison.
+>
+> ### What if the condition operand in a `select` is poison?
+>
+> In the example `%sel = select i1 %always_poison, i1 true, false`, `%sel`
+> is either `true` or `false`.  Because, `%sel` depends on `%always_poison`
+> it too is poison.
+>
+> _______________________________________________
+> LLVM Developers mailing list
+> LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+> http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+>
+>
+
+--047d7b0723fccd1293050db7aa28
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">Could you maybe provide an example where replacing `%alway=
+s_poison` with `undef` will change the meaning? At least for me, the thing =
+that I&#39;m most unclear about is how poison differs from undef.<div><br><=
+/div><div>-- Sean Silva</div></div><div class=3D"gmail_extra"><br><div clas=
+s=3D"gmail_quote">On Wed, Jan 28, 2015 at 2:50 AM, David Majnemer <span dir=
+=3D"ltr">&lt;<a href=3D"mailto:david.majnemer@gmail.com" target=3D"_blank">=
+david.majnemer@gmail.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmai=
+l_quote" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left=
+:1ex"><div dir=3D"ltr">Hello,<div><br></div><div>What follows is my attempt=
+ to describe how poison works.=C2=A0 Let me know what you think.</div><div>=
+<br></div><div>--=C2=A0</div><div>David</div><div><br></div><div><br></div>=
+<div><div># LLVM Poison Semantics</div><div><br></div><div>Poison is an LLV=
+M concept which exists solely to enable further optimization of LLVM IR. Th=
+e exact behavior of poison has been, to say the least, confusing for users,=
+ researchers and engineers working with LLVM.</div><div><br></div><div>This=
+ document hopes to clear up some of the confusion of poison and hopefully e=
+xplain *why* it has its semantics.</div><div><br></div><div>## A Quick Intr=
+oduction to Poison</div><div><br></div><div>Let&#39;s start with a concrete=
+ motivating example in C:</div><div>```</div><div>int isSumGreater(int a, i=
+nt b) {</div><div>=C2=A0 return a + b &gt; a;</div><div>}</div><div>```</di=
+v><div><br></div><div>The C specification permits us to optimize the compar=
+ison in `isSumGreater` to `b &gt; 0` because signed overflow results in und=
+efined behavior.=C2=A0 A reasonable translation of `isSumGreater` to LLVM I=
+R could be:</div><div><br></div><div>```</div><div>define i32 @isSumGreater=
+(i32 %a, i32 %b) {</div><div>entry:</div><div>=C2=A0 %add =3D add i32 %a, %=
+b</div><div>=C2=A0 %cmp =3D icmp sgt i32 %add, %a</div><div>=C2=A0 %conv =
+=3D zext i1 %cmp to i32</div><div>=C2=A0 ret i32 %conv</div><div>}</div><di=
+v>```</div><div><br></div><div>However, LLVM cannot determine that `%cmp` s=
+hould not consider cases where `%add` resulted in signed overflow.=C2=A0 We=
+ need a way to communicate this information to LLVM.</div><div><br></div><d=
+iv>This is where the `nsw` and `nuw` flags come into play. =C2=A0`nsw` is s=
+hort for &quot;no signed wrap&quot;, `nuw` is short for &quot;no unsigned w=
+rap&quot;.</div><div><br></div><div>With these, we can come up with a new f=
+ormulation of `%add`: `add i32 nsw %a, %b`.</div><div>LLVM can take this in=
+to account when it is optimizing the `%cmp` and replace it with: `icmp sgt =
+i32 %b, 0`.</div><div><br></div><div>## Differences Between LLVM and C/C++<=
+/div><div><br></div><div>There are some interesting differences between wha=
+t C++ and C specify and how LLVM behaves with respect to performing an oper=
+ationg which is not permitted to overflow. =C2=A0</div><div><br></div><div>=
+Perhaps chief among them is that evaluating an expression in C++ or C which=
+ results performs an overflow is undefined behavior. In LLVM, executing an =
+instruction which is marked `nsw` but which violates signed overflow result=
+s in poison. Values which have no relationship with poisoned values are not=
+ effected by them.</div><div><br></div><div>Let us take the following C pro=
+gram into consideration:</div><div>```</div><div>int calculateImportantResu=
+lt(int a, int b) {</div><div>=C2=A0 int result =3D 0;</div><div>=C2=A0 if (=
+a) {</div><div>=C2=A0 =C2=A0 result =3D a + b;</div><div>=C2=A0 }</div><div=
+>=C2=A0 return result;</div><div>}</div><div>```</div><div><br></div><div>A=
+ straightforward lowering to LLVM IR could be:</div><div>```</div><div>defi=
+ne i32 @calculateImportantResult(i32 %a, i32 %b) {</div><div>entry:</div><d=
+iv>=C2=A0 %tobool =3D icmp ne i32 %a, 0</div><div>=C2=A0 br i1 %tobool, lab=
+el %if.then, label %if.end</div><div><br></div><div>if.then:</div><div>=C2=
+=A0 %add =3D add nsw i32 %a, %b</div><div>=C2=A0 br label %if.end</div><div=
+><br></div><div>if.end:</div><div>=C2=A0 %result =3D phi i32 [ %add, %if.th=
+en ], [ 0, %entry ]</div><div>=C2=A0 ret i32 %result</div><div>}</div><div>=
+```</div><div><br></div><div>Moving `%add` to the `%entry` block would be p=
+referable and would allow further optimizations:</div><div>```</div><div>de=
+fine i32 @calculateImportantResult(i32 %a, i32 %b) {</div><div>entry:</div>=
+<div>=C2=A0 %tobool =3D icmp ne i32 %a, 0</div><div>=C2=A0 %add =3D add nsw=
+ i32 %a, %b</div><div>=C2=A0 %result =3D select i1 %tobool, i32 0, i32 %add=
+</div><div>=C2=A0 ret i32 %result</div><div>}</div><div>```</div><div><br><=
+/div><div>In the original code, the calculation of `%add` was control depen=
+dent.</div><div>Now, `%add` might result in signed overflow in violation of=
+ the `nsw` flag.</div><div>Despite this, the program should behave as it di=
+d before because the poisoned value is masked-out by the select. The next s=
+ection will dive into this in greater detail.</div><div><br></div><div># Co=
+mputation Involving Poison Values</div><div>Poison in a computation results=
+ in poison if the result cannot be constrained by its non-poison operands.<=
+/div><div><br></div><div>Examples of this rule which will result in poison:=
+</div><div>```</div><div>=C2=A0 %add =3D add i32 %x, %always_poison</div><d=
+iv>=C2=A0 %sub =3D sub i32 %x, %always_poison</div><div>=C2=A0 %xor =3D xor=
+ i32 %x, %always_poison</div><div>=C2=A0 %mul =3D mul i32 %always_poison, 1=
+</div><div>```</div><div><br></div><div>Examples of this rule which do not =
+result in poison:</div><div>```</div><div>=C2=A0 %or =C2=A0=3D or =C2=A0i32=
+ %always_poison, 2</div><div>=C2=A0 %and =3D and i32 %always_poison, 2</div=
+><div>=C2=A0 %mul =3D mul i32 %always_poison, 0</div><div>```</div><div><br=
+></div><div>In fact, it would be reasonable to optimize `%or` to `2` and `%=
+and` to `0`.=C2=A0 In this respect, poison is not different from `undef`.</=
+div><div><br></div><div>The following example is only poison if `%cond` is =
+false:</div><div>```</div><div>=C2=A0 %sel =3D select i1 %cond, i32 2, %alw=
+ays_poison</div><div>```</div><div><br></div><div>### Is it safe to have po=
+ison as a `call` argument?</div><div><br></div><div>A `call` instruction ma=
+y or may not result in poison depending on exactly how the callee =C2=A0use=
+s the supplied arguments, it is not necessarily the case that `call i32 @so=
+meFunction(i32 %always_poison)` results in poison.</div><div><br></div><div=
+>LLVM cannot forbid poison from entering `call` arguments without prohibiti=
+ng an optimization pass from outlining code.</div><div><br></div><div>### I=
+s it safe to store poison to memory?</div><div><br></div><div>`store i32 %a=
+lways_poison, i32* %mem` does not result in undefined behavior. A subsequen=
+t load instruction like `%load =3D load i32* %mem` will result in `%load` b=
+eing a poison value.</div><div><br></div><div>### Is it safe to load or sto=
+re a poison memory location?</div><div><br></div><div>No.=C2=A0 Poison work=
+s just like `undef` in this respect.</div><div><br></div><div>### Does comp=
+aring a poison value result in poison?</div><div><br></div><div>It depends.=
+=C2=A0 If the comparison couldn&#39;t solely be determined by looking at th=
+e other operand, the result is poison.</div><div><br></div><div>For example=
+, `icmp i32 ule %always_poison, 4294967295` is `true`, not poison.</div><di=
+v>However, `icmp i32 ne %always_poison, 7` is poison.</div><div><br></div><=
+div>### What if the condition operand in a `select` is poison?</div><div><b=
+r></div><div>In the example `%sel =3D select i1 %always_poison, i1 true, fa=
+lse`, `%sel` is either `true` or `false`.=C2=A0 Because, `%sel` depends on =
+`%always_poison` it too is poison.</div></div></div>
+<br>_______________________________________________<br>
+LLVM Developers mailing list<br>
+<a href=3D"mailto:LLVMdev@cs.uiuc.edu">LLVMdev@cs.uiuc.edu</a>=C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0<a href=3D"http://llvm.cs.uiuc.edu" target=3D"_blank">=
+http://llvm.cs.uiuc.edu</a><br>
+<a href=3D"http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev" target=3D"_bl=
+ank">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a><br>
+<br></blockquote></div><br></div>
+
+--047d7b0723fccd1293050db7aa28--
+
+--===============7698000879797236090==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============7698000879797236090==--
+
