@@ -1,0 +1,1826 @@
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 03:00:52 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 691C26501AB;
+	Sun,  1 Feb 2015 03:00:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 03:00:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t119wbQ4001898;
+	Sun, 1 Feb 2015 03:58:37 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t119wamA001889
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 03:58:36 -0600
+Received: from pps03.cites.illinois.edu ([192.17.82.70])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YHrIa-0003t7-89
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 03:58:36 -0600
+Received: from mail-ie0-f169.google.com (mail-ie0-f169.google.com
+	[209.85.223.169])
+	by pps03.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t119wUT6011936
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 03:58:30 -0600
+Received: by mail-ie0-f169.google.com with SMTP id rl12so12123786iec.0
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 01:58:30 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=/s+GJJZioU5rTmDrgsUYaDDbc/eeVoALoWpgari+1C8=;
+	b=kEJPJ5HMshxJS/9Mwg7iQ1yQoCOExYF93DsodwjV1Q82vbBrBGRvWHqmU3FsMbI6Qz
+	2a7ULIXplkCzO6lbABCueInODVVrYBkVd2M7dJI4vYeNCIjOSZaGrHIBkYGhXD7CBFOx
+	BxXRUzdS09SCz/vUh5AHr628DFdkb6NVz0P3CtiVv8r4inENKJBAu/fTgC7JJt5SGDrg
+	rrEHBxhT0acdcZP/167p49gbvzteqJrbuy3AgQlBR3geTx/yiG6jdpckbv9npcskEe28
+	L1oLGeMfLybbJFIHx8JSm0Pv7uu7snlC9wNcS+J80gVmPPnIEK4VQcjWDtZYYwdjzX4q
+	kJfQ==
+X-Received: by 10.50.137.99 with SMTP id qh3mr5984323igb.7.1422784710390; Sun,
+	01 Feb 2015 01:58:30 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Sun, 1 Feb 2015 01:57:50 -0800 (PST)
+In-Reply-To: <CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Sun, 1 Feb 2015 01:57:50 -0800
+Message-ID: <CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============1312006999028565030=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============1312006999028565030==
+Content-Type: multipart/alternative; boundary=001a11c3bcbc413bee050e03e115
+
+--001a11c3bcbc413bee050e03e115
+Content-Type: text/plain; charset=UTF-8
+
+On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> > Ah, yes.  You are right, we cannot always assume that %y would be zero in
+> > the second case.
+> > This wouldn't be the first time we've lost information that we could use
+> to
+> > optimize a program by transforming it.
+> >
+> > Do you think this result would be problematic?  It seems consistent with
+> the
+> > RFC and LLVM's current behavior.
+> >
+>
+> The problem is not that we're losing information, the problem is that
+> we're changing the behavior of a well-defined program.
+>
+> I'll try to put the whole argument in one place:
+>
+> We start with
+>
+>   %x = add nuw i32 %m, %n
+>   %y = zext i32 %x to i64
+>   %s = lshr i64 %y, 32
+>   %addr = gep %some_global, %s
+>   store i32 42, i32* %addr
+>
+> In the above program, for all values of %x, %s is 0.  This means the
+> program is well-defined when %x is poison (since you don't need to
+> look at %x to determine the value of %addr, in the same sense as you
+> don't need to look at X to determine the value of "and X, 0"); and it
+> stores 42 to &(%some_global)[0].  Specifically, the above program is
+> well defined for "%m = %n = 2^32-1".
+>
+> Now if we do the usual transform of "zext (add nuw X Y)" => "add nuw
+> (zext X) (zext Y)" then we get
+>
+>   %m.wide = zext i32 %m to i64
+>   %n.wide = zext i32 %n to i64
+>   %z = add nuw i64 %m.wide, %n.wide
+>   %s = lshr i64 %y, 32
+>   %addr = gep %some_global, %s
+>   store i32 42, i32* %addr
+>
+> The new program does *not* have the same behavior as the old program
+> for "%m = %n = 2^32-1".  We have changed the behavior of a
+> well-defined program by doing the "zext (add nuw X Y)" => "add nuw
+> (zext X) (zext Y)" transform.
+>
+
+After some pondering and combing through LLVM's implementation, I think we
+must conclude that zexting a value with any poison bits creates poison in
+every new bit.
+
+Considering the following program:
+
+%zext = zext i32 %x to i64
+%icmp = icmp i64 %zext, i64 1
+
+we'd like to transform this to:
+
+%icmp = icmp i32 %x, i32 1
+
+Is it reasonable to say that '%icmp' in the before case is not poison but
+'%icmp' in the after case is poison?  LLVM assumes it can remove casts with
+impunity, I think this is a useful property to maintain.
+
+
+>
+> -- Sanjoy
+>
+
+--001a11c3bcbc413bee050e03e115
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a hr=
+ef=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playi=
+ngwithpointers.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quot=
+e" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">=
+<span class=3D"">&gt; Ah, yes.=C2=A0 You are right, we cannot always assume=
+ that %y would be zero in<br>
+&gt; the second case.<br>
+&gt; This wouldn&#39;t be the first time we&#39;ve lost information that we=
+ could use to<br>
+&gt; optimize a program by transforming it.<br>
+&gt;<br>
+&gt; Do you think this result would be problematic?=C2=A0 It seems consiste=
+nt with the<br>
+&gt; RFC and LLVM&#39;s current behavior.<br>
+&gt;<br>
+<br>
+</span>The problem is not that we&#39;re losing information, the problem is=
+ that<br>
+we&#39;re changing the behavior of a well-defined program.<br>
+<br>
+I&#39;ll try to put the whole argument in one place:<br>
+<br>
+We start with<br>
+<br>
+=C2=A0 %x =3D add nuw i32 %m, %n<br>
+=C2=A0 %y =3D zext i32 %x to i64<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+In the above program, for all values of %x, %s is 0.=C2=A0 This means the<b=
+r>
+program is well-defined when %x is poison (since you don&#39;t need to<br>
+look at %x to determine the value of %addr, in the same sense as you<br>
+don&#39;t need to look at X to determine the value of &quot;and X, 0&quot;)=
+; and it<br>
+stores 42 to &amp;(%some_global)[0].=C2=A0 Specifically, the above program =
+is<br>
+well defined for &quot;%m =3D %n =3D 2^32-1&quot;.<br>
+<br>
+Now if we do the usual transform of &quot;zext (add nuw X Y)&quot; =3D&gt; =
+&quot;add nuw<br>
+(zext X) (zext Y)&quot; then we get<br>
+<br>
+=C2=A0 %m.wide =3D zext i32 %m to i64<br>
+=C2=A0 %n.wide =3D zext i32 %n to i64<br>
+=C2=A0 %z =3D add nuw i64 %m.wide, %n.wide<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+The new program does *not* have the same behavior as the old program<br>
+for &quot;%m =3D %n =3D 2^32-1&quot;.=C2=A0 We have changed the behavior of=
+ a<br>
+well-defined program by doing the &quot;zext (add nuw X Y)&quot; =3D&gt; &q=
+uot;add nuw<br>
+(zext X) (zext Y)&quot; transform.<br></blockquote><div><br></div><div>Afte=
+r some pondering and combing through LLVM&#39;s implementation, I think we =
+must conclude that zexting a value with any poison bits creates poison in e=
+very new bit.</div><div><br></div><div>Considering the following program:</=
+div><div><br></div><div>%zext =3D zext i32 %x to i64</div><div>%icmp =3D ic=
+mp i64 %zext, i64 1</div><div><br></div><div>we&#39;d like to transform thi=
+s to:</div><div><br></div><div>%icmp =3D icmp i32 %x, i32 1</div><div><br><=
+/div><div>Is it reasonable to say that &#39;%icmp&#39; in the before case i=
+s not poison but &#39;%icmp&#39; in the after case is poison?=C2=A0 LLVM as=
+sumes it can remove casts with impunity, I think this is a useful property =
+to maintain.</div><div>=C2=A0</div><blockquote class=3D"gmail_quote" style=
+=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">
+<span class=3D"HOEnZb"><font color=3D"#888888"><br>
+-- Sanjoy<br>
+</font></span></blockquote></div><br></div></div>
+
+--001a11c3bcbc413bee050e03e115--
+
+--===============1312006999028565030==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============1312006999028565030==--
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 03:21:21 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 1DC536501AB;
+	Sun,  1 Feb 2015 03:21:21 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 03:21:20 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t11AJCHU002669;
+	Sun, 1 Feb 2015 04:19:12 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t11AJBLL002666
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 04:19:11 -0600
+Received: from pps04.cites.illinois.edu ([192.17.82.101])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <chandlerc@google.com>)
+	id 1YHrcV-0004Lo-Dk
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 04:19:11 -0600
+Received: from mail-vc0-f179.google.com (mail-vc0-f179.google.com
+	[209.85.220.179])
+	by pps04.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t11AJ5vr019873
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 04:19:05 -0600
+Received: by mail-vc0-f179.google.com with SMTP id la4so13296690vcb.10
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 02:19:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=20120113;
+	h=mime-version:in-reply-to:references:date:message-id:subject:from:to
+	:cc:content-type;
+	bh=AUA+M7UWFIjp1zLRHhM+5bJCtEGfxXcvij3p5lxwhbE=;
+	b=eDRlbKWqbSKewdjdUWCIysx8bEKBr2KKuqaNwDMizes/GQpd4sHFs2XnMdO0Tdd8D6
+	irEbRAOVe43rRFi91blU6qgpO8Xg2K2iPYFcCV5jJXew5mBmBqdBpLoKegC39SlghK9l
+	cxgzwoF8P6JE5O+DivQj7KrKUsH/8xBAUB3VRGV5idBvexSuUT++lzqYrNaRXUsncK0z
+	eIu3zbtZtkxUPL5TsOG3bRyVBze68KB6U+5uEsIyo2G0iGEznomAaCAnGsNzhk3D/5sp
+	vZkwUlN3cNmk45KxJgu511iMeIDD46s0JC51ZIbvtNlGiYAGVp8pspU5PCI7Y/XQQ9Li
+	bCAw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:date
+	:message-id:subject:from:to:cc:content-type;
+	bh=AUA+M7UWFIjp1zLRHhM+5bJCtEGfxXcvij3p5lxwhbE=;
+	b=U2ukkByP6OCu2XoYurBXPbO3dUKeiHHFnYssdYnxLdLHRE1owGCL7x+8NkDy8h36SQ
+	Exoa2N4CVUsKxymDD9X6v8IXP+jck3Hbb21OJnCku8x+08NuIAY9El3RI6LlZC1Lomv8
+	ICbny43s6Sq0KFsRSmjJXk52PU0BL+8Jfuz3dGMzys4GgkUct3vROCGxUGsYrOtzLDZZ
+	OI+3vAxT8C/lfpYwQu+eQcaeG/Wa9n9aF4uvBpz3JZt5m8AKaff7qUmmlF5C84BWE+p+
+	y01MX8kGoJfOo6FYWWfgBHsA0mGZwgNI6jb5KrucVpV/wwjABmw3N9kIu7NmhYF63pR5
+	NAWQ==
+X-Gm-Message-State: ALoCoQldFCuxWVk/rdeMeXjuJAJQ0OAQB4VV74w9lZDMx8+zQm9E+uYV+9wFqUA8nC9mRIYrXMuL
+MIME-Version: 1.0
+X-Received: by 10.220.89.132 with SMTP id e4mr8491851vcm.2.1422785944965; Sun,
+	01 Feb 2015 02:19:04 -0800 (PST)
+Received: by 10.52.34.230 with HTTP; Sun, 1 Feb 2015 02:19:04 -0800 (PST)
+In-Reply-To: <CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+Date: Sun, 1 Feb 2015 02:19:04 -0800
+Message-ID: <CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+From: Chandler Carruth <chandlerc@google.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============3730566182876145444=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============3730566182876145444==
+Content-Type: multipart/alternative; boundary=047d7b3a8a20d77212050e042a07
+
+--047d7b3a8a20d77212050e042a07
+Content-Type: text/plain; charset=UTF-8
+
+On Sun, Feb 1, 2015 at 1:57 AM, David Majnemer <david.majnemer@gmail.com>
+wrote:
+
+>
+> On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <
+> sanjoy@playingwithpointers.com> wrote:
+>
+>> > Ah, yes.  You are right, we cannot always assume that %y would be zero
+>> in
+>> > the second case.
+>> > This wouldn't be the first time we've lost information that we could
+>> use to
+>> > optimize a program by transforming it.
+>> >
+>> > Do you think this result would be problematic?  It seems consistent
+>> with the
+>> > RFC and LLVM's current behavior.
+>> >
+>>
+>> The problem is not that we're losing information, the problem is that
+>> we're changing the behavior of a well-defined program.
+>>
+>> I'll try to put the whole argument in one place:
+>>
+>> We start with
+>>
+>>   %x = add nuw i32 %m, %n
+>>   %y = zext i32 %x to i64
+>>   %s = lshr i64 %y, 32
+>>   %addr = gep %some_global, %s
+>>   store i32 42, i32* %addr
+>>
+>> In the above program, for all values of %x, %s is 0.  This means the
+>> program is well-defined when %x is poison (since you don't need to
+>> look at %x to determine the value of %addr, in the same sense as you
+>> don't need to look at X to determine the value of "and X, 0"); and it
+>> stores 42 to &(%some_global)[0].  Specifically, the above program is
+>> well defined for "%m = %n = 2^32-1".
+>>
+>> Now if we do the usual transform of "zext (add nuw X Y)" => "add nuw
+>> (zext X) (zext Y)" then we get
+>>
+>>   %m.wide = zext i32 %m to i64
+>>   %n.wide = zext i32 %n to i64
+>>   %z = add nuw i64 %m.wide, %n.wide
+>>   %s = lshr i64 %y, 32
+>>   %addr = gep %some_global, %s
+>>   store i32 42, i32* %addr
+>>
+>> The new program does *not* have the same behavior as the old program
+>> for "%m = %n = 2^32-1".  We have changed the behavior of a
+>> well-defined program by doing the "zext (add nuw X Y)" => "add nuw
+>> (zext X) (zext Y)" transform.
+>>
+>
+> After some pondering and combing through LLVM's implementation, I think we
+> must conclude that zexting a value with any poison bits creates poison in
+> every new bit.
+>
+> Considering the following program:
+>
+> %zext = zext i32 %x to i64
+> %icmp = icmp i64 %zext, i64 1
+>
+> we'd like to transform this to:
+>
+> %icmp = icmp i32 %x, i32 1
+>
+> Is it reasonable to say that '%icmp' in the before case is not poison but
+> '%icmp' in the after case is poison?  LLVM assumes it can remove casts with
+> impunity, I think this is a useful property to maintain.
+>
+
+FWIW, I agree with your statement.
+
+Here is the line of reasoning that I find troubling.
+
+If we accept the above, we have a surprising result (using small bit-width
+integers to make it easier to read)
+
+%zext = zext i1 %x to i2
+%and = and i2 %zext, 1
+
+We cannot replace %and with %zext because the %and might be removing poison.
+
+Perhaps this restriction is OK though. I just find it somewhat troubling.
+
+--047d7b3a8a20d77212050e042a07
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><br><div class=3D"gmail_quote">=
+On Sun, Feb 1, 2015 at 1:57 AM, David Majnemer <span dir=3D"ltr">&lt;<a hre=
+f=3D"mailto:david.majnemer@gmail.com" target=3D"_blank">david.majnemer@gmai=
+l.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"m=
+argin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><div class=3D=
+"adM"><br></div><div class=3D"gmail_quote"><div class=3D"adM"><div class=3D=
+"">On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a hre=
+f=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playin=
+gwithpointers.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote=
+" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><=
+span>&gt; Ah, yes.=C2=A0 You are right, we cannot always assume that %y wou=
+ld be zero in<br>
+&gt; the second case.<br>
+&gt; This wouldn&#39;t be the first time we&#39;ve lost information that we=
+ could use to<br>
+&gt; optimize a program by transforming it.<br>
+&gt;<br>
+&gt; Do you think this result would be problematic?=C2=A0 It seems consiste=
+nt with the<br>
+&gt; RFC and LLVM&#39;s current behavior.<br>
+&gt;<br>
+<br>
+</span>The problem is not that we&#39;re losing information, the problem is=
+ that<br>
+we&#39;re changing the behavior of a well-defined program.<br>
+<br>
+I&#39;ll try to put the whole argument in one place:<br>
+<br>
+We start with<br>
+<br>
+=C2=A0 %x =3D add nuw i32 %m, %n<br>
+=C2=A0 %y =3D zext i32 %x to i64<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+In the above program, for all values of %x, %s is 0.=C2=A0 This means the<b=
+r>
+program is well-defined when %x is poison (since you don&#39;t need to<br>
+look at %x to determine the value of %addr, in the same sense as you<br>
+don&#39;t need to look at X to determine the value of &quot;and X, 0&quot;)=
+; and it<br>
+stores 42 to &amp;(%some_global)[0].=C2=A0 Specifically, the above program =
+is<br>
+well defined for &quot;%m =3D %n =3D 2^32-1&quot;.<br>
+<br>
+Now if we do the usual transform of &quot;zext (add nuw X Y)&quot; =3D&gt; =
+&quot;add nuw<br>
+(zext X) (zext Y)&quot; then we get<br>
+<br>
+=C2=A0 %m.wide =3D zext i32 %m to i64<br>
+=C2=A0 %n.wide =3D zext i32 %n to i64<br>
+=C2=A0 %z =3D add nuw i64 %m.wide, %n.wide<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+The new program does *not* have the same behavior as the old program<br>
+for &quot;%m =3D %n =3D 2^32-1&quot;.=C2=A0 We have changed the behavior of=
+ a<br>
+well-defined program by doing the &quot;zext (add nuw X Y)&quot; =3D&gt; &q=
+uot;add nuw<br>
+(zext X) (zext Y)&quot; transform.<br></blockquote><div><br></div></div></d=
+iv><div>After some pondering and combing through LLVM&#39;s implementation,=
+ I think we must conclude that zexting a value with any poison bits creates=
+ poison in every new bit.</div><div><br></div><div>Considering the followin=
+g program:</div><div><br></div><div>%zext =3D zext i32 %x to i64</div><div>=
+%icmp =3D icmp i64 %zext, i64 1</div><div><br></div><div>we&#39;d like to t=
+ransform this to:</div><div><br></div><div>%icmp =3D icmp i32 %x, i32 1</di=
+v><div><br></div><div>Is it reasonable to say that &#39;%icmp&#39; in the b=
+efore case is not poison but &#39;%icmp&#39; in the after case is poison?=
+=C2=A0 LLVM assumes it can remove casts with impunity, I think this is a us=
+eful property to maintain.</div></div></blockquote></div><br>FWIW, I agree =
+with your statement.</div><div class=3D"gmail_extra"><br></div><div class=
+=3D"gmail_extra">Here is the line of reasoning that I find troubling.</div>=
+<div class=3D"gmail_extra"><br></div><div class=3D"gmail_extra">If we accep=
+t the above, we have a surprising result (using small bit-width integers to=
+ make it easier to read)</div><div class=3D"gmail_extra"><br></div><div cla=
+ss=3D"gmail_extra">%zext =3D zext i1 %x to i2</div><div class=3D"gmail_extr=
+a">%and =3D and i2 %zext, 1</div><div class=3D"gmail_extra"><br></div><div =
+class=3D"gmail_extra">We cannot replace %and with %zext because the %and mi=
+ght be removing poison.</div><div class=3D"gmail_extra"><br></div><div clas=
+s=3D"gmail_extra">Perhaps this restriction is OK though. I just find it som=
+ewhat troubling.</div></div>
+
+--047d7b3a8a20d77212050e042a07--
+
+--===============3730566182876145444==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============3730566182876145444==--
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 03:47:11 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=DKIM_SIGNED,HK_RANDOM_ENVFROM,
+	HTML_MESSAGE,T_DKIM_INVALID autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 8891865019C;
+	Sun,  1 Feb 2015 03:47:11 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 03:47:11 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t11Aj2Ne003423;
+	Sun, 1 Feb 2015 04:45:02 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t11Aj0Ye003412
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 04:45:00 -0600
+Received: from pps01.cites.illinois.edu ([192.17.82.69])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <bruce.hoult@gmail.com>)
+	id 1YHs1U-0005Gh-Le
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 04:45:00 -0600
+Received: from mail-we0-f172.google.com (mail-we0-f172.google.com
+	[74.125.82.172])
+	by pps01.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t11Air3D016436
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 04:44:54 -0600
+Received: by mail-we0-f172.google.com with SMTP id q59so34169653wes.3
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 02:44:53 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:sender:in-reply-to:references:date:message-id:subject
+	:from:to:cc:content-type;
+	bh=LWFb4lcmZgHv2sLuh/73KaefAGPW2zQtwrgnqz+IcL4=;
+	b=gQGr6sZIsbkvIy5tXMTERdcLmwlFHxvwaK/2wLl6wVh+5OfRkZFY/TiBD+IHWoQD5R
+	39aDcRNFnEJwuOIkH0feYRQbsXmTVg4zsa1PLHzugT+AfXO+Eb0DF5nJtIum8hp0bOV3
+	EbBIlWRdiWMTcdsTave+4kUl2fkOYORiHm6ZDhmqKUH+cAmAA3Vt6aytAxhiM7/mKChc
+	z+8F5OcgsG95cZUahmYqoU2TEQSRnZ9UdL2+RKhlANymYUEYPWDviBs4+Y7EwVVOZ6bn
+	ZiAaGD/jzqk9pnNpyzYJPvLNiDTW/rPVJZOqaqpwousDvKYOfv0ogzKwUYfJWLW23ewz
+	E5yg==
+MIME-Version: 1.0
+X-Received: by 10.180.21.161 with SMTP id w1mr13320092wie.44.1422787493361;
+	Sun, 01 Feb 2015 02:44:53 -0800 (PST)
+Received: by 10.27.78.133 with HTTP; Sun, 1 Feb 2015 02:44:53 -0800 (PST)
+In-Reply-To: <CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+	<CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+Date: Sun, 1 Feb 2015 23:44:53 +1300
+X-Google-Sender-Auth: r3wbO5PyVvKp3iRK6NZLw9qXO4c
+Message-ID: <CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+From: Bruce Hoult <bruce@hoult.org>
+To: Chandler Carruth <chandlerc@google.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============4581316300909376030=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============4581316300909376030==
+Content-Type: multipart/alternative; boundary=047d7b6dc07421fbf5050e04871a
+
+--047d7b6dc07421fbf5050e04871a
+Content-Type: text/plain; charset=UTF-8
+
+I don't know how things work at the moment, but it seems to me that you can
+do lots of sensible things, and avoid lots of silly things, if you keep
+track of four possible values for each bit:
+
+- undef (the default)
+- poison
+- known to be 0
+- known to be 1
+
+This makes both David's and Chandler's examples work nicely if you assume:
+
+- ZEXT makes all the new bits known 0
+- SEXT makes all the new bits the same as the high bit
+- AND clears unknown and poison bits to known 0 if the other input is known
+0
+- OR sets unknown and poison bits to known 1 if the other input is known 1
+
+Also things such as ZEXTing a poison i32 to i64 and then right shifting by
+32 will result in all known 0 bits.
+
+
+On Sun, Feb 1, 2015 at 11:19 PM, Chandler Carruth <chandlerc@google.com>
+wrote:
+
+>
+> On Sun, Feb 1, 2015 at 1:57 AM, David Majnemer <david.majnemer@gmail.com>
+> wrote:
+>
+>>
+>> On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <
+>> sanjoy@playingwithpointers.com> wrote:
+>>
+>>> > Ah, yes.  You are right, we cannot always assume that %y would be zero
+>>> in
+>>> > the second case.
+>>> > This wouldn't be the first time we've lost information that we could
+>>> use to
+>>> > optimize a program by transforming it.
+>>> >
+>>> > Do you think this result would be problematic?  It seems consistent
+>>> with the
+>>> > RFC and LLVM's current behavior.
+>>> >
+>>>
+>>> The problem is not that we're losing information, the problem is that
+>>> we're changing the behavior of a well-defined program.
+>>>
+>>> I'll try to put the whole argument in one place:
+>>>
+>>> We start with
+>>>
+>>>   %x = add nuw i32 %m, %n
+>>>   %y = zext i32 %x to i64
+>>>   %s = lshr i64 %y, 32
+>>>   %addr = gep %some_global, %s
+>>>   store i32 42, i32* %addr
+>>>
+>>> In the above program, for all values of %x, %s is 0.  This means the
+>>> program is well-defined when %x is poison (since you don't need to
+>>> look at %x to determine the value of %addr, in the same sense as you
+>>> don't need to look at X to determine the value of "and X, 0"); and it
+>>> stores 42 to &(%some_global)[0].  Specifically, the above program is
+>>> well defined for "%m = %n = 2^32-1".
+>>>
+>>> Now if we do the usual transform of "zext (add nuw X Y)" => "add nuw
+>>> (zext X) (zext Y)" then we get
+>>>
+>>>   %m.wide = zext i32 %m to i64
+>>>   %n.wide = zext i32 %n to i64
+>>>   %z = add nuw i64 %m.wide, %n.wide
+>>>   %s = lshr i64 %y, 32
+>>>   %addr = gep %some_global, %s
+>>>   store i32 42, i32* %addr
+>>>
+>>> The new program does *not* have the same behavior as the old program
+>>> for "%m = %n = 2^32-1".  We have changed the behavior of a
+>>> well-defined program by doing the "zext (add nuw X Y)" => "add nuw
+>>> (zext X) (zext Y)" transform.
+>>>
+>>
+>> After some pondering and combing through LLVM's implementation, I think
+>> we must conclude that zexting a value with any poison bits creates poison
+>> in every new bit.
+>>
+>> Considering the following program:
+>>
+>> %zext = zext i32 %x to i64
+>> %icmp = icmp i64 %zext, i64 1
+>>
+>> we'd like to transform this to:
+>>
+>> %icmp = icmp i32 %x, i32 1
+>>
+>> Is it reasonable to say that '%icmp' in the before case is not poison but
+>> '%icmp' in the after case is poison?  LLVM assumes it can remove casts with
+>> impunity, I think this is a useful property to maintain.
+>>
+>
+> FWIW, I agree with your statement.
+>
+> Here is the line of reasoning that I find troubling.
+>
+> If we accept the above, we have a surprising result (using small bit-width
+> integers to make it easier to read)
+>
+> %zext = zext i1 %x to i2
+> %and = and i2 %zext, 1
+>
+> We cannot replace %and with %zext because the %and might be removing
+> poison.
+>
+> Perhaps this restriction is OK though. I just find it somewhat troubling.
+>
+> _______________________________________________
+> LLVM Developers mailing list
+> LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+> http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+>
+>
+
+--047d7b6dc07421fbf5050e04871a
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">I don&#39;t know how things work at the moment, but it see=
+ms to me that you can do lots of sensible things, and avoid lots of silly t=
+hings, if you keep track of four possible values for each bit:<div><br></di=
+v><div>- undef (the default)</div><div>- poison</div><div>- known to be 0</=
+div><div>- known to be 1</div><div><br></div><div>This makes both David&#39=
+;s and Chandler&#39;s examples work nicely if you assume:</div><div><br></d=
+iv><div>- ZEXT makes all the new bits known 0</div><div>- SEXT makes all th=
+e new bits the same as the high bit</div><div>- AND clears unknown and pois=
+on bits to known 0 if the other input is known 0</div><div>- OR sets unknow=
+n and poison bits to known 1 if the other input is known 1</div><div><br></=
+div><div>Also things such as ZEXTing a poison i32 to i64 and then right shi=
+fting by 32 will result in all known 0 bits.</div><div><br></div></div><div=
+ class=3D"gmail_extra"><br><div class=3D"gmail_quote">On Sun, Feb 1, 2015 a=
+t 11:19 PM, Chandler Carruth <span dir=3D"ltr">&lt;<a href=3D"mailto:chandl=
+erc@google.com" target=3D"_blank">chandlerc@google.com</a>&gt;</span> wrote=
+:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-le=
+ft:1px #ccc solid;padding-left:1ex"><div dir=3D"ltr"><div class=3D"gmail_ex=
+tra"><div><div class=3D"h5"><br><div class=3D"gmail_quote">On Sun, Feb 1, 2=
+015 at 1:57 AM, David Majnemer <span dir=3D"ltr">&lt;<a href=3D"mailto:davi=
+d.majnemer@gmail.com" target=3D"_blank">david.majnemer@gmail.com</a>&gt;</s=
+pan> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex=
+;border-left:1px #ccc solid;padding-left:1ex"><div><br></div><div class=3D"=
+gmail_quote"><div><div>On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <span di=
+r=3D"ltr">&lt;<a href=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_=
+blank">sanjoy@playingwithpointers.com</a>&gt;</span> wrote:<br><blockquote =
+class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid=
+;padding-left:1ex"><span>&gt; Ah, yes.=C2=A0 You are right, we cannot alway=
+s assume that %y would be zero in<br>
+&gt; the second case.<br>
+&gt; This wouldn&#39;t be the first time we&#39;ve lost information that we=
+ could use to<br>
+&gt; optimize a program by transforming it.<br>
+&gt;<br>
+&gt; Do you think this result would be problematic?=C2=A0 It seems consiste=
+nt with the<br>
+&gt; RFC and LLVM&#39;s current behavior.<br>
+&gt;<br>
+<br>
+</span>The problem is not that we&#39;re losing information, the problem is=
+ that<br>
+we&#39;re changing the behavior of a well-defined program.<br>
+<br>
+I&#39;ll try to put the whole argument in one place:<br>
+<br>
+We start with<br>
+<br>
+=C2=A0 %x =3D add nuw i32 %m, %n<br>
+=C2=A0 %y =3D zext i32 %x to i64<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+In the above program, for all values of %x, %s is 0.=C2=A0 This means the<b=
+r>
+program is well-defined when %x is poison (since you don&#39;t need to<br>
+look at %x to determine the value of %addr, in the same sense as you<br>
+don&#39;t need to look at X to determine the value of &quot;and X, 0&quot;)=
+; and it<br>
+stores 42 to &amp;(%some_global)[0].=C2=A0 Specifically, the above program =
+is<br>
+well defined for &quot;%m =3D %n =3D 2^32-1&quot;.<br>
+<br>
+Now if we do the usual transform of &quot;zext (add nuw X Y)&quot; =3D&gt; =
+&quot;add nuw<br>
+(zext X) (zext Y)&quot; then we get<br>
+<br>
+=C2=A0 %m.wide =3D zext i32 %m to i64<br>
+=C2=A0 %n.wide =3D zext i32 %n to i64<br>
+=C2=A0 %z =3D add nuw i64 %m.wide, %n.wide<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+The new program does *not* have the same behavior as the old program<br>
+for &quot;%m =3D %n =3D 2^32-1&quot;.=C2=A0 We have changed the behavior of=
+ a<br>
+well-defined program by doing the &quot;zext (add nuw X Y)&quot; =3D&gt; &q=
+uot;add nuw<br>
+(zext X) (zext Y)&quot; transform.<br></blockquote><div><br></div></div></d=
+iv><div>After some pondering and combing through LLVM&#39;s implementation,=
+ I think we must conclude that zexting a value with any poison bits creates=
+ poison in every new bit.</div><div><br></div><div>Considering the followin=
+g program:</div><div><br></div><div>%zext =3D zext i32 %x to i64</div><div>=
+%icmp =3D icmp i64 %zext, i64 1</div><div><br></div><div>we&#39;d like to t=
+ransform this to:</div><div><br></div><div>%icmp =3D icmp i32 %x, i32 1</di=
+v><div><br></div><div>Is it reasonable to say that &#39;%icmp&#39; in the b=
+efore case is not poison but &#39;%icmp&#39; in the after case is poison?=
+=C2=A0 LLVM assumes it can remove casts with impunity, I think this is a us=
+eful property to maintain.</div></div></blockquote></div><br></div></div>FW=
+IW, I agree with your statement.</div><div class=3D"gmail_extra"><br></div>=
+<div class=3D"gmail_extra">Here is the line of reasoning that I find troubl=
+ing.</div><div class=3D"gmail_extra"><br></div><div class=3D"gmail_extra">I=
+f we accept the above, we have a surprising result (using small bit-width i=
+ntegers to make it easier to read)</div><div class=3D"gmail_extra"><br></di=
+v><div class=3D"gmail_extra">%zext =3D zext i1 %x to i2</div><div class=3D"=
+gmail_extra">%and =3D and i2 %zext, 1</div><div class=3D"gmail_extra"><br><=
+/div><div class=3D"gmail_extra">We cannot replace %and with %zext because t=
+he %and might be removing poison.</div><div class=3D"gmail_extra"><br></div=
+><div class=3D"gmail_extra">Perhaps this restriction is OK though. I just f=
+ind it somewhat troubling.</div></div>
+<br>_______________________________________________<br>
+LLVM Developers mailing list<br>
+<a href=3D"mailto:LLVMdev@cs.uiuc.edu">LLVMdev@cs.uiuc.edu</a>=C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0<a href=3D"http://llvm.cs.uiuc.edu" target=3D"_blank">=
+http://llvm.cs.uiuc.edu</a><br>
+<a href=3D"http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev" target=3D"_bl=
+ank">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a><br>
+<br></blockquote></div><br></div>
+
+--047d7b6dc07421fbf5050e04871a--
+
+--===============4581316300909376030==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============4581316300909376030==--
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 04:23:27 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 0EA6365019F;
+	Sun,  1 Feb 2015 04:23:27 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 04:23:25 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t11BLOKj004719;
+	Sun, 1 Feb 2015 05:21:24 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t11BLM0c004716
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 05:21:22 -0600
+Received: from pps02.cites.illinois.edu ([192.17.82.100])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YHsag-00067a-QJ
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 05:21:22 -0600
+Received: from mail-ie0-f178.google.com (mail-ie0-f178.google.com
+	[209.85.223.178])
+	by pps02.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t11BLGOM002925
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 05:21:17 -0600
+Received: by mail-ie0-f178.google.com with SMTP id rd18so3031997iec.9
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 03:21:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=jvZizWCD61Lt0S/VbxLCyKOtlx5R8uuOE6maxWIWt/s=;
+	b=f24aIqfQTjmt5whAJcVd0OyzKSLtCZMHioQODoit/KYSJI7QveN5CILHezx9lJ3eC7
+	wnatgjXhXR5KIW0wciNHKrDm/w9eIOg9iWTIT/pua2JvNW/YFIMZrqgv38Qyk1KnoRQt
+	kdEYO5kbbvHfS+4tYAzbCU//FS/8GDEmPtnS1eabhVXLcM1Yg0NVUf9GEZD46EEvIdrz
+	wHeNEqciVrhlto4Chrvr4XSMv3KZoLiliAPMilCZzJZ6MuvNslnumF2CnpC2FEnhxYDh
+	vhTF0XkuVxuBBo0tHPTntnY/SiNdsXsV+FVWs+bzq6gr+REsXi4ihRSdesqdg25m1EQG
+	xQ8g==
+X-Received: by 10.107.154.17 with SMTP id c17mr16921153ioe.74.1422789676654;
+	Sun, 01 Feb 2015 03:21:16 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Sun, 1 Feb 2015 03:20:36 -0800 (PST)
+In-Reply-To: <CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+	<CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+	<CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Sun, 1 Feb 2015 03:20:36 -0800
+Message-ID: <CAL7bZ_dCjgJf62x6hG4m6SiA=9mH=4wv0BxpooNFh4cdBzH4=g@mail.gmail.com>
+To: Bruce Hoult <bruce@hoult.org>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============8585282094798818615=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============8585282094798818615==
+Content-Type: multipart/alternative; boundary=001a1140fae84466f0050e050909
+
+--001a1140fae84466f0050e050909
+Content-Type: text/plain; charset=UTF-8
+
+Let's consider Sanjoy's earlier example,
+
+We start with the following program:
+
+%x = add nuw i32 %m, %n
+%y = zext i32 %x to i64
+%s = lshr i64 %y, 32
+
+If %m and %n are 2**32 - 1, then using your model: %x is entirely poison,
+%y's top 32-bits would be zero and bottom 32-bits are poison and %s would
+be enitrely zero.
+
+This would mean that we couldn't transform the program into:
+
+%m.wide = zext i32 %m to i64
+%n.wide = zext i32 %n to i64
+%z = add nuw i64 %m.wide, %n.wide
+%s = lshr i64 %z, 32
+
+Because we would have: %m.wide and %n.wide are 2**32 - 1, %z is 2**33 - 2,
+%s is 1
+
+That being said, we don't perform this transform today and I don't see why
+we would want to.  I'd happily give up this flexibility if it meant that we
+could keep everything else.
+
+On Sun, Feb 1, 2015 at 2:44 AM, Bruce Hoult <bruce@hoult.org> wrote:
+
+> I don't know how things work at the moment, but it seems to me that you
+> can do lots of sensible things, and avoid lots of silly things, if you keep
+> track of four possible values for each bit:
+>
+> - undef (the default)
+> - poison
+> - known to be 0
+> - known to be 1
+>
+> This makes both David's and Chandler's examples work nicely if you assume:
+>
+> - ZEXT makes all the new bits known 0
+> - SEXT makes all the new bits the same as the high bit
+> - AND clears unknown and poison bits to known 0 if the other input is
+> known 0
+> - OR sets unknown and poison bits to known 1 if the other input is known 1
+>
+> Also things such as ZEXTing a poison i32 to i64 and then right shifting by
+> 32 will result in all known 0 bits.
+>
+>
+> On Sun, Feb 1, 2015 at 11:19 PM, Chandler Carruth <chandlerc@google.com>
+> wrote:
+>
+>>
+>> On Sun, Feb 1, 2015 at 1:57 AM, David Majnemer <david.majnemer@gmail.com>
+>> wrote:
+>>
+>>>
+>>> On Tue, Jan 27, 2015 at 8:58 PM, Sanjoy Das <
+>>> sanjoy@playingwithpointers.com> wrote:
+>>>
+>>>> > Ah, yes.  You are right, we cannot always assume that %y would be
+>>>> zero in
+>>>> > the second case.
+>>>> > This wouldn't be the first time we've lost information that we could
+>>>> use to
+>>>> > optimize a program by transforming it.
+>>>> >
+>>>> > Do you think this result would be problematic?  It seems consistent
+>>>> with the
+>>>> > RFC and LLVM's current behavior.
+>>>> >
+>>>>
+>>>> The problem is not that we're losing information, the problem is that
+>>>> we're changing the behavior of a well-defined program.
+>>>>
+>>>> I'll try to put the whole argument in one place:
+>>>>
+>>>> We start with
+>>>>
+>>>>   %x = add nuw i32 %m, %n
+>>>>   %y = zext i32 %x to i64
+>>>>   %s = lshr i64 %y, 32
+>>>>   %addr = gep %some_global, %s
+>>>>   store i32 42, i32* %addr
+>>>>
+>>>> In the above program, for all values of %x, %s is 0.  This means the
+>>>> program is well-defined when %x is poison (since you don't need to
+>>>> look at %x to determine the value of %addr, in the same sense as you
+>>>> don't need to look at X to determine the value of "and X, 0"); and it
+>>>> stores 42 to &(%some_global)[0].  Specifically, the above program is
+>>>> well defined for "%m = %n = 2^32-1".
+>>>>
+>>>> Now if we do the usual transform of "zext (add nuw X Y)" => "add nuw
+>>>> (zext X) (zext Y)" then we get
+>>>>
+>>>>   %m.wide = zext i32 %m to i64
+>>>>   %n.wide = zext i32 %n to i64
+>>>>   %z = add nuw i64 %m.wide, %n.wide
+>>>>   %s = lshr i64 %y, 32
+>>>>   %addr = gep %some_global, %s
+>>>>   store i32 42, i32* %addr
+>>>>
+>>>> The new program does *not* have the same behavior as the old program
+>>>> for "%m = %n = 2^32-1".  We have changed the behavior of a
+>>>> well-defined program by doing the "zext (add nuw X Y)" => "add nuw
+>>>> (zext X) (zext Y)" transform.
+>>>>
+>>>
+>>> After some pondering and combing through LLVM's implementation, I think
+>>> we must conclude that zexting a value with any poison bits creates poison
+>>> in every new bit.
+>>>
+>>> Considering the following program:
+>>>
+>>> %zext = zext i32 %x to i64
+>>> %icmp = icmp i64 %zext, i64 1
+>>>
+>>> we'd like to transform this to:
+>>>
+>>> %icmp = icmp i32 %x, i32 1
+>>>
+>>> Is it reasonable to say that '%icmp' in the before case is not poison
+>>> but '%icmp' in the after case is poison?  LLVM assumes it can remove casts
+>>> with impunity, I think this is a useful property to maintain.
+>>>
+>>
+>> FWIW, I agree with your statement.
+>>
+>> Here is the line of reasoning that I find troubling.
+>>
+>> If we accept the above, we have a surprising result (using small
+>> bit-width integers to make it easier to read)
+>>
+>> %zext = zext i1 %x to i2
+>> %and = and i2 %zext, 1
+>>
+>> We cannot replace %and with %zext because the %and might be removing
+>> poison.
+>>
+>> Perhaps this restriction is OK though. I just find it somewhat troubling.
+>>
+>> _______________________________________________
+>> LLVM Developers mailing list
+>> LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+>> http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+>>
+>>
+>
+
+--001a1140fae84466f0050e050909
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">Let&#39;s consider Sanjoy&#39;s earlier example,<div><br><=
+/div><div>We start with the following program:<br></div><div><br><div><div>=
+%x =3D add nuw i32 %m, %n</div><div>%y =3D zext i32 %x to i64</div><div>%s =
+=3D lshr i64 %y, 32</div></div><div><br></div><div>If %m and %n are 2**32 -=
+ 1, then using your model: %x is entirely poison, %y&#39;s top 32-bits woul=
+d be zero and bottom 32-bits are poison and %s would be enitrely zero.</div=
+><div><br></div><div>This would mean that we couldn&#39;t transform the pro=
+gram into:</div><div><br></div><div><div>%m.wide =3D zext i32 %m to i64</di=
+v><div>%n.wide =3D zext i32 %n to i64</div><div>%z =3D add nuw i64 %m.wide,=
+ %n.wide</div><div>%s =3D lshr i64 %z, 32</div></div><div><br></div></div><=
+div>Because we would have: %m.wide and %n.wide are 2**32 - 1, %z is 2**33 -=
+ 2, %s is 1</div><div><br></div><div>That being said, we don&#39;t perform =
+this transform today and I don&#39;t see why we would want to.=C2=A0 I&#39;=
+d happily give up this flexibility if it meant that we could keep everythin=
+g else.</div></div><div class=3D"gmail_extra"><br><div class=3D"gmail_quote=
+">On Sun, Feb 1, 2015 at 2:44 AM, Bruce Hoult <span dir=3D"ltr">&lt;<a href=
+=3D"mailto:bruce@hoult.org" target=3D"_blank">bruce@hoult.org</a>&gt;</span=
+> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;bo=
+rder-left:1px #ccc solid;padding-left:1ex"><div dir=3D"ltr">I don&#39;t kno=
+w how things work at the moment, but it seems to me that you can do lots of=
+ sensible things, and avoid lots of silly things, if you keep track of four=
+ possible values for each bit:<div><br></div><div>- undef (the default)</di=
+v><div>- poison</div><div>- known to be 0</div><div>- known to be 1</div><d=
+iv><br></div><div>This makes both David&#39;s and Chandler&#39;s examples w=
+ork nicely if you assume:</div><div><br></div><div>- ZEXT makes all the new=
+ bits known 0</div><div>- SEXT makes all the new bits the same as the high =
+bit</div><div>- AND clears unknown and poison bits to known 0 if the other =
+input is known 0</div><div>- OR sets unknown and poison bits to known 1 if =
+the other input is known 1</div><div><br></div><div>Also things such as ZEX=
+Ting a poison i32 to i64 and then right shifting by 32 will result in all k=
+nown 0 bits.</div><div><br></div></div><div class=3D"gmail_extra"><br><div =
+class=3D"gmail_quote"><div><div class=3D"h5">On Sun, Feb 1, 2015 at 11:19 P=
+M, Chandler Carruth <span dir=3D"ltr">&lt;<a href=3D"mailto:chandlerc@googl=
+e.com" target=3D"_blank">chandlerc@google.com</a>&gt;</span> wrote:<br></di=
+v></div><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border=
+-left:1px #ccc solid;padding-left:1ex"><div><div class=3D"h5"><div dir=3D"l=
+tr"><div class=3D"gmail_extra"><div><div><br><div class=3D"gmail_quote">On =
+Sun, Feb 1, 2015 at 1:57 AM, David Majnemer <span dir=3D"ltr">&lt;<a href=
+=3D"mailto:david.majnemer@gmail.com" target=3D"_blank">david.majnemer@gmail=
+.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"ma=
+rgin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><div><br></div=
+><div class=3D"gmail_quote"><div><div>On Tue, Jan 27, 2015 at 8:58 PM, Sanj=
+oy Das <span dir=3D"ltr">&lt;<a href=3D"mailto:sanjoy@playingwithpointers.c=
+om" target=3D"_blank">sanjoy@playingwithpointers.com</a>&gt;</span> wrote:<=
+br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-left=
+:1px #ccc solid;padding-left:1ex"><span>&gt; Ah, yes.=C2=A0 You are right, =
+we cannot always assume that %y would be zero in<br>
+&gt; the second case.<br>
+&gt; This wouldn&#39;t be the first time we&#39;ve lost information that we=
+ could use to<br>
+&gt; optimize a program by transforming it.<br>
+&gt;<br>
+&gt; Do you think this result would be problematic?=C2=A0 It seems consiste=
+nt with the<br>
+&gt; RFC and LLVM&#39;s current behavior.<br>
+&gt;<br>
+<br>
+</span>The problem is not that we&#39;re losing information, the problem is=
+ that<br>
+we&#39;re changing the behavior of a well-defined program.<br>
+<br>
+I&#39;ll try to put the whole argument in one place:<br>
+<br>
+We start with<br>
+<br>
+=C2=A0 %x =3D add nuw i32 %m, %n<br>
+=C2=A0 %y =3D zext i32 %x to i64<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+In the above program, for all values of %x, %s is 0.=C2=A0 This means the<b=
+r>
+program is well-defined when %x is poison (since you don&#39;t need to<br>
+look at %x to determine the value of %addr, in the same sense as you<br>
+don&#39;t need to look at X to determine the value of &quot;and X, 0&quot;)=
+; and it<br>
+stores 42 to &amp;(%some_global)[0].=C2=A0 Specifically, the above program =
+is<br>
+well defined for &quot;%m =3D %n =3D 2^32-1&quot;.<br>
+<br>
+Now if we do the usual transform of &quot;zext (add nuw X Y)&quot; =3D&gt; =
+&quot;add nuw<br>
+(zext X) (zext Y)&quot; then we get<br>
+<br>
+=C2=A0 %m.wide =3D zext i32 %m to i64<br>
+=C2=A0 %n.wide =3D zext i32 %n to i64<br>
+=C2=A0 %z =3D add nuw i64 %m.wide, %n.wide<br>
+=C2=A0 %s =3D lshr i64 %y, 32<br>
+=C2=A0 %addr =3D gep %some_global, %s<br>
+=C2=A0 store i32 42, i32* %addr<br>
+<br>
+The new program does *not* have the same behavior as the old program<br>
+for &quot;%m =3D %n =3D 2^32-1&quot;.=C2=A0 We have changed the behavior of=
+ a<br>
+well-defined program by doing the &quot;zext (add nuw X Y)&quot; =3D&gt; &q=
+uot;add nuw<br>
+(zext X) (zext Y)&quot; transform.<br></blockquote><div><br></div></div></d=
+iv><div>After some pondering and combing through LLVM&#39;s implementation,=
+ I think we must conclude that zexting a value with any poison bits creates=
+ poison in every new bit.</div><div><br></div><div>Considering the followin=
+g program:</div><div><br></div><div>%zext =3D zext i32 %x to i64</div><div>=
+%icmp =3D icmp i64 %zext, i64 1</div><div><br></div><div>we&#39;d like to t=
+ransform this to:</div><div><br></div><div>%icmp =3D icmp i32 %x, i32 1</di=
+v><div><br></div><div>Is it reasonable to say that &#39;%icmp&#39; in the b=
+efore case is not poison but &#39;%icmp&#39; in the after case is poison?=
+=C2=A0 LLVM assumes it can remove casts with impunity, I think this is a us=
+eful property to maintain.</div></div></blockquote></div><br></div></div>FW=
+IW, I agree with your statement.</div><div class=3D"gmail_extra"><br></div>=
+<div class=3D"gmail_extra">Here is the line of reasoning that I find troubl=
+ing.</div><div class=3D"gmail_extra"><br></div><div class=3D"gmail_extra">I=
+f we accept the above, we have a surprising result (using small bit-width i=
+ntegers to make it easier to read)</div><div class=3D"gmail_extra"><br></di=
+v><div class=3D"gmail_extra">%zext =3D zext i1 %x to i2</div><div class=3D"=
+gmail_extra">%and =3D and i2 %zext, 1</div><div class=3D"gmail_extra"><br><=
+/div><div class=3D"gmail_extra">We cannot replace %and with %zext because t=
+he %and might be removing poison.</div><div class=3D"gmail_extra"><br></div=
+><div class=3D"gmail_extra">Perhaps this restriction is OK though. I just f=
+ind it somewhat troubling.</div></div>
+<br></div></div><span class=3D"">__________________________________________=
+_____<br>
+LLVM Developers mailing list<br>
+<a href=3D"mailto:LLVMdev@cs.uiuc.edu" target=3D"_blank">LLVMdev@cs.uiuc.ed=
+u</a>=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0<a href=3D"http://llvm.cs.uiuc.edu" =
+target=3D"_blank">http://llvm.cs.uiuc.edu</a><br>
+<a href=3D"http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev" target=3D"_bl=
+ank">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a><br>
+<br></span></blockquote></div><br></div>
+</blockquote></div><br></div>
+
+--001a1140fae84466f0050e050909--
+
+--===============8585282094798818615==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============8585282094798818615==--
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 14:01:13 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=HK_RANDOM_ENVFROM autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 7F0436501A2;
+	Sun,  1 Feb 2015 14:01:13 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 14:01:13 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t11Kx0Mr017248;
+	Sun, 1 Feb 2015 14:59:00 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t11Kwwru017245
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 14:58:58 -0600
+Received: from pps04.cites.illinois.edu ([192.17.82.101])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YI1be-0005mY-2o
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 14:58:58 -0600
+Received: from mail-we0-f179.google.com (mail-we0-f179.google.com
+	[74.125.82.179])
+	by pps04.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t11Kwpig028069
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 14:58:52 -0600
+Received: by mail-we0-f179.google.com with SMTP id q59so35757972wes.10
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 12:58:51 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=WAUd8YYTwQMXFdBxuXJ7PJZbIR20JgYtUPdCpoibVg0=;
+	b=aIW0yjFYZgTM7j5UcZVMdKAcwF/bueaLknf+WeKceZ5ISa3QEeGmCj0Ez15QTMa50/
+	tEMcLkpX5hJ/xMvoKF1pR6lPISdDF/8o7DlcvquQt1J/Y/WkOShieLy3UecocH9nTX3M
+	0v6IP2kRLCrYU7WMEZPBRzDkxIAHiNwuPvsO7nDL6CbdKkMvQjg7w41TE5/xJVg3E7Do
+	EDHjVBjcFx5i+Fzox9yJ6fwfdCVqNH9C8hmHvGBjgQ5FQB+T8hy/3Nj4r9RZoq+5q23A
+	bVTZ+1NsMiAGMtx39tinxPmNFG9RKFTNTbVb6gKNeS5ing6DjZOvssiUiPxiP9mR1/1T
+	KJZw==
+X-Gm-Message-State: ALoCoQlTeed8LVtc2EXIt78wv6GVVx8Zf8Ei/lSV37Ombgt6LB7BRIQRDDOVyhPzEOnQ3kJFkgLQ
+X-Received: by 10.181.28.168 with SMTP id jp8mr17995435wid.40.1422824331052;
+	Sun, 01 Feb 2015 12:58:51 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Sun, 1 Feb 2015 12:58:29 -0800 (PST)
+X-Originating-IP: [162.238.124.235]
+In-Reply-To: <CAL7bZ_dCjgJf62x6hG4m6SiA=9mH=4wv0BxpooNFh4cdBzH4=g@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+	<CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+	<CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+	<CAL7bZ_dCjgJf62x6hG4m6SiA=9mH=4wv0BxpooNFh4cdBzH4=g@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Sun, 1 Feb 2015 12:58:29 -0800
+Message-ID: <CAMiUf7eN_zY7ZBSS6GuCaeV3eXCf=ZxQZ5FjQ4dZ7ELBOJN8fQ@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, Bruce Hoult <bruce@hoult.org>,
+        John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+> That being said, we don't perform this transform today and I don't see why
+> we would want to.  I'd happily give up this flexibility if it meant that we
+> could keep everything else.
+
+I was under the impression that "zext(add nuw X Y) == add nuw zext(X),
+zext(Y)" is the very definition of nuw (i.e. all properties of nuw/nsw
+are supposed to
+follow from that).  If we wish to go ahead without that equivalence,
+then I agree we probably don't need the higher bits to be poison when
+zexting poison.
+
+IOW, the higher bits of the zext of poison needs to be poison because
+we want the "zext(add nuw X Y) == add nuw zext(X), zext(Y)" transform
+to not change the meaning of a program.  Hence any program whose
+meaning would change because of this transform needs to have UB to
+start with.
+
+This is also the root of the issue Chandler pointed out -- "(zext X)"
+and "(and 0x7f (zext X))" are _not_ the same value because a
+non-trivial use of the first value induces a dependence on the bits
+that may change with the "zext(add nuw X Y) == add nuw zext(X),
+zext(Y)" transform while a non-trivial use of the second value does
+not.
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 14:09:24 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=HK_RANDOM_ENVFROM autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 66A0D65019C;
+	Sun,  1 Feb 2015 14:09:24 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 14:09:24 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t11L7M2X017536;
+	Sun, 1 Feb 2015 15:07:22 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t11L7Lkq017533
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 15:07:21 -0600
+Received: from pps03.cites.illinois.edu ([192.17.82.70])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YI1jl-00067b-37
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 15:07:21 -0600
+Received: from mail-we0-f179.google.com (mail-we0-f179.google.com
+	[74.125.82.179])
+	by pps03.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t11L7E4Y015689
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 15:07:15 -0600
+Received: by mail-we0-f179.google.com with SMTP id q59so35778944wes.10
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 13:07:14 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=y32fk03Hq6nTSFSzvvTbiiUyKjKiEeHmHeO7IuzgPBY=;
+	b=lm+xQ7GXTowBQIOIIPKT1porzJDGsbvN+S37eP3xxN8U/12yYe5gXgVyNcaj0AhRSD
+	Ri5tG7CHZWKyvziyBtnM3E1niBO4FcnpEggMCkOultG2laj+/P6ndmLB7nscD3Nr4mS1
+	iRs+QjGNxfAcrlzhKR6rh579ksXCmOxYuyxZ9iBIsUjyCCJ5+q7csTuPwjKg3/dRRBe1
+	eeVAmLVcmQfWI01OMr0z8rSrQkDIvKX3gXPXtb1zIZ7OePxeaF0+Zv2g3uIso8QxmlEO
+	L5LgoLlRiAwhTYjj7WIjLxamHmvzU1ChswhBIS9c8BBZV2SGaHdVwdqs6dQmrEekBHy4
+	HZqA==
+X-Gm-Message-State: ALoCoQkjFD0ilMD+nSz8vhPMb9ZYfDbvZPdbcU26Sn0AxAk0VHQH7aUMm6es+d9ziW0/yW3haVu4
+X-Received: by 10.180.95.97 with SMTP id dj1mr17301348wib.43.1422824834009;
+	Sun, 01 Feb 2015 13:07:14 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Sun, 1 Feb 2015 13:06:53 -0800 (PST)
+X-Originating-IP: [162.238.124.235]
+In-Reply-To: <CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+	<CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+	<CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Sun, 1 Feb 2015 13:06:53 -0800
+Message-ID: <CAMiUf7f-ZkiitNXLQpOXkwkde+eTWCOkdUFc-eKLW18L2hrtrA@mail.gmail.com>
+To: Bruce Hoult <bruce@hoult.org>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+> I don't know how things work at the moment, but it seems to me that you can
+> do lots of sensible things, and avoid lots of silly things, if you keep
+> track of four possible values for each bit:
+>
+> - undef (the default)
+> - poison
+> - known to be 0
+> - known to be 1
+
+I'm not clear what you mean by "known to be X", but assuming you mean
+"known" in the same sense of computeKnownBits, then I don't think such
+a distinction will lead to intuitive semantics.  If the semantics of a
+program depended on what the compiler can prove about the program,
+then the meaning of a program will change based on how smart the
+compiler is (i.e. does the /compiler/ know that `add i32 10, 9` is
+`i32 19`?).  As a concrete example, outlining a function to a separate
+module will no longer be a meaning preserving transform because then a
+bit could go from "known to be 0" to "nothing is known".
+
+Sorry for the tangent, in case you meant something completely
+different by "known". :)
+
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 18:12:18 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=DKIM_SIGNED,HK_RANDOM_ENVFROM,
+	HTML_MESSAGE,T_DKIM_INVALID autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 1EBFB6501AE;
+	Sun,  1 Feb 2015 18:12:18 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 18:12:17 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t121A1GB024343;
+	Sun, 1 Feb 2015 19:10:01 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t1219xbb024340
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 19:09:59 -0600
+Received: from pps03.cites.illinois.edu ([192.17.82.70])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <bruce.hoult@gmail.com>)
+	id 1YI5WZ-0004kR-LI
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 19:09:59 -0600
+Received: from mail-we0-f180.google.com (mail-we0-f180.google.com
+	[74.125.82.180])
+	by pps03.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t1219rWf029128
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 19:09:54 -0600
+Received: by mail-we0-f180.google.com with SMTP id m14so36304636wev.11
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 17:09:52 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:sender:in-reply-to:references:date:message-id:subject
+	:from:to:cc:content-type;
+	bh=4ZNIp9cps4I3aoWQvmu+O8ZbQ42tHTvryCNgvzezZfs=;
+	b=y9Uq25I/6xANeN8hR11GPhJATq7IHnVdTqIhiTqtQmYjkjuXIHj09AK18xv/kt0rkr
+	E8OYdHi+6/70IMj5zQ8Zuq6mrQy2WfqNT2UmYgTDyb4GT5u//c6t9cBskADUeDr+elP5
+	HZmMpHF74mQ56XubVEOmYxZMboeu90sYJWImitgo5UiWld0k+Zr6MIKeL5DplTVkFhJV
+	xzyp5DkMXLoiTL0qPHQ2nOVuTjOUvjO1iC14uZzPZF1h9JBLi4vzK0NXIlUYpxKJOpq9
+	lVXZoSbPPJNbHwT1ZoDTGIgrTOck8oNBdcEmCWfo5KlBKn4+eNSn0kf+ZFExCT2pisTn
+	A07w==
+MIME-Version: 1.0
+X-Received: by 10.180.7.196 with SMTP id l4mr2448324wia.44.1422839392867; Sun,
+	01 Feb 2015 17:09:52 -0800 (PST)
+Received: by 10.27.78.133 with HTTP; Sun, 1 Feb 2015 17:09:52 -0800 (PST)
+In-Reply-To: <CAMiUf7f-ZkiitNXLQpOXkwkde+eTWCOkdUFc-eKLW18L2hrtrA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+	<CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+	<CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+	<CAMiUf7f-ZkiitNXLQpOXkwkde+eTWCOkdUFc-eKLW18L2hrtrA@mail.gmail.com>
+Date: Mon, 2 Feb 2015 14:09:52 +1300
+X-Google-Sender-Auth: c1muY8tNVgoS4nJ7EnKGaJey_kY
+Message-ID: <CAMU+EkxRb9WUKoozODZeMMyXX_3AMCaucqXK75-+YrcrWF7mxg@mail.gmail.com>
+From: Bruce Hoult <bruce@hoult.org>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============3925691615069569566=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============3925691615069569566==
+Content-Type: multipart/alternative; boundary=f46d041826b8959bd4050e109c62
+
+--f46d041826b8959bd4050e109c62
+Content-Type: text/plain; charset=UTF-8
+
+I don't see how it changes the meaning of the program whether the compiler
+notices that two variables will always be 10 and 9 and does a compile time
+evaluation of 10 + 9 = 19, or generates an add instruction that turns out
+to  calculate the same result at runtime?
+
+If you outline a function as you suggest, and then as a result don't know
+the return value, it just means you generate actual instructions to use
+that result as the programmer directed, rather than compile time
+propagating a constant 19 to whatever follows.
+
+On Mon, Feb 2, 2015 at 10:06 AM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> > I don't know how things work at the moment, but it seems to me that you
+> can
+> > do lots of sensible things, and avoid lots of silly things, if you keep
+> > track of four possible values for each bit:
+> >
+> > - undef (the default)
+> > - poison
+> > - known to be 0
+> > - known to be 1
+>
+> I'm not clear what you mean by "known to be X", but assuming you mean
+> "known" in the same sense of computeKnownBits, then I don't think such
+> a distinction will lead to intuitive semantics.  If the semantics of a
+> program depended on what the compiler can prove about the program,
+> then the meaning of a program will change based on how smart the
+> compiler is (i.e. does the /compiler/ know that `add i32 10, 9` is
+> `i32 19`?).  As a concrete example, outlining a function to a separate
+> module will no longer be a meaning preserving transform because then a
+> bit could go from "known to be 0" to "nothing is known".
+>
+> Sorry for the tangent, in case you meant something completely
+> different by "known". :)
+>
+> -- Sanjoy
+>
+> --
+> This message has been scanned for viruses and
+> dangerous content by MailScanner, and is
+> believed to be clean.
+>
+>
+
+--f46d041826b8959bd4050e109c62
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr">I don&#39;t see how it changes the meaning of the program =
+whether the compiler notices that two variables will always be 10 and 9 and=
+ does a compile time evaluation of 10 + 9 =3D 19, or generates an add instr=
+uction that turns out to =C2=A0calculate the same result at runtime?<div><b=
+r></div><div>If you outline a function as you suggest, and then as a result=
+ don&#39;t know the return value, it just means you generate actual instruc=
+tions to use that result as the programmer directed, rather than compile ti=
+me propagating a constant 19 to whatever follows.</div></div><div class=3D"=
+gmail_extra"><br><div class=3D"gmail_quote">On Mon, Feb 2, 2015 at 10:06 AM=
+, Sanjoy Das <span dir=3D"ltr">&lt;<a href=3D"mailto:sanjoy@playingwithpoin=
+ters.com" target=3D"_blank">sanjoy@playingwithpointers.com</a>&gt;</span> w=
+rote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;borde=
+r-left:1px #ccc solid;padding-left:1ex"><span class=3D"">&gt; I don&#39;t k=
+now how things work at the moment, but it seems to me that you can<br>
+&gt; do lots of sensible things, and avoid lots of silly things, if you kee=
+p<br>
+&gt; track of four possible values for each bit:<br>
+&gt;<br>
+&gt; - undef (the default)<br>
+&gt; - poison<br>
+&gt; - known to be 0<br>
+&gt; - known to be 1<br>
+<br>
+</span>I&#39;m not clear what you mean by &quot;known to be X&quot;, but as=
+suming you mean<br>
+&quot;known&quot; in the same sense of computeKnownBits, then I don&#39;t t=
+hink such<br>
+a distinction will lead to intuitive semantics.=C2=A0 If the semantics of a=
+<br>
+program depended on what the compiler can prove about the program,<br>
+then the meaning of a program will change based on how smart the<br>
+compiler is (i.e. does the /compiler/ know that `add i32 10, 9` is<br>
+`i32 19`?).=C2=A0 As a concrete example, outlining a function to a separate=
+<br>
+module will no longer be a meaning preserving transform because then a<br>
+bit could go from &quot;known to be 0&quot; to &quot;nothing is known&quot;=
+.<br>
+<br>
+Sorry for the tangent, in case you meant something completely<br>
+different by &quot;known&quot;. :)<br>
+<div class=3D"HOEnZb"><div class=3D"h5"><br>
+-- Sanjoy<br>
+<br>
+--<br>
+This message has been scanned for viruses and<br>
+dangerous content by MailScanner, and is<br>
+believed to be clean.<br>
+<br>
+</div></div></blockquote></div><br></div>
+
+--f46d041826b8959bd4050e109c62--
+
+--===============3925691615069569566==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============3925691615069569566==--
+
+From llvmdev-bounces@cs.uiuc.edu Sun Feb  1 18:28:52 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=HK_RANDOM_ENVFROM autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 05EB36501B5;
+	Sun,  1 Feb 2015 18:28:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Sun,  1 Feb 2015 18:28:51 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t121QbQZ024620;
+	Sun, 1 Feb 2015 19:26:37 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t121QZwP024615
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Sun, 1 Feb 2015 19:26:35 -0600
+Received: from pps01.cites.illinois.edu ([192.17.82.69])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YI5md-00056M-OU
+	for llvmdev@cs.uiuc.edu; Sun, 01 Feb 2015 19:26:35 -0600
+Received: from mail-wi0-f179.google.com (mail-wi0-f179.google.com
+	[209.85.212.179])
+	by pps01.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t121QS6s016652
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Sun, 1 Feb 2015 19:26:29 -0600
+Received: by mail-wi0-f179.google.com with SMTP id l15so12254890wiw.0
+	for <llvmdev@cs.uiuc.edu>; Sun, 01 Feb 2015 17:26:27 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=yu5XSBvHBd2K7NOSA+zHfcHNvNGO82MWVeKCGr57NB8=;
+	b=Vrn0JgWJ2FEXjQkHsqpc24kyJFIe7XwxRXv3qBiQg6DxcmOheWANQmZeUx4ivNf01s
+	cWgOA6HmgyBbLl+tsYjR7ARFj4hBe9T7KhNajnjYhrwBFMR6WEpNGnI3g8k7EP69nCcy
+	eqm97ykS/xKsnU4OytWPs+F7YA8ocJ2YuJ3xmtn7BugfBoWxRa+aTkTXEouyqNggg3eL
+	fqb2UT0A1qUT65oTPVSS7QRyQQOmHoaDYRqrqjwiAkf4YUc+ZWLSFYD3bcHRmgscM24p
+	xwvtdFPpEoNnN+zS4g1lgheoRnyDRklZeyoEOEo5LXgCa04LnWV6P13NoEysrnQZ1MBl
+	EHqQ==
+X-Gm-Message-State: ALoCoQnxzA15fNVzj39hzQg+5bYHZdDWGJ1LvG3YuHjZrexgbB8r/tQ75SjAIqVOuctD5kTXjW1/
+X-Received: by 10.180.73.84 with SMTP id j20mr18757061wiv.43.1422840387894;
+	Sun, 01 Feb 2015 17:26:27 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Sun, 1 Feb 2015 17:26:07 -0800 (PST)
+X-Originating-IP: [162.238.124.235]
+In-Reply-To: <CAMU+EkxRb9WUKoozODZeMMyXX_3AMCaucqXK75-+YrcrWF7mxg@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<CAMiUf7dGeE-DKi3JNog_EOrtaxfsOOVhaBRW5Ti_t41Xq3YkWg@mail.gmail.com>
+	<CAL7bZ_djhG=GB2AdWzjKUw4zsA=cm-AZKMugv1Z8SxbAp+qBSQ@mail.gmail.com>
+	<CAMiUf7dEaorbaW4oGeTz3yfF9qcvQYe=JFjW55MBEd2TGezy1g@mail.gmail.com>
+	<CAL7bZ_fqhr0f1aoqQaCczsgTvDZqxxCWvSobWcZKj5iHDDgBXg@mail.gmail.com>
+	<CAMiUf7ey9XAcnTibNObGiqkuX28N7sECDChNMtBZ9PTtCK33yg@mail.gmail.com>
+	<CAL7bZ_deFdNgEYUvwaaexLeAmaGVmYateNi8Ug5FQTAHqPVFVw@mail.gmail.com>
+	<CAMiUf7cUMhMPpSF-DXSGaX1pwXQ4R5x5j6wDAOO1qqeiyuW_qA@mail.gmail.com>
+	<CAL7bZ_eSiq2mPp-k9JBoV5aOYn0vpOP69kTkpdFQfpkgLusfDA@mail.gmail.com>
+	<CAGCO0KgW_wRCNKUyCXTFO-vXGB3_1CeCQELd73qMp2NmijZSZQ@mail.gmail.com>
+	<CAMU+Ekzm+1=-Z-nRse0KbYHPegy2uLQvsZQ8cNf7bnrBYEw=0g@mail.gmail.com>
+	<CAMiUf7f-ZkiitNXLQpOXkwkde+eTWCOkdUFc-eKLW18L2hrtrA@mail.gmail.com>
+	<CAMU+EkxRb9WUKoozODZeMMyXX_3AMCaucqXK75-+YrcrWF7mxg@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Sun, 1 Feb 2015 17:26:07 -0800
+Message-ID: <CAMiUf7e48x6-3B_JA60WfZd_nsOdGkBvMfU2zPF7HJoq8bT6gg@mail.gmail.com>
+To: Bruce Hoult <bruce@hoult.org>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+Hi Bruce,
+
+I think I misread your email.  Basically I wanted to say that you
+cannot make a semantic difference between "and X, 0" and "and X, Y"
+with Y's dynamic value being zero -- they need to have the exact same
+semantics w.r.t. poison.  But on re-reading your mail, it does not
+look like you were suggesting that.
+
+Sorry for the confusion.
+-- Sanjoy
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+

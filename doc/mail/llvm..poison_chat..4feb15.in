@@ -1,0 +1,2336 @@
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 10:13:07 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.9 required=5.0 tests=AWL,FROM_CS_UTAH,FROM_UTAH,
+	HK_RANDOM_ENVFROM autolearn=ham version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id B615E6501A4;
+	Wed,  4 Feb 2015 10:13:07 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 10:13:07 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14HAkPh003751;
+	Wed, 4 Feb 2015 11:10:46 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14H9jvm003690
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 11:09:45 -0600
+Received: from pps02.cites.illinois.edu ([192.17.82.100])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <regehr@cs.utah.edu>) id 1YJ3SS-0000sd-VL
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 11:09:45 -0600
+Received: from mail-svr1.cs.utah.edu (rio.cs.utah.edu [155.98.64.241])
+	by pps02.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14H9bYx013622
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 11:09:38 -0600
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 012EF6501AA;
+	Wed,  4 Feb 2015 10:09:37 -0700 (MST)
+Received: from thebes.cs.utah.edu (thebes.cs.utah.edu [155.98.65.57])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 10:09:36 -0700 (MST)
+Date: Wed, 4 Feb 2015 10:09:36 -0700 (MST)
+From: John Regehr <regehr@cs.utah.edu>
+To: Nuno Lopes <nuno.lopes@ist.utl.pt>
+In-Reply-To: <003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+Message-ID: <alpine.DEB.2.02.1502041004100.15024@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+User-Agent: Alpine 2.02 (DEB 1266 2009-07-14)
+MIME-Version: 1.0
+Cc: llvmdev@cs.uiuc.edu
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+Hi all, sorry to come late to the party. This is a great thread. I wanted 
+to toss out an example I ran across the other day that seems somewhat 
+interesting. We start with this C program that executes no UB:
+
+int foo(int x1, int x2) {
+   return
+     ((x2 > 0) && (x1 > (2147483647 - x2))) ||
+     (x1 && (x2 < 0));
+}
+
+int main(void) {
+   printf("%x\n", foo(1, -770027279));
+   return 0;
+}
+
+Clang+LLVM turns foo() into this:
+
+define i32 @foo(i32 %x1, i32 %x2) #0 {
+   %1 = icmp sgt i32 %x2, 0
+   %2 = sub nsw i32 2147483647, %x2
+   %3 = icmp slt i32 %2, %x1
+   %or.cond = and i1 %1, %3
+   br i1 %or.cond, label %6, label %4
+
+; <label>:4                                       ; preds = %0
+   %5 = icmp slt i32 %x2, 0
+   %not. = icmp ne i32 %x1, 0
+   %. = and i1 %5, %not.
+   br label %6
+
+; <label>:6                                       ; preds = %4, %0
+   %7 = phi i1 [ true, %0 ], [ %., %4 ]
+   %8 = zext i1 %7 to i32
+   ret i32 %8
+}
+
+In the semantics described by the LangRef, my interpretation of the
+execution is this:
+
+%1 = false
+%2 = poison
+%3 = poison
+%or.cond = poison
+... the br goes either way or both ways or something ...
+%5 = true
+%not. = true
+%. = true
+%7 = phi true, true
+
+So all is good despite the non-deterministic execution.
+
+In the proposed new model, we don't have to branch on poison since
+%or.cond is completely determined by its false argument and is therefore
+false. Does that all sound right?
+
+John
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 10:17:01 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.8 required=5.0 tests=AWL,FROM_CS_UTAH,FROM_UTAH,
+	HK_RANDOM_ENVFROM autolearn=ham version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 91B4E6501AA;
+	Wed,  4 Feb 2015 10:17:01 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 10:17:01 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14HDxIo003921;
+	Wed, 4 Feb 2015 11:13:59 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14HDp53003910
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 11:13:51 -0600
+Received: from pps03.cites.illinois.edu ([192.17.82.70])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <regehr@cs.utah.edu>) id 1YJ3WQ-0000yJ-Ve
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 11:13:50 -0600
+Received: from mail-svr1.cs.utah.edu (mail-svr1.cs.utah.edu [155.98.64.241])
+	by pps03.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14HDicx021497
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 11:13:45 -0600
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 2EE6C6501AA;
+	Wed,  4 Feb 2015 10:13:44 -0700 (MST)
+Received: from thebes.cs.utah.edu (thebes.cs.utah.edu [155.98.65.57])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 10:13:44 -0700 (MST)
+Date: Wed, 4 Feb 2015 10:13:44 -0700 (MST)
+From: John Regehr <regehr@cs.utah.edu>
+To: David Majnemer <david.majnemer@gmail.com>
+In-Reply-To: <CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+Message-ID: <alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+User-Agent: Alpine 2.02 (DEB 1266 2009-07-14)
+MIME-Version: 1.0
+Content-Type: MULTIPART/MIXED; BOUNDARY="1654339905-32257589-1423070024=:15024"
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+
+--1654339905-32257589-1423070024=:15024
+Content-Type: TEXT/PLAIN; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by pps03.cites.illinois.edu id t14HDicx021497
+
+> I think such a thing would be great.=C2=A0 However, there is a problem =
+that the RFC wasn't aware of when it was
+> written:
+>=20
+> consider:
+> %S =3D select %A, %B, undef
+>=20
+> without us knowing anything about %A or %B, we will replace all uses of=
+ %S with %B.=C2=A0 This transform would be
+> considered wrong with the RFC in mind.
+>=20
+> If this transform was valid, there could not be any value or value-like=
+ property in LLVM with semantics more
+> powerful than undef.=C2=A0 This makes me think that what LLVM *actually=
+* implements is not poison or something like
+> it.
+
+Is it possible that the new weaker poison subsumes undef?  The interactio=
+n=20
+between these different but related UB-like concepts is confusing at best.
+
+John
+
+--1654339905-32257589-1423070024=:15024
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--1654339905-32257589-1423070024=:15024--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 10:25:30 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=HK_RANDOM_ENVFROM autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 8B0A56501BB;
+	Wed,  4 Feb 2015 10:25:30 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 10:25:30 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14HNOmc004521;
+	Wed, 4 Feb 2015 11:23:24 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14HKcnu004320
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 11:20:38 -0600
+Received: from pps02.cites.illinois.edu ([192.17.82.100])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <nuno.lopes@ist.utl.pt>)
+	id 1YJ3d0-00018M-1P
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 11:20:38 -0600
+Received: from smtp2.ist.utl.pt (smtp2.ist.utl.pt [193.136.128.22])
+	by pps02.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14HKJPH029575
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 11:20:30 -0600
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by smtp2.ist.utl.pt (Postfix) with ESMTP id 82F417000549;
+	Wed,  4 Feb 2015 17:20:17 +0000 (WET)
+X-Virus-Scanned: by amavisd-new-2.6.4 (20090625) (Debian) at ist.utl.pt
+Received: from smtp2.ist.utl.pt ([127.0.0.1])
+	by localhost (smtp2.ist.utl.pt [127.0.0.1]) (amavisd-new, port 10025)
+	with LMTP id CxLNsn0-XvBZ; Wed,  4 Feb 2015 17:20:17 +0000 (WET)
+Received: from mail2.ist.utl.pt (mail.ist.utl.pt [IPv6:2001:690:2100:1::8])
+	by smtp2.ist.utl.pt (Postfix) with ESMTP id E10E6700055A;
+	Wed,  4 Feb 2015 17:20:16 +0000 (WET)
+Received: from MSRC1361839 (unknown [IPv6:2a01:110:8012:1010::1e3])
+	(Authenticated sender: ist155393)
+	by mail2.ist.utl.pt (Postfix) with ESMTPSA id 64BBD2006C39;
+	Wed,  4 Feb 2015 17:20:16 +0000 (WET)
+From: "Nuno Lopes" <nuno.lopes@ist.utl.pt>
+To: "'David Majnemer'" <david.majnemer@gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+In-Reply-To: <CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+Date: Wed, 4 Feb 2015 17:20:15 -0000
+Message-ID: <004d01d0409e$d7f6cab0$87e46010$@ist.utl.pt>
+MIME-Version: 1.0
+X-Mailer: Microsoft Outlook 15.0
+Thread-Index: AQG2W3TkzUCbwbbvG8PPX7NLZcKjgQFV8fmxAljDGr+c9ww+oA==
+Content-Language: en-gb
+X-MIME-Autoconverted: from quoted-printable to 8bit by
+	dcs-maillist2.engr.illinois.edu id t14HKcnu004320
+Cc: "'John Regehr'" <regehr@cs.utah.edu>, llvmdev@cs.uiuc.edu
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+Pj4gVGhhbmtzIERhdmlkIGZvciBwdXR0aW5nIHVwIHRoaXMgcHJvcG9zYWwgdG9nZXRoZXIhCj4+
+IEkgbGlrZSB0aGUgaWRlYSBvZiBoYXZpbmcgcG9pc29uIHZhbHVlcyBiZWhhdmUgbW9yZSBsaWtl
+IHVuZGVmIChpLmUuLCBwZXIgYml0LCB3aXRoIHJ1bi10aW1lIGJlaGF2aW9yKS4KPj4gT25lIG9m
+IHRoZSBwcm9ibGVtcyB0aGlzIHByb3Bvc2FsIHNvbHZlcyBpcyBzcGVjdWxhdGlvbiBvZiAnYSAm
+JiBiJyBpbnRvICdhICYgYicuIEN1cnJlbnRseSB0aGlzIGlzIGlsbGVnYWwgKGRlc3BpdGUgc29t
+ZXRpbWVzIHNpbXBsaWZ5Y2ZnIGRvaW5nIGl0IGFueXdheSkuCj4+IEl0IGFsc28gZml4ZXMgYnVn
+cyBsaWtlIGh0dHA6Ly9sbHZtLm9yZy9QUjIwOTk3CiA+PiAKPj4gVGhlIHByb3Bvc2FsIGRvZXNu
+J3Qgc2F5IGFueXRoaW5nIGFib3V0IGJyYW5jaGluZyBvbiBhIHBvaXNvbiB2YWx1ZS4gSSBhc3N1
+bWUgdGhpcyBzaG91bGQgc3RheSBhcyB0aGUgY3VycmVudCBpbnRlcnByZXRhdGlvbiAtLSB0aGF0
+IHN1Y2ggYnJhbmNoZXMgc2hvdWxkIGJlIHVuZGVmaW5lZCBiZWhhdmlvciAoc2luY2Ugd2UgY2Fu
+bm90IGJyYW5jaCB0byBtdWx0aXBsZSBwbGFjZXMgYXQgdGhlIHNhbWUgdGltZSAtLSBldmVuIGlm
+IHRoZXkgPj4gd291bGQgY29tcHV0ZSB0aGUgc2FtZSB2YWx1ZXM7IHRoYXQncyBhbHJlYWR5IHRv
+byBoYXJkIGZvciB0aGUgY29tcGlsZXIgdG8gYW5hbHl6ZSkuCj4gCj4gVGhlIFJGQyBpbnRlbmRl
+ZCB0byBtYWtlIGJyYW5jaGluZyBvbiBwb2lzb24gdmFsdWVzIE9LLiAgSWYgYnJhbmNoaW5nIG9u
+IHBvaXNvbiB3YXNuJ3QgT0ssIHRoZW4gd2UgY291bGRuJ3QgZ28gZnJvbSBzZWxlY3QgdG8gLT4g
+YnIvcGhpLgogCk9rLCBhZ3JlZWQuIFRoYXQgY2FzZSB3aWxsIGJlIGFsd2F5cyBzYWZlLiAKCiAK
+Pj4gVGhlcmUncyBhbm90aGVyIGNhdmVhdDogaXQgKmRvZXMqIHNlZW0gdG8gZml4IHRoZSBwcm9i
+bGVtIGRlc2NyaWJlZCBieSBEYW4gaW4gaHR0cDovL2xpc3RzLmNzLnVpdWMuZWR1L3BpcGVybWFp
+bC9sbHZtZGV2LzIwMTEtRGVjZW1iZXIvMDQ2MTUyLmh0bWwKPj4gSG93ZXZlciwgaXQgaW50cm9k
+dWNlcyBhIHBvdGVudGlhbCBwZXJmb3JtYW5jZSBwZW5hbHR5OiB3ZSB3b24ndCBiZSBhYmxlIHRv
+IHNwZWN1bGF0ZSBpbnN0cnVjdGlvbnMgd2l0aCB1bmRlZmluZWQgYmVoYXZpb3Igd2hvc2UgaW5w
+dXQgbWF5IGJlIHBvaXNvbi4KPj4gIAo+PiBGb3IgZXhhbXBsZSwgdGFrZSB0aGUgZm9sbG93aW5n
+IGNvZGU6Cj4+IGxvb3A6Cj4+ICAgJWFkZCA9IGFkZCBuc3cgJXgsICV5Cj4+ICAgJWRpdiA9IHVk
+aXYgJXosICVhZGQKPj4gICDigKYgdXNlICVkaXYgb25seSBpbiB0aGUgY2FzZSB0aGF0ICVhZGQg
+ZG9lcyBub3Qgb3ZlcmZsb3cgYW5kIGlzIG5vbi16ZXJvCj4+ICAKPj4gV2UgY2FuIG1vdmUgdGhl
+ICVhZGQgb3V0c2lkZSBvZiB0aGUgbG9vcCwgYnV0IHdlIGNhbm5vdCBtb3ZlIHRoZSBkaXZpc2lv
+bi4gV2l0aCB0aGUgcmVhc29uIGJlaW5nIHRoYXQgaWYgJWFkZCBvdmVyZmxvd3MsIHRoZW4gJWFk
+ZCBpcyBwb2lzb24gYW5kIHRoZXJlZm9yZSBpdCBjYW4gdGFrZSBhbnkgdmFsdWUgKGluIHBhcnRp
+Y3VsYXIsIGl0IGNhbiBiZSAwKSwgdHJpZ2dlcmluZyB1bmRlZiBiZWhhdmlvciBpbiAlZGl2LiAg
+VGhlcmVmb3JlLCB3ZSBjYW5ub3QgZnJlZWx5IG1vdmUgJWRpdiwgdW5sZXNzIHdlIGNhbiBwcm92
+ZSB0aGF0ICVhZGQgd2lsbCBuZXZlciBiZSAwIG5vciBwb2lzb24uICBUaGlzIHNvdW5kcyBoYXJk
+IGZvciB0aGUgY29tcGlsZXIgdG8gZG8sIGFuZCBJIGd1ZXNzIHdlJ2xsIGhhdmUgc29tZSByZWdy
+ZXNzaW9ucyAoZS5nLiwgTElDTSBoYXMgdG8gYmUgbW9yZSBjb25zZXJ2YXRpdmUpLiBOZXZlcnRo
+ZWxlc3MsIEknbSBhbGwgZm9yIGZpeGluZyBwb2lzb24gb25jZSBhbmQgZm9yIGFsbCEKPiAKPiBC
+ZWxpZXZlIGl0IG9yIG5vdCwgSSBhbHJlYWR5IGZpeGVkIHRoaXMgYnVnIChQUjIxNDEyKS4gOikK
+IApDb29sISA6KQoKIAo+PiBCVFcsIHdvdWxkIGl0IGhlbHAgaWYgSSBwcm9kdWNlZCBhIHZlcnNp
+b24gb2YgQWxpdmUgdGhhdCBpbXBsZW1lbnRzIHRoZSBzZW1hbnRpY3MgYmVpbmcgcHJvcG9zZWQ/
+ICAod2l0aCBubyBwZXJmb3JtYW5jZSBndWFyYW50ZWVzIGZvciB0aGlzIHByb3RvdHlwZSkuICBU
+aGUgY29vbCB0aGluZyBpcyB0aGF0IHRoZW4gd2UgY2FuIHJ1biBpdCB0aHJvdWdoIG91ciBkYXRh
+YmFzZSBvZiAzMDArIEluc3RDb21iaW5lIG9wdGltaXphdGlvbnMgYW5kIHNlZSB3aGljaCBvbmVz
+IHdvdWxkIGhhdmUgdG8gYmUgcmVtb3ZlZC9maXhlZC4KPiAKPiBJIHRoaW5rIHN1Y2ggYSB0aGlu
+ZyB3b3VsZCBiZSBncmVhdC4gIEhvd2V2ZXIsIHRoZXJlIGlzIGEgcHJvYmxlbSB0aGF0IHRoZSBS
+RkMgd2Fzbid0IGF3YXJlIG9mIHdoZW4gaXQgd2FzIHdyaXR0ZW46Cj4gCj4gY29uc2lkZXI6Cj4g
+JVMgPSBzZWxlY3QgJUEsICVCLCB1bmRlZgo+IAo+IHdpdGhvdXQgdXMga25vd2luZyBhbnl0aGlu
+ZyBhYm91dCAlQSBvciAlQiwgd2Ugd2lsbCByZXBsYWNlIGFsbCB1c2VzIG9mICVTIHdpdGggJUIu
+ICBUaGlzIHRyYW5zZm9ybSB3b3VsZCBiZSBjb25zaWRlcmVkIHdyb25nIHdpdGggdGhlIFJGQyBp
+biBtaW5kLgo+IAo+IElmIHRoaXMgdHJhbnNmb3JtIHdhcyB2YWxpZCwgdGhlcmUgY291bGQgbm90
+IGJlIGFueSB2YWx1ZSBvciB2YWx1ZS1saWtlIHByb3BlcnR5IGluIExMVk0gd2l0aCBzZW1hbnRp
+Y3MgbW9yZSBwb3dlcmZ1bCB0aGFuIHVuZGVmLiAgVGhpcyBtYWtlcyBtZSB0aGluayB0aGF0IHdo
+YXQgTExWTSAqYWN0dWFsbHkqIGltcGxlbWVudHMgaXMgbm90IHBvaXNvbiBvciBzb21ldGhpbmcg
+bGlrZSBpdC4KPiAKPiBPbiB0aGUgZmxpcCBzaWRlLCB3ZSBjb3VsZCBzYXkgdGhhdCB0aGlzIHRy
+YW5zZm9ybSBpcyBub25zZW5zZSBidXQgSSdkIHJhdGhlciBub3QgcGVzc2ltaXplIExMVk0gbGlr
+ZSB0aGF0LgogCkFoLCB5b3UncmUgc2F5aW5nIHRoYXQgcG9pc29uIGlzIHN0cmljdGx5IHN0cm9u
+Z2VyIFVCIHRoYW4gdW5kZWYuIEFuZCB0aGUgcmVhc29uIGJlaW5nIHRoYXQgcG9pc29uIG1heSBs
+ZWFkIHRvIFVCIHdoZW4gdXNlZCBpbiBjZXJ0YWluIG9wZXJhdGlvbnMuICBOaWNlIGNhdGNoLgpC
+dXQgd2UgY291bGQgaGF2ZSBhIHNpbXBsZSBwcmVjb25kaXRpb24gdGhhdCBzdGF0ZXMgdGhhdCB0
+aGlzIHRyYW5zZm9ybWF0aW9uIGlzIGNvcnJlY3QgaWYgJUEgaXMgbm90IGFueSBvcGVyYXRpb25z
+IHdpdGggbnN3L251dy9leGFjdCBmbGFncy4gU3VyZSwgaXQncyBub3QgYXMgZ29vZCBhcyB0aGUg
+c2l0dWF0aW9uIHdlIGhhdmUgdG9kYXksIGJ1dCB0aGUgY3VycmVudCBzaXR1YXRpb24gZG9lc24n
+dCBsb29rIHZlcnkgZ29vZCBhbnl3YXkgOikKCkkgaGF2ZSBhIHF1ZXN0aW9uIHRob3VnaDogV2hl
+biBkb2VzIHBvaXNvbiBiZWNvbWVzIFVCPyBPbiBleHRlcm5hbCBjYWxscyBhbmQgdm9sYXRpbGUg
+c3RvcmVzIG9ubHk/ICBBbnkgb3RoZXIgdmlzaWJsZSBzaWRlLWVmZmVjdGluZyBvcGVyYXRpb25z
+PyAgKGF0IGxlYXN0IHRob3NlIHR3byBoYXZlIHRvIGJlIFVCLCByaWdodD8pCgpOdW5vCgoKX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KTExWTSBEZXZlbG9w
+ZXJzIG1haWxpbmcgbGlzdApMTFZNZGV2QGNzLnVpdWMuZWR1ICAgICAgICAgaHR0cDovL2xsdm0u
+Y3MudWl1Yy5lZHUKaHR0cDovL2xpc3RzLmNzLnVpdWMuZWR1L21haWxtYW4vbGlzdGluZm8vbGx2
+bWRldgo=
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 10:49:28 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=HK_RANDOM_ENVFROM autolearn=no
+	version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 09FE96501B1;
+	Wed,  4 Feb 2015 10:49:28 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 10:49:27 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14HlPkS006091;
+	Wed, 4 Feb 2015 11:47:25 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14HgEmY005709
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 11:42:14 -0600
+Received: from pps02.cites.illinois.edu ([192.17.82.100])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <nuno.lopes@ist.utl.pt>)
+	id 1YJ3xu-0002L8-1t
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 11:42:14 -0600
+Received: from smtp1.ist.utl.pt (smtp1.ist.utl.pt [193.136.128.21])
+	by pps02.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14Hg5Mt028310
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 11:42:06 -0600
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by smtp1.ist.utl.pt (Postfix) with ESMTP id 049A2402FA8A;
+	Wed,  4 Feb 2015 17:42:04 +0000 (WET)
+X-Virus-Scanned: by amavisd-new-2.7.1 (20120429) (Debian) at ist.utl.pt
+Received: from smtp1.ist.utl.pt ([127.0.0.1])
+	by localhost (smtp1.ist.utl.pt [127.0.0.1]) (amavisd-new, port 10025)
+	with LMTP id IHMUhVLmjGEP; Wed,  4 Feb 2015 17:42:03 +0000 (WET)
+Received: from mail2.ist.utl.pt (mail.ist.utl.pt [IPv6:2001:690:2100:1::8])
+	by smtp1.ist.utl.pt (Postfix) with ESMTP id 2654C402FA82;
+	Wed,  4 Feb 2015 17:42:02 +0000 (WET)
+Received: from MSRC1361839 (unknown [IPv6:2a01:110:8012:1010::1e3])
+	(Authenticated sender: ist155393)
+	by mail2.ist.utl.pt (Postfix) with ESMTPSA id 484452001805;
+	Wed,  4 Feb 2015 17:42:02 +0000 (WET)
+From: "Nuno Lopes" <nuno.lopes@ist.utl.pt>
+To: "'John Regehr'" <regehr@cs.utah.edu>,
+        "'David Majnemer'" <david.majnemer@gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+In-Reply-To: <alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+Date: Wed, 4 Feb 2015 17:42:01 -0000
+Message-ID: <005301d040a1$e255a3c0$a700eb40$@ist.utl.pt>
+MIME-Version: 1.0
+X-Mailer: Microsoft Outlook 15.0
+Thread-Index: AQG2W3TkzUCbwbbvG8PPX7NLZcKjgQFV8fmxAljDGr8CKo6wnJzlvVOA
+Content-Language: en-gb
+X-MIME-Autoconverted: from quoted-printable to 8bit by
+	dcs-maillist2.engr.illinois.edu id t14HgEmY005709
+Cc: llvmdev@cs.uiuc.edu
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+>> I think such a thing would be great.  However, there is a problem that 
+>> the RFC wasn't aware of when it was
+>> written:
+>> 
+>> consider:
+>> %S = select %A, %B, undef
+>> 
+>> without us knowing anything about %A or %B, we will replace all uses 
+>> of %S with %B.  This transform would be considered wrong with the RFC in mind.
+>> 
+>> If this transform was valid, there could not be any value or 
+>> value-like property in LLVM with semantics more powerful than undef.  
+>> This makes me think that what LLVM *actually* implements is not poison or something like it.
+> 
+>Is it possible that the new weaker poison subsumes undef?  The interaction between these different but related UB-like concepts is confusing at best.
+
+That's a good point!
+AFAICT there are only 2 differences between undef and poison:
+ 1) poison can trigger UB at some point in the future.
+ 2) the behavior of sext (and zext?) is different (copying the sign bit vs adding poison bits)
+
+(read more about 2) at http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-November/045730.html)
+
+
+Right now. I think the only places that generate undef are reads of uninitialized variables, and I can't remember of any other.  If that's the case, it's fair to ask why can't we use poison for everything?
+Reading uninitialized memory is undefined behavior, so in theory we could return a poison value.  On the other hand, the behavior may look strange at times. Imagine the following:
+
+%a = load i4* %ptr
+%b = sext %a to i8
+%c = and %b, 0x8080
+
+If %a returns undef, then %c can only be 0 or 0x8080 (because it copies the sign). If %a is poison, then %c can be any of the 4 combinations.
+The developer may not expect this behavior.  But, anyway, UB was executed, so not our problem..
+
+Nuno
+
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 11:36:07 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 722586501B3;
+	Wed,  4 Feb 2015 11:36:07 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 11:36:06 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14IY6Fx008443;
+	Wed, 4 Feb 2015 12:34:06 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14IPDrp007836
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 12:25:13 -0600
+Received: from pps03.cites.illinois.edu ([192.17.82.70])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YJ4dV-0003TB-CE
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 12:25:13 -0600
+Received: from mail-ie0-f169.google.com (mail-ie0-f169.google.com
+	[209.85.223.169])
+	by pps03.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14IP6wM028391
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 12:25:07 -0600
+Received: by mail-ie0-f169.google.com with SMTP id rl12so4201113iec.0
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 10:25:06 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=0i4cF6fvWkaKRJ8h/ICrhsfEfu5mRO3vYBxBEdanthE=;
+	b=0XzqCwdAUr/sqFPVUpTz3+QoIxEgOpZoWj+zYwqER2i/iYHl20SY11gX7K3KN14gpQ
+	vHVYLWI+mCVgDi4Z3+TjRB+AeT9At6bBmgKGrYzGSRELGrzjv1BIWyuTqqQr7R6uVuIT
+	KPufDLuOPdwizGicyGmlAu4Y5y8aMYNNuYUEDiYHhACwu00okg9l3WN3cHdVhcDJbuD1
+	J1RLOh0FolJ8kJPbk+ryr2+Cg7nizfzO1VK/27yoO33V76lEJg+Bfm+mZ2jPIhtXVVNb
+	OIFz3kWIwGePaPumFbx3RMLjp6O8x89gzcWQplpT/N4o0wojr9Hy7TTDIv8oHlDmCx0J
+	g4Jw==
+X-Received: by 10.107.151.80 with SMTP id z77mr36433906iod.51.1423074306447;
+	Wed, 04 Feb 2015 10:25:06 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Wed, 4 Feb 2015 10:24:26 -0800 (PST)
+In-Reply-To: <alpine.DEB.2.02.1502041004100.15024@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<alpine.DEB.2.02.1502041004100.15024@thebes.cs.utah.edu>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Wed, 4 Feb 2015 10:24:26 -0800
+Message-ID: <CAL7bZ_eYPcZoP9V2=FHa2pyT1yqwEpxVPm1xyvtntThQbOs_1w@mail.gmail.com>
+To: John Regehr <regehr@cs.utah.edu>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============2889416389555673399=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============2889416389555673399==
+Content-Type: multipart/alternative; boundary=001a1140f5ee86623d050e474e8b
+
+--001a1140f5ee86623d050e474e8b
+Content-Type: text/plain; charset=UTF-8
+
+On Wed, Feb 4, 2015 at 9:09 AM, John Regehr <regehr@cs.utah.edu> wrote:
+
+> Hi all, sorry to come late to the party. This is a great thread. I wanted
+> to toss out an example I ran across the other day that seems somewhat
+> interesting. We start with this C program that executes no UB:
+>
+> int foo(int x1, int x2) {
+>   return
+>     ((x2 > 0) && (x1 > (2147483647 - x2))) ||
+>     (x1 && (x2 < 0));
+> }
+>
+> int main(void) {
+>   printf("%x\n", foo(1, -770027279));
+>   return 0;
+> }
+>
+> Clang+LLVM turns foo() into this:
+>
+> define i32 @foo(i32 %x1, i32 %x2) #0 {
+>   %1 = icmp sgt i32 %x2, 0
+>   %2 = sub nsw i32 2147483647, %x2
+>   %3 = icmp slt i32 %2, %x1
+>   %or.cond = and i1 %1, %3
+>   br i1 %or.cond, label %6, label %4
+>
+> ; <label>:4                                       ; preds = %0
+>   %5 = icmp slt i32 %x2, 0
+>   %not. = icmp ne i32 %x1, 0
+>   %. = and i1 %5, %not.
+>   br label %6
+>
+> ; <label>:6                                       ; preds = %4, %0
+>   %7 = phi i1 [ true, %0 ], [ %., %4 ]
+>   %8 = zext i1 %7 to i32
+>   ret i32 %8
+> }
+>
+> In the semantics described by the LangRef, my interpretation of the
+> execution is this:
+>
+> %1 = false
+> %2 = poison
+> %3 = poison
+> %or.cond = poison
+> ... the br goes either way or both ways or something ...
+> %5 = true
+> %not. = true
+> %. = true
+> %7 = phi true, true
+>
+> So all is good despite the non-deterministic execution.
+>
+> In the proposed new model, we don't have to branch on poison since
+> %or.cond is completely determined by its false argument and is therefore
+> false. Does that all sound right?
+
+
+Under the semantics described by the RFC, yes.
+
+
+>
+>
+> John
+>
+
+--001a1140f5ee86623d050e474e8b
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Wed, Feb 4, 2015 at 9:09 AM, John Regehr <span dir=3D"ltr">&lt;<a hr=
+ef=3D"mailto:regehr@cs.utah.edu" target=3D"_blank">regehr@cs.utah.edu</a>&g=
+t;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0=
+ .8ex;border-left:1px #ccc solid;padding-left:1ex">Hi all, sorry to come la=
+te to the party. This is a great thread. I wanted to toss out an example I =
+ran across the other day that seems somewhat interesting. We start with thi=
+s C program that executes no UB:<br>
+<br>
+int foo(int x1, int x2) {<br>
+=C2=A0 return<br>
+=C2=A0 =C2=A0 ((x2 &gt; 0) &amp;&amp; (x1 &gt; <a href=3D"tel:%282147483647=
+%20-%20x2" value=3D"+12147483647" target=3D"_blank">(2147483647 - x2</a>)))=
+ ||<br>
+=C2=A0 =C2=A0 (x1 &amp;&amp; (x2 &lt; 0));<br>
+}<br>
+<br>
+int main(void) {<br>
+=C2=A0 printf(&quot;%x\n&quot;, foo(1, -770027279));<br>
+=C2=A0 return 0;<br>
+}<br>
+<br>
+Clang+LLVM turns foo() into this:<br>
+<br>
+define i32 @foo(i32 %x1, i32 %x2) #0 {<br>
+=C2=A0 %1 =3D icmp sgt i32 %x2, 0<br>
+=C2=A0 %2 =3D sub nsw i32 <a href=3D"tel:2147483647" value=3D"+12147483647"=
+ target=3D"_blank">2147483647</a>, %x2<br>
+=C2=A0 %3 =3D icmp slt i32 %2, %x1<br>
+=C2=A0 %or.cond =3D and i1 %1, %3<br>
+=C2=A0 br i1 %or.cond, label %6, label %4<br>
+<br>
+; &lt;label&gt;:4=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 =C2=A0; preds =3D %0<br>
+=C2=A0 %5 =3D icmp slt i32 %x2, 0<br>
+=C2=A0 %not. =3D icmp ne i32 %x1, 0<br>
+=C2=A0 %. =3D and i1 %5, %not.<br>
+=C2=A0 br label %6<br>
+<br>
+; &lt;label&gt;:6=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 =C2=A0; preds =3D %4, %0<br>
+=C2=A0 %7 =3D phi i1 [ true, %0 ], [ %., %4 ]<br>
+=C2=A0 %8 =3D zext i1 %7 to i32<br>
+=C2=A0 ret i32 %8<br>
+}<br>
+<br>
+In the semantics described by the LangRef, my interpretation of the<br>
+execution is this:<br>
+<br>
+%1 =3D false<br>
+%2 =3D poison<br>
+%3 =3D poison<br>
+%or.cond =3D poison<br>
+... the br goes either way or both ways or something ...<br>
+%5 =3D true<br>
+%not. =3D true<br>
+%. =3D true<br>
+%7 =3D phi true, true<br>
+<br>
+So all is good despite the non-deterministic execution.<br>
+<br>
+In the proposed new model, we don&#39;t have to branch on poison since<br>
+%or.cond is completely determined by its false argument and is therefore<br=
+>
+false. Does that all sound right?</blockquote><div><br></div><div>Under the=
+ semantics described by the RFC, yes.</div><div>=C2=A0</div><blockquote cla=
+ss=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;pa=
+dding-left:1ex"><span class=3D"HOEnZb"><font color=3D"#888888"><br>
+<br>
+John<br>
+</font></span></blockquote></div><br></div></div>
+
+--001a1140f5ee86623d050e474e8b--
+
+--===============2889416389555673399==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============2889416389555673399==--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 11:39:43 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id BAB8D6501B2;
+	Wed,  4 Feb 2015 11:39:43 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 11:39:43 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14IbhBL008747;
+	Wed, 4 Feb 2015 12:37:43 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14IR3XZ007935
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 12:27:03 -0600
+Received: from pps08.cites.illinois.edu ([192.17.82.103])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YJ4fG-0003Uv-Ve
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 12:27:03 -0600
+Received: from mail-ie0-f171.google.com (mail-ie0-f171.google.com
+	[209.85.223.171])
+	by pps08.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14IQvXq010674
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 12:26:57 -0600
+Received: by mail-ie0-f171.google.com with SMTP id tr6so4189931ieb.2
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 10:26:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=QE64ASwFQchMsbVKSxQzXjS1MT5RHL7KCfrGQu6peGU=;
+	b=INBeDioA4lSBTjd/IxuMHafFRkfRDMAYdZ15g2Ll+gwRsjYPGOCfyNIOyJApk1N2UR
+	OlHPnMQ8Cf4TpcLiZQrWZkOiJgLLRUy60fig6SQKaPrilWo6+R3utVn3CsMisSQYOys0
+	IKIkyRM+LtoGgW8MIbypt1L3eoz2ngPvdLpeWXHdey949+IRtumC1FvIVk5e5vPwF03w
+	uvseYlETQiESmGT2o3L2/KA3QRHOuTw2HzRtymKBUsAuhvLXW7yh7FiUq8z/2dgOaeLb
+	omRKkpsmCEAKZlOlGrmivQirvVhthQq9FWrSmsJa26wFvvdKw3m18mDqe7QooQK+NHfx
+	Br5w==
+X-Received: by 10.43.103.8 with SMTP id dg8mr3164946icc.18.1423074416993; Wed,
+	04 Feb 2015 10:26:56 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Wed, 4 Feb 2015 10:26:16 -0800 (PST)
+In-Reply-To: <alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Wed, 4 Feb 2015 10:26:16 -0800
+Message-ID: <CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+To: John Regehr <regehr@cs.utah.edu>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============7683796561776036232=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============7683796561776036232==
+Content-Type: multipart/alternative; boundary=bcaec5171deb1d517e050e47559d
+
+--bcaec5171deb1d517e050e47559d
+Content-Type: text/plain; charset=UTF-8
+
+On Wed, Feb 4, 2015 at 9:13 AM, John Regehr <regehr@cs.utah.edu> wrote:
+
+> I think such a thing would be great.  However, there is a problem that the
+>> RFC wasn't aware of when it was
+>> written:
+>>
+>> consider:
+>> %S = select %A, %B, undef
+>>
+>> without us knowing anything about %A or %B, we will replace all uses of
+>> %S with %B.  This transform would be
+>> considered wrong with the RFC in mind.
+>>
+>> If this transform was valid, there could not be any value or value-like
+>> property in LLVM with semantics more
+>> powerful than undef.  This makes me think that what LLVM *actually*
+>> implements is not poison or something like
+>> it.
+>>
+>
+> Is it possible that the new weaker poison subsumes undef?  The interaction
+> between these different but related UB-like concepts is confusing at best.
+
+
+I am actively working towards removing poison altogether.  I think a more
+accurate model of LLVM's wrapping flags is not poison but instead something
+akin to the fast-math flags on floating point instructions.
+
+
+>
+>
+> John
+>
+
+--bcaec5171deb1d517e050e47559d
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Wed, Feb 4, 2015 at 9:13 AM, John Regehr <span dir=3D"ltr">&lt;<a hr=
+ef=3D"mailto:regehr@cs.utah.edu" target=3D"_blank">regehr@cs.utah.edu</a>&g=
+t;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0 0 0=
+ .8ex;border-left:1px #ccc solid;padding-left:1ex"><span class=3D""><blockq=
+uote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc =
+solid;padding-left:1ex">
+I think such a thing would be great.=C2=A0 However, there is a problem that=
+ the RFC wasn&#39;t aware of when it was<br>
+written:<br>
+<br>
+consider:<br>
+%S =3D select %A, %B, undef<br>
+<br>
+without us knowing anything about %A or %B, we will replace all uses of %S =
+with %B.=C2=A0 This transform would be<br>
+considered wrong with the RFC in mind.<br>
+<br>
+If this transform was valid, there could not be any value or value-like pro=
+perty in LLVM with semantics more<br>
+powerful than undef.=C2=A0 This makes me think that what LLVM *actually* im=
+plements is not poison or something like<br>
+it.<br>
+</blockquote>
+<br></span>
+Is it possible that the new weaker poison subsumes undef?=C2=A0 The interac=
+tion between these different but related UB-like concepts is confusing at b=
+est.</blockquote><div><br></div><div>I am actively working towards removing=
+ poison altogether.=C2=A0 I think a more accurate model of LLVM&#39;s wrapp=
+ing flags is not poison but instead something akin to the fast-math flags o=
+n floating point instructions.</div><div>=C2=A0</div><blockquote class=3D"g=
+mail_quote" style=3D"margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-l=
+eft:1ex"><span class=3D"HOEnZb"><font color=3D"#888888"><br>
+<br>
+John<br>
+</font></span></blockquote></div><br></div></div>
+
+--bcaec5171deb1d517e050e47559d--
+
+--===============7683796561776036232==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============7683796561776036232==--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 11:40:51 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 56D526501AA;
+	Wed,  4 Feb 2015 11:40:51 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 11:40:51 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14Id2eh008837;
+	Wed, 4 Feb 2015 12:39:02 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14IRqHm007955
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 12:27:52 -0600
+Received: from pps03.cites.illinois.edu ([192.17.82.70])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YJ4g3-0003VP-VG
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 12:27:51 -0600
+Received: from mail-wg0-f53.google.com (mail-wg0-f53.google.com [74.125.82.53])
+	by pps03.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14IRj18000889
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 12:27:46 -0600
+Received: by mail-wg0-f53.google.com with SMTP id a1so3315789wgh.12
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 10:27:44 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type:content-transfer-encoding;
+	bh=rA+K/bVg1PzdvFqQdz4PMvu81e8FAUWpxytlrt7upKw=;
+	b=CVgclPEoe3Fo3Amc+hc96M5f3K4IpYXtryXxvhMHHyhiX8X91GDGbNeBNNET8/qWvq
+	B2ruQlMsJ9UM7Jh3GEo/BQPajvR6HJQGXlf5ZZXKVpZGwpbROIumpjmyY0kqw+2BnJQ5
+	3643GWZmADUK3io21ENLvxYkxYIN33u/K3vkDN6cQDcuAum7hiPQsdfFwH3a/+VWoADB
+	tnetNPdyXB+G1nftzBe3bjRVsm6s1FkKm1L9yJNkqrRIqDJa+wqA3+L+WgS0ZFmPpKiC
+	RLMYyChXgQNCS6Hat9ALEJ1WLfxIgpqGXq6C41yVR0iiiQY7gQ86JokYjaGiHGMcmOrx
+	7EGw==
+X-Gm-Message-State: ALoCoQlwiGKpkADMm/RsMlqEeXLA1RmgPnbh445GSXSNoxD44ba5cXoXqYGAWiBr2yYDzqHczadI
+X-Received: by 10.194.23.39 with SMTP id j7mr70226359wjf.9.1423074464362; Wed,
+	04 Feb 2015 10:27:44 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Wed, 4 Feb 2015 10:27:24 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <004d01d0409e$d7f6cab0$87e46010$@ist.utl.pt>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<004d01d0409e$d7f6cab0$87e46010$@ist.utl.pt>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Wed, 4 Feb 2015 10:27:24 -0800
+Message-ID: <CAMiUf7dSYb1M2iU5nDaLgTXc6+9YTniTTaKiyHK6k0emaAQXww@mail.gmail.com>
+To: Nuno Lopes <nuno.lopes@ist.utl.pt>
+X-MIME-Autoconverted: from quoted-printable to 8bit by
+	dcs-maillist2.engr.illinois.edu id t14IRqHm007955
+Cc: John Regehr <regehr@cs.utah.edu>,
+        LLVM Developers Mailing List <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+> But we could have a simple precondition that states that this transformation is correct if %A is not any operations with nsw/nuw/exact flags. Sure, it's not as good as the situation we have today, but the current situation doesn't look very good anyway :)
+
+Function arguments can be poison too.  One way to get around this is
+to declare that calling a function with poison as an argument is UB,
+but then outlining functions without introducing UB becomes tricky.  A
+similar issue exists with loading poison -- if we make storing poison
+UB period, then reg2mem will introduce UB.
+
+>
+> I have a question though: When does poison becomes UB? On external calls and volatile stores only?  Any other visible side-effecting operations?  (at least those two have to be UB, right?)
+>
+> Nuno
+>
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 11:44:28 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id A965B6501B2;
+	Wed,  4 Feb 2015 11:44:28 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 11:44:28 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14IgLuT009089;
+	Wed, 4 Feb 2015 12:42:21 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14IUYnC008082
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 12:30:34 -0600
+Received: from pps02.cites.illinois.edu ([192.17.82.100])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YJ4ig-0004A9-8S
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 12:30:34 -0600
+Received: from mail-ig0-f175.google.com (mail-ig0-f175.google.com
+	[209.85.213.175])
+	by pps02.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14IURoB021298
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 12:30:28 -0600
+Received: by mail-ig0-f175.google.com with SMTP id hn18so36683168igb.2
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 10:30:27 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=+8R0dIO2RXOjyduaVOWlnW5jZnLAre8X9MwwpInlRS0=;
+	b=gGHeLEbKFwZyR3Xz0H1rcRDMmXFOssdEsI6F+J2B0CgAcbmyOQbyWOw+uJowrzCVQP
+	5odGhHmTZ+j8skYbjJlCTG9CdkHjmXjM+M0vnXserFVOOLxp3Ds4APSddfyud4dSJCip
+	u2rs7HxadJE9mVzNoYSZ4OQrgUAuUjymyF+IngSiu/50DPkxxWZO2sJtIL0tPrk/g1Tc
+	68Z1ZjGgUKw6IuOjfew9kA/OM2sDM9oGMp+8TnpXbke0L884iI8QxtN/YuguUOY6Tcej
+	6+rG0LLC/bzREcAsgA2ZamjlyxKHe5gjLawq5SCq/geLpeD5WHa2LFwChWE8sHzVzyi6
+	sLwA==
+X-Received: by 10.50.112.98 with SMTP id ip2mr3745512igb.15.1423074627261;
+	Wed, 04 Feb 2015 10:30:27 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Wed, 4 Feb 2015 10:29:47 -0800 (PST)
+In-Reply-To: <004d01d0409e$d7f6cab0$87e46010$@ist.utl.pt>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<004d01d0409e$d7f6cab0$87e46010$@ist.utl.pt>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Wed, 4 Feb 2015 10:29:47 -0800
+Message-ID: <CAL7bZ_dKQ=JfmF+ByRgZKuOeSh8SiuGcA9RFcONfAEqbav9prw@mail.gmail.com>
+To: Nuno Lopes <nuno.lopes@ist.utl.pt>
+Cc: John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============0588831836871082456=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+--===============0588831836871082456==
+Content-Type: multipart/alternative; boundary=047d7b414162a5acb3050e47617a
+
+--047d7b414162a5acb3050e47617a
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, Feb 4, 2015 at 9:20 AM, Nuno Lopes <nuno.lopes@ist.utl.pt> wrote:
+
+> >> Thanks David for putting up this proposal together!
+> >> I like the idea of having poison values behave more like undef (i.e.,
+> per bit, with run-time behavior).
+> >> One of the problems this proposal solves is speculation of 'a && b'
+> into 'a & b'. Currently this is illegal (despite sometimes simplifycfg
+> doing it anyway).
+> >> It also fixes bugs like http://llvm.org/PR20997
+>  >>
+> >> The proposal doesn't say anything about branching on a poison value. I
+> assume this should stay as the current interpretation -- that such branch=
+es
+> should be undefined behavior (since we cannot branch to multiple places a=
+t
+> the same time -- even if they >> would compute the same values; that's
+> already too hard for the compiler to analyze).
+> >
+> > The RFC intended to make branching on poison values OK.  If branching o=
+n
+> poison wasn't OK, then we couldn't go from select to -> br/phi.
+>
+> Ok, agreed. That case will be always safe.
+>
+>
+> >> There's another caveat: it *does* seem to fix the problem described by
+> Dan in
+> http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html
+> >> However, it introduces a potential performance penalty: we won't be
+> able to speculate instructions with undefined behavior whose input may be
+> poison.
+> >>
+> >> For example, take the following code:
+> >> loop:
+> >>   %add =3D add nsw %x, %y
+> >>   %div =3D udiv %z, %add
+> >>   =E2=80=A6 use %div only in the case that %add does not overflow and =
+is
+> non-zero
+> >>
+> >> We can move the %add outside of the loop, but we cannot move the
+> division. With the reason being that if %add overflows, then %add is pois=
+on
+> and therefore it can take any value (in particular, it can be 0),
+> triggering undef behavior in %div.  Therefore, we cannot freely move %div=
+,
+> unless we can prove that %add will never be 0 nor poison.  This sounds ha=
+rd
+> for the compiler to do, and I guess we'll have some regressions (e.g., LI=
+CM
+> has to be more conservative). Nevertheless, I'm all for fixing poison onc=
+e
+> and for all!
+> >
+> > Believe it or not, I already fixed this bug (PR21412). :)
+>
+> Cool! :)
+>
+>
+> >> BTW, would it help if I produced a version of Alive that implements th=
+e
+> semantics being proposed?  (with no performance guarantees for this
+> prototype).  The cool thing is that then we can run it through our databa=
+se
+> of 300+ InstCombine optimizations and see which ones would have to be
+> removed/fixed.
+> >
+> > I think such a thing would be great.  However, there is a problem that
+> the RFC wasn't aware of when it was written:
+> >
+> > consider:
+> > %S =3D select %A, %B, undef
+> >
+> > without us knowing anything about %A or %B, we will replace all uses of
+> %S with %B.  This transform would be considered wrong with the RFC in min=
+d.
+> >
+> > If this transform was valid, there could not be any value or value-like
+> property in LLVM with semantics more powerful than undef.  This makes me
+> think that what LLVM *actually* implements is not poison or something lik=
+e
+> it.
+> >
+> > On the flip side, we could say that this transform is nonsense but I'd
+> rather not pessimize LLVM like that.
+>
+> Ah, you're saying that poison is strictly stronger UB than undef. And the
+> reason being that poison may lead to UB when used in certain operations.
+> Nice catch.
+> But we could have a simple precondition that states that this
+> transformation is correct if %A is not any operations with nsw/nuw/exact
+> flags. Sure, it's not as good as the situation we have today, but the
+> current situation doesn't look very good anyway :)
+>
+> I have a question though: When does poison becomes UB? On external calls
+> and volatile stores only?  Any other visible side-effecting operations?
+> (at least those two have to be UB, right?)
+>
+
+Saying that calls to external functions results in UB is too strict.  It's
+only if the external function has some side-effecting behavior.
+
+
+>
+> Nuno
+>
+>
+
+--047d7b414162a5acb3050e47617a
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Wed, Feb 4, 2015 at 9:20 AM, Nuno Lopes <span dir=3D"ltr">&lt;<a hre=
+f=3D"mailto:nuno.lopes@ist.utl.pt" target=3D"_blank">nuno.lopes@ist.utl.pt<=
+/a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:=
+0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex"><span class=3D"">&g=
+t;&gt; Thanks David for putting up this proposal together!<br>
+&gt;&gt; I like the idea of having poison values behave more like undef (i.=
+e., per bit, with run-time behavior).<br>
+&gt;&gt; One of the problems this proposal solves is speculation of &#39;a =
+&amp;&amp; b&#39; into &#39;a &amp; b&#39;. Currently this is illegal (desp=
+ite sometimes simplifycfg doing it anyway).<br>
+&gt;&gt; It also fixes bugs like <a href=3D"http://llvm.org/PR20997" target=
+=3D"_blank">http://llvm.org/PR20997</a><br>
+=C2=A0&gt;&gt;<br>
+&gt;&gt; The proposal doesn&#39;t say anything about branching on a poison =
+value. I assume this should stay as the current interpretation -- that such=
+ branches should be undefined behavior (since we cannot branch to multiple =
+places at the same time -- even if they &gt;&gt; would compute the same val=
+ues; that&#39;s already too hard for the compiler to analyze).<br>
+&gt;<br>
+&gt; The RFC intended to make branching on poison values OK.=C2=A0 If branc=
+hing on poison wasn&#39;t OK, then we couldn&#39;t go from select to -&gt; =
+br/phi.<br>
+<br>
+</span>Ok, agreed. That case will be always safe.<br>
+<span class=3D""><br>
+<br>
+&gt;&gt; There&#39;s another caveat: it *does* seem to fix the problem desc=
+ribed by Dan in <a href=3D"http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-=
+December/046152.html" target=3D"_blank">http://lists.cs.uiuc.edu/pipermail/=
+llvmdev/2011-December/046152.html</a><br>
+&gt;&gt; However, it introduces a potential performance penalty: we won&#39=
+;t be able to speculate instructions with undefined behavior whose input ma=
+y be poison.<br>
+&gt;&gt;<br>
+&gt;&gt; For example, take the following code:<br>
+&gt;&gt; loop:<br>
+&gt;&gt;=C2=A0 =C2=A0%add =3D add nsw %x, %y<br>
+&gt;&gt;=C2=A0 =C2=A0%div =3D udiv %z, %add<br>
+&gt;&gt;=C2=A0 =C2=A0=E2=80=A6 use %div only in the case that %add does not=
+ overflow and is non-zero<br>
+&gt;&gt;<br>
+&gt;&gt; We can move the %add outside of the loop, but we cannot move the d=
+ivision. With the reason being that if %add overflows, then %add is poison =
+and therefore it can take any value (in particular, it can be 0), triggerin=
+g undef behavior in %div.=C2=A0 Therefore, we cannot freely move %div, unle=
+ss we can prove that %add will never be 0 nor poison.=C2=A0 This sounds har=
+d for the compiler to do, and I guess we&#39;ll have some regressions (e.g.=
+, LICM has to be more conservative). Nevertheless, I&#39;m all for fixing p=
+oison once and for all!<br>
+&gt;<br>
+&gt; Believe it or not, I already fixed this bug (PR21412). :)<br>
+<br>
+</span>Cool! :)<br>
+<span class=3D""><br>
+<br>
+&gt;&gt; BTW, would it help if I produced a version of Alive that implement=
+s the semantics being proposed?=C2=A0 (with no performance guarantees for t=
+his prototype).=C2=A0 The cool thing is that then we can run it through our=
+ database of 300+ InstCombine optimizations and see which ones would have t=
+o be removed/fixed.<br>
+&gt;<br>
+&gt; I think such a thing would be great.=C2=A0 However, there is a problem=
+ that the RFC wasn&#39;t aware of when it was written:<br>
+&gt;<br>
+&gt; consider:<br>
+&gt; %S =3D select %A, %B, undef<br>
+&gt;<br>
+&gt; without us knowing anything about %A or %B, we will replace all uses o=
+f %S with %B.=C2=A0 This transform would be considered wrong with the RFC i=
+n mind.<br>
+&gt;<br>
+&gt; If this transform was valid, there could not be any value or value-lik=
+e property in LLVM with semantics more powerful than undef.=C2=A0 This make=
+s me think that what LLVM *actually* implements is not poison or something =
+like it.<br>
+&gt;<br>
+&gt; On the flip side, we could say that this transform is nonsense but I&#=
+39;d rather not pessimize LLVM like that.<br>
+<br>
+</span>Ah, you&#39;re saying that poison is strictly stronger UB than undef=
+. And the reason being that poison may lead to UB when used in certain oper=
+ations.=C2=A0 Nice catch.<br>
+But we could have a simple precondition that states that this transformatio=
+n is correct if %A is not any operations with nsw/nuw/exact flags. Sure, it=
+&#39;s not as good as the situation we have today, but the current situatio=
+n doesn&#39;t look very good anyway :)<br>
+<br>
+I have a question though: When does poison becomes UB? On external calls an=
+d volatile stores only?=C2=A0 Any other visible side-effecting operations?=
+=C2=A0 (at least those two have to be UB, right?)<br></blockquote><div><br>=
+</div><div>Saying that calls to external functions results in UB is too str=
+ict.=C2=A0 It&#39;s only if the external function has some side-effecting b=
+ehavior.</div><div>=C2=A0</div><blockquote class=3D"gmail_quote" style=3D"m=
+argin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">
+<span class=3D"HOEnZb"><font color=3D"#888888"><br>
+Nuno<br>
+<br>
+</font></span></blockquote></div><br></div></div>
+
+--047d7b414162a5acb3050e47617a--
+
+--===============0588831836871082456==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============0588831836871082456==--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 12:41:29 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.8 required=5.0 tests=AWL,FROM_CS_UTAH,FROM_UTAH,
+	HK_RANDOM_ENVFROM autolearn=ham version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id D331565024F;
+	Wed,  4 Feb 2015 12:41:29 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 12:41:29 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t14JcJi7013355;
+	Wed, 4 Feb 2015 13:38:19 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t14JPChK012188
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 13:25:12 -0600
+Received: from pps05.cites.illinois.edu ([192.17.82.72])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <regehr@cs.utah.edu>) id 1YJ5ZX-0005qh-Vm
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 13:25:12 -0600
+Received: from mail-svr1.cs.utah.edu (mail-svr1.cs.utah.edu [155.98.64.241])
+	by pps05.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t14JOIYk003235
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 13:25:00 -0600
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id CA18B650242;
+	Wed,  4 Feb 2015 12:24:10 -0700 (MST)
+Received: from thebes.cs.utah.edu (thebes.cs.utah.edu [155.98.65.57])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 12:24:10 -0700 (MST)
+Date: Wed, 4 Feb 2015 12:24:10 -0700 (MST)
+From: John Regehr <regehr@cs.utah.edu>
+To: David Majnemer <david.majnemer@gmail.com>
+In-Reply-To: <CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+Message-ID: <alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+	<CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+User-Agent: Alpine 2.02 (DEB 1266 2009-07-14)
+MIME-Version: 1.0
+Content-Type: MULTIPART/MIXED;
+	BOUNDARY="1654339905-348050006-1423077850=:18823"
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: O
+
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+
+--1654339905-348050006-1423077850=:18823
+Content-Type: TEXT/PLAIN; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by pps05.cites.illinois.edu id t14JOIYk003235
+
+> I am actively working towards removing poison altogether.=C2=A0 I think=
+ a more accurate model of LLVM's wrapping
+> flags is not poison but instead something akin to the fast-math flags o=
+n floating point instructions.
+
+Looking forward to seeing it. One of my students has a hacked lli that=20
+tracks poison, it's a nice playground for trying to understand the=20
+interaction of poison with programs and with LLVM passes. We can hopefull=
+y=20
+implement your new semantics as an option in order to better understand=20
+it. In one way, the hacked lli is not as good as Alive (it only reasons=20
+about one execution at a time) but on the other hand it tells us what=20
+happens for real codes which Alive does not.
+
+John
+--1654339905-348050006-1423077850=:18823
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--1654339905-348050006-1423077850=:18823--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 18:14:22 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 29A636501A8;
+	Wed,  4 Feb 2015 18:14:22 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 18:14:21 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t151CCk7001767;
+	Wed, 4 Feb 2015 19:12:12 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t151A8RM001601
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 19:10:08 -0600
+Received: from pps01.cites.illinois.edu ([192.17.82.69])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YJAxM-0001sH-NK
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 19:10:08 -0600
+Received: from mail-ie0-f182.google.com (mail-ie0-f182.google.com
+	[209.85.223.182])
+	by pps01.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t151A119015482
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 19:10:01 -0600
+Received: by mail-ie0-f182.google.com with SMTP id ar1so6573287iec.13
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 17:10:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=LFcVIfNSmbrsl22oCfmoTAZGWNh5ppqOxmOoELPIyzo=;
+	b=f9Dj0KOczkrTmzArZF1oCUjyEVBqgjwOGjc9OBefQ/MslPB1YaIXNa3N6Pr1PIo9h+
+	aHnCVOcxbNV7lziMI/Pl/jy1Qxkm1vAugm2Xd6L1gYx7x8kJ8JfdDB2QNGjk+5uLpUNE
+	S8yqM47MCinI+SjZ+tKKv8HafAqxXqBMjqpaVgvdRuZwR1YgaW6/19rZaXLmOJoTqcJT
+	K9FDSSUfD8XyCPVn8bXx5O1Jrp0N0DZHcjrkmYmBnztbw3G+d6bmBtAaDCM9BMfBn3TH
+	RR59kwf92rkBfO/nNhKrPdEFc4cjLI/UbTwtT2LSGu/nHUG2jdlTjjlpnlzVscL0KYFz
+	5uNg==
+X-Received: by 10.50.124.73 with SMTP id mg9mr5632123igb.38.1423098600177;
+	Wed, 04 Feb 2015 17:10:00 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Wed, 4 Feb 2015 17:09:19 -0800 (PST)
+In-Reply-To: <alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+	<CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+	<alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Wed, 4 Feb 2015 17:09:19 -0800
+Message-ID: <CAL7bZ_eVTGkKGrfZqCFGrhg1vCcjTXaWz8S7AKV8VQvk=KCz3Q@mail.gmail.com>
+To: John Regehr <regehr@cs.utah.edu>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============4910319361131978672=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+
+--===============4910319361131978672==
+Content-Type: multipart/alternative; boundary=089e010d95328b47f7050e4cf6e2
+
+--089e010d95328b47f7050e4cf6e2
+Content-Type: text/plain; charset=UTF-8
+
+On Wed, Feb 4, 2015 at 11:24 AM, John Regehr <regehr@cs.utah.edu> wrote:
+
+> I am actively working towards removing poison altogether.  I think a more
+>> accurate model of LLVM's wrapping
+>> flags is not poison but instead something akin to the fast-math flags on
+>> floating point instructions.
+>>
+>
+> Looking forward to seeing it. One of my students has a hacked lli that
+> tracks poison, it's a nice playground for trying to understand the
+> interaction of poison with programs and with LLVM passes. We can hopefully
+> implement your new semantics as an option in order to better understand it.
+> In one way, the hacked lli is not as good as Alive (it only reasons about
+> one execution at a time) but on the other hand it tells us what happens for
+> real codes which Alive does not.
+
+
+Turns out that undef + fast math flags is enough to cause LLVM to become
+inconsistent:
+define i1 @f(i1 %a.is_nan, float %a, float %b) {
+  %add = fadd nnan float %a, %b
+  %sel = select i1 %a.is_nan, float undef, float %add
+  %cmp = fcmp ord float %b, %sel
+  ret i1 %cmp
+}
+
+When 'b' is NaN, the following occurs:
+%add = float undef
+%sel = float undef
+%cmp = i1 false
+
+However, the 'select i1 %A, %B, undef' -> 'undef' optimization permits us
+to transform @f to:
+define i1 @f(i1 %a.is_nan, float %a, float %b) {
+  %add = fadd nnan float %a, %b
+  %cmp = fcmp ord float %add, 0.000000e+00
+  ret i1 %cmp
+}
+
+Now we will have:
+%add = float undef
+%cmp = i1 undef
+
+
+
+>
+>
+> John
+
+--089e010d95328b47f7050e4cf6e2
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Wed, Feb 4, 2015 at 11:24 AM, John Regehr <span dir=3D"ltr">&lt;<a h=
+ref=3D"mailto:regehr@cs.utah.edu" target=3D"_blank">regehr@cs.utah.edu</a>&=
+gt;</span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0px =
+0px 0px 0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);bord=
+er-left-style:solid;padding-left:1ex"><span><blockquote class=3D"gmail_quot=
+e" style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-colo=
+r:rgb(204,204,204);border-left-style:solid;padding-left:1ex">
+I am actively working towards removing poison altogether.=C2=A0 I think a m=
+ore accurate model of LLVM&#39;s wrapping<br>
+flags is not poison but instead something akin to the fast-math flags on fl=
+oating point instructions.<br>
+</blockquote>
+<br></span>
+Looking forward to seeing it. One of my students has a hacked lli that trac=
+ks poison, it&#39;s a nice playground for trying to understand the interact=
+ion of poison with programs and with LLVM passes. We can hopefully implemen=
+t your new semantics as an option in order to better understand it. In one =
+way, the hacked lli is not as good as Alive (it only reasons about one exec=
+ution at a time) but on the other hand it tells us what happens for real co=
+des which Alive does not.</blockquote><div><br></div><div>Turns out that un=
+def + fast math flags is enough to cause LLVM to become inconsistent:<br></=
+div><div><div>define i1 @f(i1 %a.is_nan, float %a, float %b) {</div><div>=
+=C2=A0 %add =3D fadd nnan float %a, %b</div><div>=C2=A0 %sel =3D select i1 =
+%a.is_nan, float undef, float %add</div><div>=C2=A0 %cmp =3D fcmp ord float=
+ %b, %sel</div><div>=C2=A0 ret i1 %cmp</div><div>}</div><br class=3D"">When=
+ &#39;b&#39; is NaN, the following occurs:</div><div>%add =3D float undef</=
+div><div>%sel =3D float undef</div><div>%cmp =3D i1 false</div><div><br></d=
+iv><div>However, the &#39;select i1 %A, %B, undef&#39; -&gt; &#39;undef&#39=
+; optimization permits us to transform @f to:</div><div>define i1 @f(i1 %a.=
+is_nan, float %a, float %b) {<br></div><div><div>=C2=A0 %add =3D fadd nnan =
+float %a, %b</div><div>=C2=A0 %cmp =3D fcmp ord float %add, 0.000000e+00</d=
+iv><div>=C2=A0 ret i1 %cmp</div><div>}</div></div><div><br></div><div>Now w=
+e will have:</div><div>%add =3D float undef</div><div>%cmp =3D i1 undef</di=
+v><div><br></div><div>=C2=A0</div><blockquote class=3D"gmail_quote" style=
+=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-color:rgb(20=
+4,204,204);border-left-style:solid;padding-left:1ex"><span><font color=3D"#=
+888888"><br>
+<br>
+John</font></span></blockquote></div><br></div></div>
+
+--089e010d95328b47f7050e4cf6e2--
+
+--===============4910319361131978672==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============4910319361131978672==--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 18:52:43 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 4493B6501A6;
+	Wed,  4 Feb 2015 18:52:43 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 18:52:43 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t151obta004333;
+	Wed, 4 Feb 2015 19:50:37 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t151lsc7004102
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 19:47:54 -0600
+Received: from pps05.cites.illinois.edu ([192.17.82.72])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YJBXu-0003IW-9C
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 19:47:54 -0600
+Received: from mail-we0-f171.google.com (mail-we0-f171.google.com
+	[74.125.82.171])
+	by pps05.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t151ll7I025868
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 19:47:48 -0600
+Received: by mail-we0-f171.google.com with SMTP id k11so5069004wes.2
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 17:47:47 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=/YPSoxEZ8Zs3RUYBp39fNb1815AQFTK/NVBRWeZmu6I=;
+	b=DFBeU5iKK6vZmWH/KAmFCqELG+xzV89gxkYaiWBHz0y+9MJ2pVIGOW13lCPg5FBbN8
+	wgp19vrAIR6ernAMr4+rHg7kbES+EpbjqaPrwQToeNTYZqzxcQPleagefkeWptefXxdw
+	tYFSwCrA5vtex70ZfubwCVdq/98JYsHESe6t6iUbo8CPtBSfkwELxPyLfGOKFlbXGJTJ
+	2AvI8eYiyZKyhPpmmNpPZtGvaXYrzEJL+hbSFoVM6FQiWb3duXLb0GO7VsOnyf4IQ6UD
+	LJ6MkRLEVsHtyNCTAAFo4BHXJYTUnRKGxyE7yJCBEtj/oiohtXu9YzA6/JvpnSg35u+l
+	gWZg==
+X-Gm-Message-State: ALoCoQnSaHho4KMBE3I52eklrzAOwGwc+1hTrWj88OBUDlhSJFZeGmDEzHID6h4hrJmUQ1Xu8Xo3
+X-Received: by 10.180.97.2 with SMTP id dw2mr10550908wib.6.1423100867463; Wed,
+	04 Feb 2015 17:47:47 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Wed, 4 Feb 2015 17:47:27 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAL7bZ_eVTGkKGrfZqCFGrhg1vCcjTXaWz8S7AKV8VQvk=KCz3Q@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+	<CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+	<alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+	<CAL7bZ_eVTGkKGrfZqCFGrhg1vCcjTXaWz8S7AKV8VQvk=KCz3Q@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Wed, 4 Feb 2015 17:47:27 -0800
+Message-ID: <CAMiUf7czE2wv7i4WnXuaV2N6sm==3Mj5ofeP=v_8zQuw-kxrzw@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+
+> Turns out that undef + fast math flags is enough to cause LLVM to become
+> inconsistent:
+> define i1 @f(i1 %a.is_nan, float %a, float %b) {
+>   %add = fadd nnan float %a, %b
+>   %sel = select i1 %a.is_nan, float undef, float %add
+>   %cmp = fcmp ord float %b, %sel
+>   ret i1 %cmp
+> }
+>
+> When 'b' is NaN, the following occurs:
+> %add = float undef
+> %sel = float undef
+> %cmp = i1 false
+>
+> However, the 'select i1 %A, %B, undef' -> 'undef' optimization permits us to
+
+How can you transform 'select X, Y, undef' to undef?  What if X is
+true?  Did you mean 'select X, undef, undef' -> undef?
+
+> transform @f to:
+> define i1 @f(i1 %a.is_nan, float %a, float %b) {
+>   %add = fadd nnan float %a, %b
+>   %cmp = fcmp ord float %add, 0.000000e+00
+
+I don't see how you got here -- %cmp was "fcmp ord float %b, %sel".
+Now %b is NaN so %add is undef, making %cmp = "fcmp ord NaN, undef"
+which is false for any value of undef.
+
+Maybe I'm being thick, but I think it will help if you break down the
+second half of your argument into smaller steps. :)
+
+Having said that I won't be surprised if fast-math flags suffer from
+issues similar to poison -- "Allow algebraically equivalent
+transformations that may dramatically change results in floating
+point" sounds somewhat vague to me.
+
+-- Sanjoy
+
+>   ret i1 %cmp
+> }
+>
+> Now we will have:
+> %add = float undef
+> %cmp = i1 undef
+>
+>
+>>
+>>
+>>
+>> John
+>
+>
+>
+> _______________________________________________
+> LLVM Developers mailing list
+> LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+> http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+>
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 19:10:54 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,T_DKIM_INVALID
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id B47B365019E;
+	Wed,  4 Feb 2015 19:10:54 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 19:10:54 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t1528hLg005286;
+	Wed, 4 Feb 2015 20:08:43 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t1527pSl005256
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 20:07:51 -0600
+Received: from pps06.cites.illinois.edu ([192.17.82.102])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YJBrD-0003zM-MT
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 20:07:51 -0600
+Received: from mail-ig0-f178.google.com (mail-ig0-f178.google.com
+	[209.85.213.178])
+	by pps06.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t1527kCW000322
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 20:07:46 -0600
+Received: by mail-ig0-f178.google.com with SMTP id hl2so8550605igb.5
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 18:07:45 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=uHHdHsEWu3KtkS+kVMce5Lpg4mFLEOMGuoR8K9H52fE=;
+	b=IRUyGKg8NkJy4X7kss/qIQp4L0TyWeu72yXUglQWMwAWp1DlB2VCsQJIul79bDrxZW
+	bF8z9w/Vxht5nE9eQZS27V7RIqJs4vxwNlMfGGYADuHI4WPnd/SKoOOBKd5kG3aHICRw
+	ZVxwILb4gOSugHhQw6Vqti4kJBcsc6r0w+yg04WAvY3IJiXPwv+lIHQopyJmOQYOhQVL
+	s0DqLcJreUWKpGqt/JKKWENa0wXvTIQgMbCGja/an5dClxSRWw+XGjCKdTn1uZHH7vBp
+	Cf0P4fjh2Fv3dQekv9dqDJjXwe8QjEnmDVD+ekM5MMOWjBTmYdBNhYSP7ASylnrZFcW4
+	Eu+Q==
+X-Received: by 10.50.117.41 with SMTP id kb9mr5832730igb.37.1423102065798;
+	Wed, 04 Feb 2015 18:07:45 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Wed, 4 Feb 2015 18:07:05 -0800 (PST)
+In-Reply-To: <CAMiUf7czE2wv7i4WnXuaV2N6sm==3Mj5ofeP=v_8zQuw-kxrzw@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+	<CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+	<alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+	<CAL7bZ_eVTGkKGrfZqCFGrhg1vCcjTXaWz8S7AKV8VQvk=KCz3Q@mail.gmail.com>
+	<CAMiUf7czE2wv7i4WnXuaV2N6sm==3Mj5ofeP=v_8zQuw-kxrzw@mail.gmail.com>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Wed, 4 Feb 2015 18:07:05 -0800
+Message-ID: <CAL7bZ_dCkXK4XDUUiOjFQ-XZWF38xPg0A+n+btD2biS+x4GRsA@mail.gmail.com>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============6293554607707607187=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+
+--===============6293554607707607187==
+Content-Type: multipart/alternative; boundary=089e011605cc1c75d6050e4dc5db
+
+--089e011605cc1c75d6050e4dc5db
+Content-Type: text/plain; charset=UTF-8
+
+On Wed, Feb 4, 2015 at 5:47 PM, Sanjoy Das <sanjoy@playingwithpointers.com>
+wrote:
+
+> > Turns out that undef + fast math flags is enough to cause LLVM to become
+> > inconsistent:
+> > define i1 @f(i1 %a.is_nan, float %a, float %b) {
+> >   %add = fadd nnan float %a, %b
+> >   %sel = select i1 %a.is_nan, float undef, float %add
+> >   %cmp = fcmp ord float %b, %sel
+> >   ret i1 %cmp
+> > }
+> >
+> > When 'b' is NaN, the following occurs:
+> > %add = float undef
+> > %sel = float undef
+> > %cmp = i1 false
+> >
+> > However, the 'select i1 %A, %B, undef' -> 'undef' optimization permits
+> us to
+>
+> How can you transform 'select X, Y, undef' to undef?  What if X is
+> true?  Did you mean 'select X, undef, undef' -> undef?
+>
+
+Sorry, I meant 'select X, Y, undef' to 'Y'
+
+
+>
+> > transform @f to:
+> > define i1 @f(i1 %a.is_nan, float %a, float %b) {
+> >   %add = fadd nnan float %a, %b
+> >   %cmp = fcmp ord float %add, 0.000000e+00
+>
+> I don't see how you got here -- %cmp was "fcmp ord float %b, %sel".
+> Now %b is NaN so %add is undef, making %cmp = "fcmp ord NaN, undef"
+> which is false for any value of undef.
+>
+
+Just to be clear, I agree. This is why I said that %cmp = i1 false in the
+untransformed @f.
+
+
+>
+> Maybe I'm being thick, but I think it will help if you break down the
+> second half of your argument into smaller steps. :)
+>
+
+We start with:
+define i1 @f(i1 %a.is_nan, float %a, float %b) {
+  %add = fadd nnan float %a, %b
+  %sel = select i1 %a.is_nan, float undef, float %add
+  %cmp = fcmp ord float %b, %sel
+  ret i1 %cmp
+}
+
+LLVM (currently) permits 'select i1 %a.is_nan, float undef, float %add' to
+turn into '%add', this leaves us with:
+define i1 @f(i1 %a.is_nan, float %a, float %b) {
+  %add = fadd nnan float %a, %b
+  %cmp = fcmp ord float %b, %add
+  ret i1 %cmp
+}
+
+'fadd nnan' claims that it is allowed to assume that its operands can't be
+NaN and that those which value depend on the value will not get NaN.  I
+believe this would let 'fcmp' assume that it only needs to look at the
+result of '%add':
+define i1 @f(i1 %a.is_nan, float %a, float %b) {
+  %add = fadd nnan float %a, %b
+  %cmp = fcmp ord float 0., %add
+  ret i1 %cmp
+}
+
+
+
+> Having said that I won't be surprised if fast-math flags suffer from
+> issues similar to poison -- "Allow algebraically equivalent
+> transformations that may dramatically change results in floating
+> point" sounds somewhat vague to me.
+>
+> -- Sanjoy
+>
+> >   ret i1 %cmp
+> > }
+> >
+> > Now we will have:
+> > %add = float undef
+> > %cmp = i1 undef
+> >
+> >
+> >>
+> >>
+> >>
+> >> John
+> >
+> >
+> >
+> > _______________________________________________
+> > LLVM Developers mailing list
+> > LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+> > http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+> >
+>
+
+--089e011605cc1c75d6050e4dc5db
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><br><div class=3D"gmail_extra"><br><div class=3D"gmail_quo=
+te">On Wed, Feb 4, 2015 at 5:47 PM, Sanjoy Das <span dir=3D"ltr">&lt;<a hre=
+f=3D"mailto:sanjoy@playingwithpointers.com" target=3D"_blank">sanjoy@playin=
+gwithpointers.com</a>&gt;</span> wrote:<br><blockquote class=3D"gmail_quote=
+" style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-color=
+:rgb(204,204,204);border-left-style:solid;padding-left:1ex"><span class=3D"=
+">&gt; Turns out that undef + fast math flags is enough to cause LLVM to be=
+come<br>
+&gt; inconsistent:<br>
+&gt; define i1 @f(i1 %a.is_nan, float %a, float %b) {<br>
+&gt;=C2=A0 =C2=A0%add =3D fadd nnan float %a, %b<br>
+&gt;=C2=A0 =C2=A0%sel =3D select i1 %a.is_nan, float undef, float %add<br>
+&gt;=C2=A0 =C2=A0%cmp =3D fcmp ord float %b, %sel<br>
+&gt;=C2=A0 =C2=A0ret i1 %cmp<br>
+&gt; }<br>
+&gt;<br>
+&gt; When &#39;b&#39; is NaN, the following occurs:<br>
+&gt; %add =3D float undef<br>
+&gt; %sel =3D float undef<br>
+&gt; %cmp =3D i1 false<br>
+&gt;<br>
+&gt; However, the &#39;select i1 %A, %B, undef&#39; -&gt; &#39;undef&#39; o=
+ptimization permits us to<br>
+<br>
+</span>How can you transform &#39;select X, Y, undef&#39; to undef?=C2=A0 W=
+hat if X is<br>
+true?=C2=A0 Did you mean &#39;select X, undef, undef&#39; -&gt; undef?<br><=
+/blockquote><div><br></div><div>Sorry, I meant &#39;select X, Y, undef&#39;=
+ to &#39;Y&#39;</div><div>=C2=A0</div><blockquote class=3D"gmail_quote" sty=
+le=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-color:rgb(=
+204,204,204);border-left-style:solid;padding-left:1ex">
+<span class=3D""><br>
+&gt; transform @f to:<br>
+&gt; define i1 @f(i1 %a.is_nan, float %a, float %b) {<br>
+&gt;=C2=A0 =C2=A0%add =3D fadd nnan float %a, %b<br>
+&gt;=C2=A0 =C2=A0%cmp =3D fcmp ord float %add, 0.000000e+00<br>
+<br>
+</span>I don&#39;t see how you got here -- %cmp was &quot;fcmp ord float %b=
+, %sel&quot;.<br>
+Now %b is NaN so %add is undef, making %cmp =3D &quot;fcmp ord NaN, undef&q=
+uot;<br>
+which is false for any value of undef.<br></blockquote><div><br></div><div>=
+Just to be clear, I agree. This is why I said that %cmp =3D i1 false in the=
+ untransformed @f.</div><div>=C2=A0</div><blockquote class=3D"gmail_quote" =
+style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-color:r=
+gb(204,204,204);border-left-style:solid;padding-left:1ex">
+<br>
+Maybe I&#39;m being thick, but I think it will help if you break down the<b=
+r>
+second half of your argument into smaller steps. :)<br></blockquote><div><b=
+r></div><div>We start with:</div><div><div>define i1 @f(i1 %a.is_nan, float=
+ %a, float %b) {</div><div>=C2=A0 %add =3D fadd nnan float %a, %b</div><div=
+>=C2=A0 %sel =3D select i1 %a.is_nan, float undef, float %add</div><div>=C2=
+=A0 %cmp =3D fcmp ord float %b, %sel</div><div>=C2=A0 ret i1 %cmp</div><div=
+>}</div></div><div><br></div><div>LLVM (currently) permits &#39;select i1 %=
+a.is_nan, float undef, float %add&#39; to turn into &#39;%add&#39;, this le=
+aves us with:</div><div><div>define i1 @f(i1 %a.is_nan, float %a, float %b)=
+ {</div><div>=C2=A0 %add =3D fadd nnan float %a, %b</div><div>=C2=A0 %cmp =
+=3D fcmp ord float %b, %add<br></div><div>=C2=A0 ret i1 %cmp</div><div>}</d=
+iv></div><div><br></div><div>&#39;fadd nnan&#39; claims that it is allowed =
+to assume that its operands can&#39;t be NaN and that those which value dep=
+end on the value will not get NaN.=C2=A0 I believe this would let &#39;fcmp=
+&#39; assume that it only needs to look at the result of &#39;%add&#39;:</d=
+iv><div><div>define i1 @f(i1 %a.is_nan, float %a, float %b) {</div><div>=C2=
+=A0 %add =3D fadd nnan float %a, %b</div><div>=C2=A0 %cmp =3D fcmp ord floa=
+t 0., %add</div><div>=C2=A0 ret i1 %cmp</div><div>}</div></div><div><br></d=
+iv><div><br></div><blockquote class=3D"gmail_quote" style=3D"margin:0px 0px=
+ 0px 0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);border-=
+left-style:solid;padding-left:1ex">
+<br>
+Having said that I won&#39;t be surprised if fast-math flags suffer from<br=
+>
+issues similar to poison -- &quot;Allow algebraically equivalent<br>
+transformations that may dramatically change results in floating<br>
+point&quot; sounds somewhat vague to me.<br>
+<br>
+-- Sanjoy<br>
+<span class=3D""><br>
+&gt;=C2=A0 =C2=A0ret i1 %cmp<br>
+&gt; }<br>
+&gt;<br>
+&gt; Now we will have:<br>
+&gt; %add =3D float undef<br>
+&gt; %cmp =3D i1 undef<br>
+&gt;<br>
+&gt;<br>
+&gt;&gt;<br>
+&gt;&gt;<br>
+&gt;&gt;<br>
+&gt;&gt; John<br>
+&gt;<br>
+&gt;<br>
+&gt;<br>
+</span>&gt; _______________________________________________<br>
+&gt; LLVM Developers mailing list<br>
+&gt; <a href=3D"mailto:LLVMdev@cs.uiuc.edu">LLVMdev@cs.uiuc.edu</a>=C2=A0 =
+=C2=A0 =C2=A0 =C2=A0 =C2=A0<a href=3D"http://llvm.cs.uiuc.edu" target=3D"_b=
+lank">http://llvm.cs.uiuc.edu</a><br>
+&gt; <a href=3D"http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev" target=
+=3D"_blank">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a><br>
+&gt;<br>
+</blockquote></div><br></div></div>
+
+--089e011605cc1c75d6050e4dc5db--
+
+--===============6293554607707607187==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============6293554607707607187==--
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 19:32:09 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM
+	autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id B798A6501A3;
+	Wed,  4 Feb 2015 19:32:09 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 19:32:07 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t152TvXf006133;
+	Wed, 4 Feb 2015 20:29:57 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t152Ttg0006130
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 20:29:56 -0600
+Received: from pps04.cites.illinois.edu ([192.17.82.101])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <sanjoy@playingwithpointers.com>)
+	id 1YJCCZ-0004MI-SZ
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 20:29:55 -0600
+Received: from mail-wg0-f51.google.com (mail-wg0-f51.google.com [74.125.82.51])
+	by pps04.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t152TneI017239
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 20:29:50 -0600
+Received: by mail-wg0-f51.google.com with SMTP id k14so5050435wgh.10
+	for <llvmdev@cs.uiuc.edu>; Wed, 04 Feb 2015 18:29:49 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=1e100.net; s=20130820;
+	h=x-gm-message-state:mime-version:in-reply-to:references:from:date
+	:message-id:subject:to:cc:content-type;
+	bh=BKOQFMewzD1+rOjReHG7FNt1xmZnGQn8Qdb+owVlQBE=;
+	b=escrLkQNM+cdc25XBMFRvq9lIhk+x6i49Db18z+F5KMysqRtSvyNkyD0NtS5HiXEkm
+	YnEKAYvMZLIv7IZ8vb0mW0drenLLHMbia94gIehp+FFWwD3Cc8Xn8nLQ8RmXEw+8AiNB
+	DLZnzbbt5VM/z0mqPCb/pD0w3SWNCqecqjljMZtIon2BmzbNLg2JofspWEBnokalDyHi
+	vITA/JbROm9B56a4e6bKKoHcDnOUpCHux81sHCPkKwV5W/L73E5XdSHeRj2u9EcIB4Dx
+	JKPhDdRgcZJbxfwj+6XBF7IHT2f6bawfSMbgvhN0X+guixM32VhyUDlEN2vqxwG23d/V
+	29EA==
+X-Gm-Message-State: ALoCoQlbnEBLHAb5EEcbJ+C8mHb8D5vvSosUM/rNxHAZQ1EIqyNKbn3mkinf0Z6FtjcL1C8+ndcB
+X-Received: by 10.180.38.66 with SMTP id e2mr10380296wik.62.1423103389094;
+	Wed, 04 Feb 2015 18:29:49 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.216.76.72 with HTTP; Wed, 4 Feb 2015 18:29:28 -0800 (PST)
+X-Originating-IP: [64.79.112.130]
+In-Reply-To: <CAL7bZ_dCkXK4XDUUiOjFQ-XZWF38xPg0A+n+btD2biS+x4GRsA@mail.gmail.com>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+	<CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+	<alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+	<CAL7bZ_eVTGkKGrfZqCFGrhg1vCcjTXaWz8S7AKV8VQvk=KCz3Q@mail.gmail.com>
+	<CAMiUf7czE2wv7i4WnXuaV2N6sm==3Mj5ofeP=v_8zQuw-kxrzw@mail.gmail.com>
+	<CAL7bZ_dCkXK4XDUUiOjFQ-XZWF38xPg0A+n+btD2biS+x4GRsA@mail.gmail.com>
+From: Sanjoy Das <sanjoy@playingwithpointers.com>
+Date: Wed, 4 Feb 2015 18:29:28 -0800
+Message-ID: <CAMiUf7eNGzUV=HRQjuu1UaL4waJf4=nL4vmJW8Ohin0qcMMbTg@mail.gmail.com>
+To: David Majnemer <david.majnemer@gmail.com>
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+
+> 'fadd nnan' claims that it is allowed to assume that its operands can't be
+> NaN and that those which value depend on the value will not get NaN.  I
+> believe this would let 'fcmp' assume that it only needs to look at the
+> result of '%add':
+> define i1 @f(i1 %a.is_nan, float %a, float %b) {
+>   %add = fadd nnan float %a, %b
+>   %cmp = fcmp ord float 0., %add
+>   ret i1 %cmp
+> }
+
+The LangRef says: " Allow optimizations to assume the arguments and
+result are not NaN. *Such optimizations are required to retain defined
+behavior over NaNs, but the value of the result is undefined.*"
+
+I'd interpret this as: "since %b is NaN, %add is undef".  I don't
+think we can interpret the langref as allowing non-local reasoning
+using nnan, since "fadd nnan NaN, foo" is explicitly not UB.  I guess
+difficult part is deciding is what is meant by "result" here.
+
+If we allowed nonlocal reasoning like this, we'd run into trouble with
+hoisting 'fadd nnan's (I don't know if we do that now, so
+sizeof(salt_grain)++) -- since we'd be changing the region in which
+such non-local reasoning is valid.
+
+-- Sanjoy
+
+>
+
+
+>
+>>
+>> Having said that I won't be surprised if fast-math flags suffer from
+>> issues similar to poison -- "Allow algebraically equivalent
+>> transformations that may dramatically change results in floating
+>> point" sounds somewhat vague to me.
+>>
+>> -- Sanjoy
+>>
+>> >   ret i1 %cmp
+>> > }
+>> >
+>> > Now we will have:
+>> > %add = float undef
+>> > %cmp = i1 undef
+>> >
+>> >
+>> >>
+>> >>
+>> >>
+>> >> John
+>> >
+>> >
+>> >
+>> > _______________________________________________
+>> > LLVM Developers mailing list
+>> > LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+>> > http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+>> >
+>
+>
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+From llvmdev-bounces@cs.uiuc.edu Wed Feb  4 21:45:03 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.7 required=5.0 tests=AWL,FROM_CS_UTAH,FROM_UTAH,
+	HK_RANDOM_ENVFROM autolearn=ham version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 58FD96501A8;
+	Wed,  4 Feb 2015 21:45:03 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 21:45:03 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t154guhA010302;
+	Wed, 4 Feb 2015 22:42:56 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t154flSB010277
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Wed, 4 Feb 2015 22:41:47 -0600
+Received: from pps05.cites.illinois.edu ([192.17.82.72])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <regehr@cs.utah.edu>) id 1YJEGB-000055-OT
+	for llvmdev@cs.uiuc.edu; Wed, 04 Feb 2015 22:41:47 -0600
+Received: from mail-svr1.cs.utah.edu (mail-svr1.cs.utah.edu [155.98.64.241])
+	by pps05.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t154fgkM031596
+	for <llvmdev@cs.uiuc.edu>; Wed, 4 Feb 2015 22:41:42 -0600
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 917FB6501A8;
+	Wed,  4 Feb 2015 21:41:41 -0700 (MST)
+Received: from thebes.cs.utah.edu (thebes.cs.utah.edu [155.98.65.57])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Wed,  4 Feb 2015 21:41:41 -0700 (MST)
+Date: Wed, 4 Feb 2015 21:41:41 -0700 (MST)
+From: John Regehr <regehr@cs.utah.edu>
+To: Sanjoy Das <sanjoy@playingwithpointers.com>
+In-Reply-To: <CAMiUf7czE2wv7i4WnXuaV2N6sm==3Mj5ofeP=v_8zQuw-kxrzw@mail.gmail.com>
+Message-ID: <alpine.DEB.2.02.1502042136130.26805@thebes.cs.utah.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+	<CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+	<alpine.DEB.2.02.1502041011590.15024@thebes.cs.utah.edu>
+	<CAL7bZ_eXUZtno53wx4TNRS0hCjd+Hv1o1G-GhrDrNkWMnCjasQ@mail.gmail.com>
+	<alpine.DEB.2.02.1502041221200.18823@thebes.cs.utah.edu>
+	<CAL7bZ_eVTGkKGrfZqCFGrhg1vCcjTXaWz8S7AKV8VQvk=KCz3Q@mail.gmail.com>
+	<CAMiUf7czE2wv7i4WnXuaV2N6sm==3Mj5ofeP=v_8zQuw-kxrzw@mail.gmail.com>
+User-Agent: Alpine 2.02 (DEB 1266 2009-07-14)
+MIME-Version: 1.0
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: R
+
+> Having said that I won't be surprised if fast-math flags suffer from
+> issues similar to poison -- "Allow algebraically equivalent
+> transformations that may dramatically change results in floating
+> point" sounds somewhat vague to me.
+
+The vaguenss should be expected since nobody seems to know what "gcc 
+-ffast-math" or "clang -ffast-math" mean at the source level either.
+
+John
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+

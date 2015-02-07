@@ -1,0 +1,2363 @@
+From llvmdev-bounces@cs.uiuc.edu Tue Feb  3 04:17:53 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=HK_RANDOM_ENVFROM,HTML_MESSAGE,
+	MIME_HTML_MOSTLY autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 223C165019E;
+	Tue,  3 Feb 2015 04:17:53 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue,  3 Feb 2015 04:17:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t13BFWQW027807;
+	Tue, 3 Feb 2015 05:15:32 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t13BFTXR027801
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 3 Feb 2015 05:15:29 -0600
+Received: from pps02.cites.illinois.edu ([192.17.82.100])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <nuno.lopes@ist.utl.pt>)
+	id 1YIbS5-0001Wo-FP
+	for llvmdev@cs.uiuc.edu; Tue, 03 Feb 2015 05:15:29 -0600
+Received: from smtp2.ist.utl.pt (smtp2.ist.utl.pt [193.136.128.22])
+	by pps02.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t13BFLYo008800
+	for <llvmdev@cs.uiuc.edu>; Tue, 3 Feb 2015 05:15:21 -0600
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by smtp2.ist.utl.pt (Postfix) with ESMTP id 86E8A700736D;
+	Tue,  3 Feb 2015 11:15:19 +0000 (WET)
+X-Virus-Scanned: by amavisd-new-2.6.4 (20090625) (Debian) at ist.utl.pt
+Received: from smtp2.ist.utl.pt ([127.0.0.1])
+	by localhost (smtp2.ist.utl.pt [127.0.0.1]) (amavisd-new, port 10025)
+	with LMTP id ypmXZKKIffE9; Tue,  3 Feb 2015 11:15:18 +0000 (WET)
+Received: from mail2.ist.utl.pt (mail.ist.utl.pt [IPv6:2001:690:2100:1::8])
+	by smtp2.ist.utl.pt (Postfix) with ESMTP id 97819700736A;
+	Tue,  3 Feb 2015 11:15:17 +0000 (WET)
+Received: from MSRC1361839 (unknown [IPv6:2a01:110:8012:1010::50e])
+	(Authenticated sender: ist155393)
+	by mail2.ist.utl.pt (Postfix) with ESMTPSA id D8C5220176FD;
+	Tue,  3 Feb 2015 11:15:16 +0000 (WET)
+From: "Nuno Lopes" <nuno.lopes@ist.utl.pt>
+To: "'David Majnemer'" <david.majnemer@gmail.com>, <llvmdev@cs.uiuc.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+In-Reply-To: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+Date: Tue, 3 Feb 2015 11:15:16 -0000
+Message-ID: <003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+MIME-Version: 1.0
+X-Mailer: Microsoft Outlook 15.0
+Thread-Index: AQG2W3TkzUCbwbbvG8PPX7NLZcKjgZ0ShuOg
+Content-Language: en-gb
+Cc: "'John Regehr'" <regehr@cs.utah.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============0238751479677414004=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+This is a multipart message in MIME format.
+
+--===============0238751479677414004==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_0037_01D03FA2.B0740630"
+Content-Language: en-gb
+
+This is a multipart message in MIME format.
+
+------=_NextPart_000_0037_01D03FA2.B0740630
+Content-Type: text/plain;
+	charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+=20
+
+Thanks David for putting up this proposal together!
+
+I like the idea of having poison values behave more like undef (i.e., =
+per bit, with run-time behavior).
+
+One of the problems this proposal solves is speculation of 'a && b' into =
+'a & b'. Currently this is illegal (despite sometimes simplifycfg doing =
+it anyway).
+
+It also fixes bugs like http://llvm.org/PR20997
+
+=20
+
+The proposal doesn't say anything about branching on a poison value. I =
+assume this should stay as the current interpretation -- that such =
+branches should be undefined behavior (since we cannot branch to =
+multiple places at the same time -- even if they would compute the same =
+values; that's already too hard for the compiler to analyze).
+
+=20
+
+There's another caveat: it *does* seem to fix the problem described by =
+Dan in =
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html
+
+However, it introduces a potential performance penalty: we won't be able =
+to speculate instructions with undefined behavior whose input may be =
+poison.
+
+=20
+
+For example, take the following code:
+
+loop:
+
+  %add =3D add nsw %x, %y
+
+  %div =3D udiv %z, %add
+
+  =E2=80=A6 use %div only in the case that %add does not overflow and is =
+non-zero
+
+=20
+
+We can move the %add outside of the loop, but we cannot move the =
+division. With the reason being that if %add overflows, then %add is =
+poison and therefore it can take any value (in particular, it can be 0), =
+triggering undef behavior in %div.  Therefore, we cannot freely move =
+%div, unless we can prove that %add will never be 0 nor poison.  This =
+sounds hard for the compiler to do, and I guess we'll have some =
+regressions (e.g., LICM has to be more conservative). Nevertheless, I'm =
+all for fixing poison once and for all!
+
+=20
+
+BTW, would it help if I produced a version of Alive that implements the =
+semantics being proposed?  (with no performance guarantees for this =
+prototype).  The cool thing is that then we can run it through our =
+database of 300+ InstCombine optimizations and see which ones would have =
+to be removed/fixed.
+
+=20
+
+Nuno
+
+=20
+
+=20
+
+From: David Majnemer
+Sent: 28 January 2015 02:50
+To: llvmdev@cs.uiuc.edu
+Cc: Sanjoy Das; Dan Gohman; John Regehr; Nuno Lopes
+Subject: RFC: Proposal for Poison Semantics
+
+=20
+
+Hello,
+
+=20
+
+What follows is my attempt to describe how poison works.  Let me know =
+what you think.
+
+=20
+
+--=20
+
+David
+
+=20
+
+=20
+
+# LLVM Poison Semantics
+
+=20
+
+Poison is an LLVM concept which exists solely to enable further =
+optimization of LLVM IR. The exact behavior of poison has been, to say =
+the least, confusing for users, researchers and engineers working with =
+LLVM.
+
+=20
+
+This document hopes to clear up some of the confusion of poison and =
+hopefully explain *why* it has its semantics.
+
+=20
+
+## A Quick Introduction to Poison
+
+=20
+
+Let's start with a concrete motivating example in C:
+
+```
+
+int isSumGreater(int a, int b) {
+
+  return a + b > a;
+
+}
+
+```
+
+=20
+
+The C specification permits us to optimize the comparison in =
+`isSumGreater` to `b > 0` because signed overflow results in undefined =
+behavior.  A reasonable translation of `isSumGreater` to LLVM IR could =
+be:
+
+=20
+
+```
+
+define i32 @isSumGreater(i32 %a, i32 %b) {
+
+entry:
+
+  %add =3D add i32 %a, %b
+
+  %cmp =3D icmp sgt i32 %add, %a
+
+  %conv =3D zext i1 %cmp to i32
+
+  ret i32 %conv
+
+}
+
+```
+
+=20
+
+However, LLVM cannot determine that `%cmp` should not consider cases =
+where `%add` resulted in signed overflow.  We need a way to communicate =
+this information to LLVM.
+
+=20
+
+This is where the `nsw` and `nuw` flags come into play.  `nsw` is short =
+for "no signed wrap", `nuw` is short for "no unsigned wrap".
+
+=20
+
+With these, we can come up with a new formulation of `%add`: `add i32 =
+nsw %a, %b`.
+
+LLVM can take this into account when it is optimizing the `%cmp` and =
+replace it with: `icmp sgt i32 %b, 0`.
+
+=20
+
+## Differences Between LLVM and C/C++
+
+=20
+
+There are some interesting differences between what C++ and C specify =
+and how LLVM behaves with respect to performing an operationg which is =
+not permitted to overflow. =20
+
+=20
+
+Perhaps chief among them is that evaluating an expression in C++ or C =
+which results performs an overflow is undefined behavior. In LLVM, =
+executing an instruction which is marked `nsw` but which violates signed =
+overflow results in poison. Values which have no relationship with =
+poisoned values are not effected by them.
+
+=20
+
+Let us take the following C program into consideration:
+
+```
+
+int calculateImportantResult(int a, int b) {
+
+  int result =3D 0;
+
+  if (a) {
+
+    result =3D a + b;
+
+  }
+
+  return result;
+
+}
+
+```
+
+=20
+
+A straightforward lowering to LLVM IR could be:
+
+```
+
+define i32 @calculateImportantResult(i32 %a, i32 %b) {
+
+entry:
+
+  %tobool =3D icmp ne i32 %a, 0
+
+  br i1 %tobool, label %if.then, label %if.end
+
+=20
+
+if.then:
+
+  %add =3D add nsw i32 %a, %b
+
+  br label %if.end
+
+=20
+
+if.end:
+
+  %result =3D phi i32 [ %add, %if.then ], [ 0, %entry ]
+
+  ret i32 %result
+
+}
+
+```
+
+=20
+
+Moving `%add` to the `%entry` block would be preferable and would allow =
+further optimizations:
+
+```
+
+define i32 @calculateImportantResult(i32 %a, i32 %b) {
+
+entry:
+
+  %tobool =3D icmp ne i32 %a, 0
+
+  %add =3D add nsw i32 %a, %b
+
+  %result =3D select i1 %tobool, i32 0, i32 %add
+
+  ret i32 %result
+
+}
+
+```
+
+=20
+
+In the original code, the calculation of `%add` was control dependent.
+
+Now, `%add` might result in signed overflow in violation of the `nsw` =
+flag.
+
+Despite this, the program should behave as it did before because the =
+poisoned value is masked-out by the select. The next section will dive =
+into this in greater detail.
+
+=20
+
+# Computation Involving Poison Values
+
+Poison in a computation results in poison if the result cannot be =
+constrained by its non-poison operands.
+
+=20
+
+Examples of this rule which will result in poison:
+
+```
+
+  %add =3D add i32 %x, %always_poison
+
+  %sub =3D sub i32 %x, %always_poison
+
+  %xor =3D xor i32 %x, %always_poison
+
+  %mul =3D mul i32 %always_poison, 1
+
+```
+
+=20
+
+Examples of this rule which do not result in poison:
+
+```
+
+  %or  =3D or  i32 %always_poison, 2
+
+  %and =3D and i32 %always_poison, 2
+
+  %mul =3D mul i32 %always_poison, 0
+
+```
+
+=20
+
+In fact, it would be reasonable to optimize `%or` to `2` and `%and` to =
+`0`.  In this respect, poison is not different from `undef`.
+
+=20
+
+The following example is only poison if `%cond` is false:
+
+```
+
+  %sel =3D select i1 %cond, i32 2, %always_poison
+
+```
+
+=20
+
+### Is it safe to have poison as a `call` argument?
+
+=20
+
+A `call` instruction may or may not result in poison depending on =
+exactly how the callee  uses the supplied arguments, it is not =
+necessarily the case that `call i32 @someFunction(i32 %always_poison)` =
+results in poison.
+
+=20
+
+LLVM cannot forbid poison from entering `call` arguments without =
+prohibiting an optimization pass from outlining code.
+
+=20
+
+### Is it safe to store poison to memory?
+
+=20
+
+`store i32 %always_poison, i32* %mem` does not result in undefined =
+behavior. A subsequent load instruction like `%load =3D load i32* %mem` =
+will result in `%load` being a poison value.
+
+=20
+
+### Is it safe to load or store a poison memory location?
+
+=20
+
+No.  Poison works just like `undef` in this respect.
+
+=20
+
+### Does comparing a poison value result in poison?
+
+=20
+
+It depends.  If the comparison couldn't solely be determined by looking =
+at the other operand, the result is poison.
+
+=20
+
+For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not =
+poison.
+
+However, `icmp i32 ne %always_poison, 7` is poison.
+
+=20
+
+### What if the condition operand in a `select` is poison?
+
+=20
+
+In the example `%sel =3D select i1 %always_poison, i1 true, false`, =
+`%sel` is either `true` or `false`.  Because, `%sel` depends on =
+`%always_poison` it too is poison.
+
+
+------=_NextPart_000_0037_01D03FA2.B0740630
+Content-Type: text/html;
+	charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" =
+xmlns:o=3D"urn:schemas-microsoft-com:office:office" =
+xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" =
+xmlns=3D"http://www.w3.org/TR/REC-html40"><head><meta =
+http-equiv=3DContent-Type content=3D"text/html; charset=3Dutf-8"><meta =
+name=3DGenerator content=3D"Microsoft Word 15 (filtered =
+medium)"><style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0cm;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman",serif;}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:#0563C1;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-priority:99;
+	color:#954F72;
+	text-decoration:underline;}
+span.EmailStyle17
+	{mso-style-type:personal;
+	font-family:"Calibri",sans-serif;
+	color:#1F497D;}
+span.EmailStyle18
+	{mso-style-type:personal-compose;
+	font-family:"Calibri",sans-serif;
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	font-family:"Calibri",sans-serif;}
+@page WordSection1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 72.0pt 72.0pt 72.0pt;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]--></head><body lang=3DEN-US =
+link=3D"#0563C1" vlink=3D"#954F72"><div class=3DWordSection1><p =
+class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>Hi,<o:p></o:p=
+></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p>&nbsp;</=
+o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>Thanks David =
+for putting up this proposal together!<o:p></o:p></span></p><p =
+class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>I like the =
+idea of having poison values behave more like undef (i.e., per bit, with =
+run-time behavior).<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>One of the =
+problems this proposal solves is speculation of 'a &amp;&amp; b' into 'a =
+&amp; b'. Currently this is illegal (despite sometimes simplifycfg doing =
+it anyway).<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>It also =
+fixes bugs like <span style=3D'color:#1F497D'><a =
+href=3D"http://llvm.org/PR20997">http://llvm.org/PR20997</a><o:p></o:p></=
+span></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif;color:#1F497D'=
+><o:p>&nbsp;</o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>The proposal =
+doesn't say anything about branching on a poison value. I assume this =
+should stay as the current interpretation -- that such branches should =
+be undefined behavior (since we cannot branch to multiple places at the =
+same time -- even if they would compute the same values; that's already =
+too hard for the compiler to analyze).<o:p></o:p></span></p><p =
+class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif;color:#1F497D'=
+><o:p>&nbsp;</o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>There's =
+another caveat: it *does* seem to fix the problem described by Dan in =
+<span style=3D'color:#1F497D'><a =
+href=3D"http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.h=
+tml">http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html=
+</a></span><o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>However, it =
+introduces a potential performance penalty: we won't be able to =
+speculate instructions with undefined behavior whose input may be =
+poison.<span style=3D'color:#1F497D'><o:p></o:p></span></span></p><p =
+class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p>&nbsp;</=
+o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>For example, =
+take the following code:<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>loop:<o:p></o=
+:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>=C2=A0 %add =
+=3D add nsw %x, %y<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>=C2=A0 %div =
+=3D udiv %z, %add<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>=C2=A0 =
+=E2=80=A6 use %div only in the case that %add does not overflow and is =
+non-zero<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p>&nbsp;</=
+o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>We can move =
+the %add outside of the loop, but we cannot move the division. With the =
+reason being that if %add overflows, then %add is poison and therefore =
+it can take any value (in particular, it can be 0), triggering undef =
+behavior in %div. =C2=A0Therefore, we cannot freely move %div, unless we =
+can prove that %add will never be 0 nor poison. =C2=A0This sounds hard =
+for the compiler to do, and I guess we'll have some regressions (e.g., =
+LICM has to be more conservative). Nevertheless, I'm all for fixing =
+poison once and for all!<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p>&nbsp;</=
+o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>BTW, would =
+it help if I produced a version of Alive that implements the semantics =
+being proposed? =C2=A0(with no performance guarantees for this =
+prototype).=C2=A0 The cool thing is that then we can run it through our =
+database of 300+ InstCombine optimizations and see which ones would have =
+to be removed/fixed.<o:p></o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'><o:p>&nbsp;</=
+o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>Nuno<o:p></o:=
+p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif;color:#1F497D'=
+><o:p>&nbsp;</o:p></span></p><p class=3DMsoNormal><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif;color:#1F497D'=
+><o:p>&nbsp;</o:p></span></p><p class=3DMsoNormal><b><span =
+style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'>From:</span><=
+/b><span style=3D'font-size:11.0pt;font-family:"Calibri",sans-serif'> =
+David Majnemer<br><b>Sent:</b> 28 January 2015 02:50<br><b>To:</b> =
+llvmdev@cs.uiuc.edu<br><b>Cc:</b> Sanjoy Das; Dan Gohman; John Regehr; =
+Nuno Lopes<br><b>Subject:</b> RFC: Proposal for Poison =
+Semantics<o:p></o:p></span></p><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p><div><p =
+class=3DMsoNormal>Hello,<o:p></o:p></p><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>What follows is my attempt to describe how poison =
+works.&nbsp; Let me know what you think.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>--&nbsp;<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>David<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><div><p =
+class=3DMsoNormal># LLVM Poison Semantics<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Poison is an LLVM concept which exists solely to =
+enable further optimization of LLVM IR. The exact behavior of poison has =
+been, to say the least, confusing for users, researchers and engineers =
+working with LLVM.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>This document hopes to clear up some of the confusion =
+of poison and hopefully explain *why* it has its =
+semantics.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>## A Quick Introduction to =
+Poison<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Let's start with a concrete motivating example in =
+C:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p class=3DMsoNormal>int =
+isSumGreater(int a, int b) {<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; return a + b &gt; =
+a;<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>}<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>The C specification permits us to optimize the =
+comparison in `isSumGreater` to `b &gt; 0` because signed overflow =
+results in undefined behavior.&nbsp; A reasonable translation of =
+`isSumGreater` to LLVM IR could be:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>define i32 @isSumGreater(i32 %a, i32 %b) =
+{<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>entry:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %add =3D add i32 %a, =
+%b<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; %cmp =3D icmp =
+sgt i32 %add, %a<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; =
+%conv =3D zext i1 %cmp to i32<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; ret i32 %conv<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>}<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>However, LLVM cannot determine that `%cmp` should not =
+consider cases where `%add` resulted in signed overflow.&nbsp; We need a =
+way to communicate this information to LLVM.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>This is where the `nsw` and `nuw` flags come into =
+play. &nbsp;`nsw` is short for &quot;no signed wrap&quot;, `nuw` is =
+short for &quot;no unsigned wrap&quot;.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>With these, we can come up with a new formulation of =
+`%add`: `add i32 nsw %a, %b`.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>LLVM can take this into account when it is optimizing =
+the `%cmp` and replace it with: `icmp sgt i32 %b, =
+0`.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>## Differences Between LLVM and =
+C/C++<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>There are some interesting differences between what =
+C++ and C specify and how LLVM behaves with respect to performing an =
+operationg which is not permitted to overflow. =
+&nbsp;<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Perhaps chief among them is that evaluating an =
+expression in C++ or C which results performs an overflow is undefined =
+behavior. In LLVM, executing an instruction which is marked `nsw` but =
+which violates signed overflow results in poison. Values which have no =
+relationship with poisoned values are not effected by =
+them.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Let us take the following C program into =
+consideration:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p class=3DMsoNormal>int =
+calculateImportantResult(int a, int b) {<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; int result =3D 0;<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; if (a) {<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; &nbsp; result =3D a + =
+b;<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; =
+}<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; return =
+result;<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>}<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p class=3DMsoNormal>A =
+straightforward lowering to LLVM IR could =
+be:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>define i32 @calculateImportantResult(i32 %a, i32 %b) =
+{<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>entry:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %tobool =3D icmp ne i32 %a, =
+0<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; br i1 %tobool, =
+label %if.then, label %if.end<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>if.then:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %add =3D add nsw i32 %a, =
+%b<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; br label =
+%if.end<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>if.end:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %result =3D phi i32 [ %add, %if.then ], [ 0, =
+%entry ]<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; ret i32 =
+%result<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>}<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Moving `%add` to the `%entry` block would be =
+preferable and would allow further =
+optimizations:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>define i32 @calculateImportantResult(i32 %a, i32 %b) =
+{<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>entry:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %tobool =3D icmp ne i32 %a, =
+0<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; %add =3D add nsw =
+i32 %a, %b<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; %result =
+=3D select i1 %tobool, i32 0, i32 %add<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; ret i32 %result<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>}<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>In the original code, the calculation of `%add` was =
+control dependent.<o:p></o:p></p></div><div><p class=3DMsoNormal>Now, =
+`%add` might result in signed overflow in violation of the `nsw` =
+flag.<o:p></o:p></p></div><div><p class=3DMsoNormal>Despite this, the =
+program should behave as it did before because the poisoned value is =
+masked-out by the select. The next section will dive into this in =
+greater detail.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p class=3DMsoNormal># =
+Computation Involving Poison Values<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>Poison in a computation results in poison if the =
+result cannot be constrained by its non-poison =
+operands.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Examples of this rule which will result in =
+poison:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %add =3D add i32 %x, =
+%always_poison<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; %sub =
+=3D sub i32 %x, %always_poison<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %xor =3D xor i32 %x, =
+%always_poison<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; %mul =
+=3D mul i32 %always_poison, 1<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>Examples of this rule which do not result in =
+poison:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %or &nbsp;=3D or &nbsp;i32 %always_poison, =
+2<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; %and =3D and i32 =
+%always_poison, 2<o:p></o:p></p></div><div><p class=3DMsoNormal>&nbsp; =
+%mul =3D mul i32 %always_poison, 0<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>In fact, it would be reasonable to optimize `%or` to =
+`2` and `%and` to `0`.&nbsp; In this respect, poison is not different =
+from `undef`.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>The following example is only poison if `%cond` is =
+false:<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>&nbsp; %sel =3D select i1 %cond, i32 2, =
+%always_poison<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>```<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>### Is it safe to have poison as a `call` =
+argument?<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p class=3DMsoNormal>A =
+`call` instruction may or may not result in poison depending on exactly =
+how the callee &nbsp;uses the supplied arguments, it is not necessarily =
+the case that `call i32 @someFunction(i32 %always_poison)` results in =
+poison.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>LLVM cannot forbid poison from entering `call` =
+arguments without prohibiting an optimization pass from outlining =
+code.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>### Is it safe to store poison to =
+memory?<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>`store i32 %always_poison, i32* %mem` does not result =
+in undefined behavior. A subsequent load instruction like `%load =3D =
+load i32* %mem` will result in `%load` being a poison =
+value.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>### Is it safe to load or store a poison memory =
+location?<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>No.&nbsp; Poison works just like `undef` in this =
+respect.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>### Does comparing a poison value result in =
+poison?<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>It depends.&nbsp; If the comparison couldn't solely be =
+determined by looking at the other operand, the result is =
+poison.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>For example, `icmp i32 ule %always_poison, 4294967295` =
+is `true`, not poison.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal>However, `icmp i32 ne %always_poison, 7` is =
+poison.<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>### What if the condition operand in a `select` is =
+poison?<o:p></o:p></p></div><div><p =
+class=3DMsoNormal><o:p>&nbsp;</o:p></p></div><div><p =
+class=3DMsoNormal>In the example `%sel =3D select i1 %always_poison, i1 =
+true, false`, `%sel` is either `true` or `false`.&nbsp; Because, `%sel` =
+depends on `%always_poison` it too is =
+poison.<o:p></o:p></p></div></div></div></div></body></html>
+------=_NextPart_000_0037_01D03FA2.B0740630--
+
+
+--===============0238751479677414004==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============0238751479677414004==--
+
+From llvmdev-bounces@cs.uiuc.edu Tue Feb  3 10:39:52 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.7 required=5.0 tests=AWL,DKIM_ADSP_CUSTOM_MED,
+	DKIM_SIGNED,FREEMAIL_FROM,HK_RANDOM_ENVFROM,HTML_MESSAGE,MIME_HTML_MOSTLY,
+	T_DKIM_INVALID autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id B4D566501AE;
+	Tue,  3 Feb 2015 10:39:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue,  3 Feb 2015 10:39:52 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t13HbXvq006118;
+	Tue, 3 Feb 2015 11:37:33 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t13HbWO2006115
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 3 Feb 2015 11:37:32 -0600
+Received: from pps01.cites.illinois.edu ([192.17.82.69])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <david.majnemer@gmail.com>)
+	id 1YIhPo-0005Di-77
+	for llvmdev@cs.uiuc.edu; Tue, 03 Feb 2015 11:37:32 -0600
+Received: from mail-ie0-f181.google.com (mail-ie0-f181.google.com
+	[209.85.223.181])
+	by pps01.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t13Hb4Qr029664
+	(version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Tue, 3 Feb 2015 11:37:21 -0600
+Received: by mail-ie0-f181.google.com with SMTP id rd18so17696430iec.12
+	for <llvmdev@cs.uiuc.edu>; Tue, 03 Feb 2015 09:37:03 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmail.com; s=20120113;
+	h=mime-version:in-reply-to:references:from:date:message-id:subject:to
+	:cc:content-type;
+	bh=O6mOeSiQMn8WaneG+Vzj0dYqIpuZMidjMuHDrST2P4I=;
+	b=fWhPdbq0A12r3k0EJphmcZ4xqgJDDVain4YmcupI3lmu1pLfuPg1aPCK7wcdFnbGF/
+	Z+PcOvcv5WlbMcD8Q992AbouMZNWwjYWbmowXGaY40nNbNUftRD0OZtXDA8o67Ckdh16
+	IaDzsnkftqU3u4+g+1KDeAx3HgvnNfRyIp9UnkiggP0rr8ghS3/IW6qwHLkNnUdhI4ac
+	2RBLW/jlEZ/dzSxy3rF5vp/F5JZW+yA2GzOw9NBlgVkuKM89z4xtLuh8xarOi2CJTwaW
+	0GOKk4snSDdo6SLCEewZgq5j//WcMU+saWJM3nzNdZar4OpARsGsxKXoknU4Wz8rfPiF
+	EJDQ==
+X-Received: by 10.107.170.162 with SMTP id g34mr25872905ioj.7.1422985023861;
+	Tue, 03 Feb 2015 09:37:03 -0800 (PST)
+MIME-Version: 1.0
+Received: by 10.50.178.178 with HTTP; Tue, 3 Feb 2015 09:36:23 -0800 (PST)
+In-Reply-To: <003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+	<003601d03fa2$b0719530$1154bf90$@ist.utl.pt>
+From: David Majnemer <david.majnemer@gmail.com>
+Date: Tue, 3 Feb 2015 09:36:23 -0800
+Message-ID: <CAL7bZ_dxyygV_X_MqtZHw-WhAhDSO_W4VERTCRFu5TW=ONJeag@mail.gmail.com>
+To: Nuno Lopes <nuno.lopes@ist.utl.pt>
+Cc: John Regehr <regehr@cs.utah.edu>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+Subject: Re: [LLVMdev] Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============5770039696841736901=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+--===============5770039696841736901==
+Content-Type: multipart/alternative; boundary=001a11426c3cde3be7050e3284b2
+
+--001a11426c3cde3be7050e3284b2
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, Feb 3, 2015 at 3:15 AM, Nuno Lopes <nuno.lopes@ist.utl.pt> wrote:
+
+> Hi,
+>
+>
+>
+> Thanks David for putting up this proposal together!
+>
+> I like the idea of having poison values behave more like undef (i.e., per
+> bit, with run-time behavior).
+>
+> One of the problems this proposal solves is speculation of 'a && b' into
+> 'a & b'. Currently this is illegal (despite sometimes simplifycfg doing i=
+t
+> anyway).
+>
+> It also fixes bugs like http://llvm.org/PR20997
+>
+>
+>
+> The proposal doesn't say anything about branching on a poison value. I
+> assume this should stay as the current interpretation -- that such branch=
+es
+> should be undefined behavior (since we cannot branch to multiple places a=
+t
+> the same time -- even if they would compute the same values; that's alrea=
+dy
+> too hard for the compiler to analyze).
+>
+
+The RFC intended to make branching on poison values OK.  If branching on
+poison wasn't OK, then we couldn't go from select to -> br/phi.
+
+
+>
+>
+> There's another caveat: it *does* seem to fix the problem described by Da=
+n
+> in http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html
+>
+> However, it introduces a potential performance penalty: we won't be able
+> to speculate instructions with undefined behavior whose input may be pois=
+on.
+>
+>
+>
+> For example, take the following code:
+>
+> loop:
+>
+>   %add =3D add nsw %x, %y
+>
+>   %div =3D udiv %z, %add
+>
+>   =E2=80=A6 use %div only in the case that %add does not overflow and is =
+non-zero
+>
+>
+>
+> We can move the %add outside of the loop, but we cannot move the division=
+.
+> With the reason being that if %add overflows, then %add is poison and
+> therefore it can take any value (in particular, it can be 0), triggering
+> undef behavior in %div.  Therefore, we cannot freely move %div, unless we
+> can prove that %add will never be 0 nor poison.  This sounds hard for the
+> compiler to do, and I guess we'll have some regressions (e.g., LICM has t=
+o
+> be more conservative). Nevertheless, I'm all for fixing poison once and f=
+or
+> all!
+>
+
+Believe it or not, I already fixed this bug (PR21412). :)
+
+
+>
+>
+> BTW, would it help if I produced a version of Alive that implements the
+> semantics being proposed?  (with no performance guarantees for this
+> prototype).  The cool thing is that then we can run it through our databa=
+se
+> of 300+ InstCombine optimizations and see which ones would have to be
+> removed/fixed.
+>
+
+I think such a thing would be great.  However, there is a problem that the
+RFC wasn't aware of when it was written:
+
+consider:
+%S =3D select %A, %B, undef
+
+without us knowing anything about %A or %B, we will replace all uses of %S
+with %B.  This transform would be considered wrong with the RFC in mind.
+
+If this transform was valid, there could not be any value or value-like
+property in LLVM with semantics more powerful than undef.  This makes me
+think that what LLVM *actually* implements is not poison or something like
+it.
+
+On the flip side, we could say that this transform is nonsense but I'd
+rather not pessimize LLVM like that.
+
+
+>
+>
+> Nuno
+>
+>
+>
+>
+>
+> *From:* David Majnemer
+> *Sent:* 28 January 2015 02:50
+> *To:* llvmdev@cs.uiuc.edu
+> *Cc:* Sanjoy Das; Dan Gohman; John Regehr; Nuno Lopes
+> *Subject:* RFC: Proposal for Poison Semantics
+>
+>
+>
+> Hello,
+>
+>
+>
+> What follows is my attempt to describe how poison works.  Let me know wha=
+t
+> you think.
+>
+>
+>
+> --
+>
+> David
+>
+>
+>
+>
+>
+> # LLVM Poison Semantics
+>
+>
+>
+> Poison is an LLVM concept which exists solely to enable further
+> optimization of LLVM IR. The exact behavior of poison has been, to say th=
+e
+> least, confusing for users, researchers and engineers working with LLVM.
+>
+>
+>
+> This document hopes to clear up some of the confusion of poison and
+> hopefully explain *why* it has its semantics.
+>
+>
+>
+> ## A Quick Introduction to Poison
+>
+>
+>
+> Let's start with a concrete motivating example in C:
+>
+> ```
+>
+> int isSumGreater(int a, int b) {
+>
+>   return a + b > a;
+>
+> }
+>
+> ```
+>
+>
+>
+> The C specification permits us to optimize the comparison in
+> `isSumGreater` to `b > 0` because signed overflow results in undefined
+> behavior.  A reasonable translation of `isSumGreater` to LLVM IR could be=
+:
+>
+>
+>
+> ```
+>
+> define i32 @isSumGreater(i32 %a, i32 %b) {
+>
+> entry:
+>
+>   %add =3D add i32 %a, %b
+>
+>   %cmp =3D icmp sgt i32 %add, %a
+>
+>   %conv =3D zext i1 %cmp to i32
+>
+>   ret i32 %conv
+>
+> }
+>
+> ```
+>
+>
+>
+> However, LLVM cannot determine that `%cmp` should not consider cases wher=
+e
+> `%add` resulted in signed overflow.  We need a way to communicate this
+> information to LLVM.
+>
+>
+>
+> This is where the `nsw` and `nuw` flags come into play.  `nsw` is short
+> for "no signed wrap", `nuw` is short for "no unsigned wrap".
+>
+>
+>
+> With these, we can come up with a new formulation of `%add`: `add i32 nsw
+> %a, %b`.
+>
+> LLVM can take this into account when it is optimizing the `%cmp` and
+> replace it with: `icmp sgt i32 %b, 0`.
+>
+>
+>
+> ## Differences Between LLVM and C/C++
+>
+>
+>
+> There are some interesting differences between what C++ and C specify and
+> how LLVM behaves with respect to performing an operationg which is not
+> permitted to overflow.
+>
+>
+>
+> Perhaps chief among them is that evaluating an expression in C++ or C
+> which results performs an overflow is undefined behavior. In LLVM,
+> executing an instruction which is marked `nsw` but which violates signed
+> overflow results in poison. Values which have no relationship with poison=
+ed
+> values are not effected by them.
+>
+>
+>
+> Let us take the following C program into consideration:
+>
+> ```
+>
+> int calculateImportantResult(int a, int b) {
+>
+>   int result =3D 0;
+>
+>   if (a) {
+>
+>     result =3D a + b;
+>
+>   }
+>
+>   return result;
+>
+> }
+>
+> ```
+>
+>
+>
+> A straightforward lowering to LLVM IR could be:
+>
+> ```
+>
+> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+>
+> entry:
+>
+>   %tobool =3D icmp ne i32 %a, 0
+>
+>   br i1 %tobool, label %if.then, label %if.end
+>
+>
+>
+> if.then:
+>
+>   %add =3D add nsw i32 %a, %b
+>
+>   br label %if.end
+>
+>
+>
+> if.end:
+>
+>   %result =3D phi i32 [ %add, %if.then ], [ 0, %entry ]
+>
+>   ret i32 %result
+>
+> }
+>
+> ```
+>
+>
+>
+> Moving `%add` to the `%entry` block would be preferable and would allow
+> further optimizations:
+>
+> ```
+>
+> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+>
+> entry:
+>
+>   %tobool =3D icmp ne i32 %a, 0
+>
+>   %add =3D add nsw i32 %a, %b
+>
+>   %result =3D select i1 %tobool, i32 0, i32 %add
+>
+>   ret i32 %result
+>
+> }
+>
+> ```
+>
+>
+>
+> In the original code, the calculation of `%add` was control dependent.
+>
+> Now, `%add` might result in signed overflow in violation of the `nsw` fla=
+g.
+>
+> Despite this, the program should behave as it did before because the
+> poisoned value is masked-out by the select. The next section will dive in=
+to
+> this in greater detail.
+>
+>
+>
+> # Computation Involving Poison Values
+>
+> Poison in a computation results in poison if the result cannot be
+> constrained by its non-poison operands.
+>
+>
+>
+> Examples of this rule which will result in poison:
+>
+> ```
+>
+>   %add =3D add i32 %x, %always_poison
+>
+>   %sub =3D sub i32 %x, %always_poison
+>
+>   %xor =3D xor i32 %x, %always_poison
+>
+>   %mul =3D mul i32 %always_poison, 1
+>
+> ```
+>
+>
+>
+> Examples of this rule which do not result in poison:
+>
+> ```
+>
+>   %or  =3D or  i32 %always_poison, 2
+>
+>   %and =3D and i32 %always_poison, 2
+>
+>   %mul =3D mul i32 %always_poison, 0
+>
+> ```
+>
+>
+>
+> In fact, it would be reasonable to optimize `%or` to `2` and `%and` to
+> `0`.  In this respect, poison is not different from `undef`.
+>
+>
+>
+> The following example is only poison if `%cond` is false:
+>
+> ```
+>
+>   %sel =3D select i1 %cond, i32 2, %always_poison
+>
+> ```
+>
+>
+>
+> ### Is it safe to have poison as a `call` argument?
+>
+>
+>
+> A `call` instruction may or may not result in poison depending on exactly
+> how the callee  uses the supplied arguments, it is not necessarily the ca=
+se
+> that `call i32 @someFunction(i32 %always_poison)` results in poison.
+>
+>
+>
+> LLVM cannot forbid poison from entering `call` arguments without
+> prohibiting an optimization pass from outlining code.
+>
+>
+>
+> ### Is it safe to store poison to memory?
+>
+>
+>
+> `store i32 %always_poison, i32* %mem` does not result in undefined
+> behavior. A subsequent load instruction like `%load =3D load i32* %mem` w=
+ill
+> result in `%load` being a poison value.
+>
+>
+>
+> ### Is it safe to load or store a poison memory location?
+>
+>
+>
+> No.  Poison works just like `undef` in this respect.
+>
+>
+>
+> ### Does comparing a poison value result in poison?
+>
+>
+>
+> It depends.  If the comparison couldn't solely be determined by looking a=
+t
+> the other operand, the result is poison.
+>
+>
+>
+> For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not
+> poison.
+>
+> However, `icmp i32 ne %always_poison, 7` is poison.
+>
+>
+>
+> ### What if the condition operand in a `select` is poison?
+>
+>
+>
+> In the example `%sel =3D select i1 %always_poison, i1 true, false`, `%sel=
+`
+> is either `true` or `false`.  Because, `%sel` depends on `%always_poison`
+> it too is poison.
+>
+
+--001a11426c3cde3be7050e3284b2
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div class=3D"gmail_extra"><div class=3D"gmail_quote">On T=
+ue, Feb 3, 2015 at 3:15 AM, Nuno Lopes <span dir=3D"ltr">&lt;<a href=3D"mai=
+lto:nuno.lopes@ist.utl.pt" target=3D"_blank">nuno.lopes@ist.utl.pt</a>&gt;<=
+/span> wrote:<br><blockquote class=3D"gmail_quote" style=3D"margin:0px 0px =
+0px 0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);border-l=
+eft-style:solid;padding-left:1ex"><div lang=3D"EN-US" link=3D"#0563C1" vlin=
+k=3D"#954F72"><div><p class=3D"MsoNormal"><span style=3D"font-size:11pt;fon=
+t-family:Calibri,sans-serif">Hi,<u></u><u></u></span></p><p class=3D"MsoNor=
+mal"><span style=3D"font-size:11pt;font-family:Calibri,sans-serif"><u></u>=
+=C2=A0<u></u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11p=
+t;font-family:Calibri,sans-serif">Thanks David for putting up this proposal=
+ together!<u></u><u></u></span></p><p class=3D"MsoNormal"><span style=3D"fo=
+nt-size:11pt;font-family:Calibri,sans-serif">I like the idea of having pois=
+on values behave more like undef (i.e., per bit, with run-time behavior).<u=
+></u><u></u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt=
+;font-family:Calibri,sans-serif">One of the problems this proposal solves i=
+s speculation of &#39;a &amp;&amp; b&#39; into &#39;a &amp; b&#39;. Current=
+ly this is illegal (despite sometimes simplifycfg doing it anyway).<u></u><=
+u></u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-=
+family:Calibri,sans-serif">It also fixes bugs like <span style=3D"color:rgb=
+(31,73,125)"><a href=3D"http://llvm.org/PR20997" target=3D"_blank">http://l=
+lvm.org/PR20997</a><u></u><u></u></span></span></p><p class=3D"MsoNormal"><=
+span style=3D"font-size:11pt;font-family:Calibri,sans-serif;color:rgb(31,73=
+,125)"><u></u>=C2=A0<u></u></span></p><p class=3D"MsoNormal"><span style=3D=
+"font-size:11pt;font-family:Calibri,sans-serif">The proposal doesn&#39;t sa=
+y anything about branching on a poison value. I assume this should stay as =
+the current interpretation -- that such branches should be undefined behavi=
+or (since we cannot branch to multiple places at the same time -- even if t=
+hey would compute the same values; that&#39;s already too hard for the comp=
+iler to analyze).</span></p></div></div></blockquote><div><br></div><div>Th=
+e RFC intended to make branching on poison values OK.=C2=A0 If branching on=
+ poison wasn&#39;t OK, then we couldn&#39;t go from select to -&gt; br/phi.=
+</div><div>=C2=A0</div><blockquote class=3D"gmail_quote" style=3D"margin:0p=
+x 0px 0px 0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);bo=
+rder-left-style:solid;padding-left:1ex"><div lang=3D"EN-US" link=3D"#0563C1=
+" vlink=3D"#954F72"><div><p class=3D"MsoNormal"><span style=3D"font-size:11=
+pt;font-family:Calibri,sans-serif"><u></u><u></u></span></p><p class=3D"Mso=
+Normal"><span style=3D"font-size:11pt;font-family:Calibri,sans-serif;color:=
+rgb(31,73,125)"><u></u>=C2=A0<u></u></span></p><p class=3D"MsoNormal"><span=
+ style=3D"font-size:11pt;font-family:Calibri,sans-serif">There&#39;s anothe=
+r caveat: it *does* seem to fix the problem described by Dan in <span style=
+=3D"color:rgb(31,73,125)"><a href=3D"http://lists.cs.uiuc.edu/pipermail/llv=
+mdev/2011-December/046152.html" target=3D"_blank">http://lists.cs.uiuc.edu/=
+pipermail/llvmdev/2011-December/046152.html</a></span><u></u><u></u></span>=
+</p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-family:Calibr=
+i,sans-serif">However, it introduces a potential performance penalty: we wo=
+n&#39;t be able to speculate instructions with undefined behavior whose inp=
+ut may be poison.<span style=3D"color:rgb(31,73,125)"><u></u><u></u></span>=
+</span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-family=
+:Calibri,sans-serif"><u></u>=C2=A0<u></u></span></p><p class=3D"MsoNormal">=
+<span style=3D"font-size:11pt;font-family:Calibri,sans-serif">For example, =
+take the following code:<u></u><u></u></span></p><p class=3D"MsoNormal"><sp=
+an style=3D"font-size:11pt;font-family:Calibri,sans-serif">loop:<u></u><u><=
+/u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-fam=
+ily:Calibri,sans-serif">=C2=A0 %add =3D add nsw %x, %y<u></u><u></u></span>=
+</p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-family:Calibr=
+i,sans-serif">=C2=A0 %div =3D udiv %z, %add<u></u><u></u></span></p><p clas=
+s=3D"MsoNormal"><span style=3D"font-size:11pt;font-family:Calibri,sans-seri=
+f">=C2=A0 =E2=80=A6 use %div only in the case that %add does not overflow a=
+nd is non-zero<u></u><u></u></span></p><p class=3D"MsoNormal"><span style=
+=3D"font-size:11pt;font-family:Calibri,sans-serif"><u></u>=C2=A0<u></u></sp=
+an></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-family:Cal=
+ibri,sans-serif">We can move the %add outside of the loop, but we cannot mo=
+ve the division. With the reason being that if %add overflows, then %add is=
+ poison and therefore it can take any value (in particular, it can be 0), t=
+riggering undef behavior in %div.=C2=A0 Therefore, we cannot freely move %d=
+iv, unless we can prove that %add will never be 0 nor poison.=C2=A0 This so=
+unds hard for the compiler to do, and I guess we&#39;ll have some regressio=
+ns (e.g., LICM has to be more conservative). Nevertheless, I&#39;m all for =
+fixing poison once and for all!</span></p></div></div></blockquote><div><br=
+></div><div>Believe it or not, I already fixed this bug (PR21412). :)</div>=
+<div>=C2=A0</div><blockquote class=3D"gmail_quote" style=3D"margin:0px 0px =
+0px 0.8ex;border-left-width:1px;border-left-color:rgb(204,204,204);border-l=
+eft-style:solid;padding-left:1ex"><div lang=3D"EN-US" link=3D"#0563C1" vlin=
+k=3D"#954F72"><div><p class=3D"MsoNormal"><span style=3D"font-size:11pt;fon=
+t-family:Calibri,sans-serif"><u></u><u></u></span></p><p class=3D"MsoNormal=
+"><span style=3D"font-size:11pt;font-family:Calibri,sans-serif"><u></u>=C2=
+=A0<u></u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;f=
+ont-family:Calibri,sans-serif">BTW, would it help if I produced a version o=
+f Alive that implements the semantics being proposed? =C2=A0(with no perfor=
+mance guarantees for this prototype).=C2=A0 The cool thing is that then we =
+can run it through our database of 300+ InstCombine optimizations and see w=
+hich ones would have to be removed/fixed.</span></p></div></div></blockquot=
+e><div><br></div><div>I think such a thing would be great.=C2=A0 However, t=
+here is a problem that the RFC wasn&#39;t aware of when it was written:</di=
+v><div><br></div><div>consider:</div><div>%S =3D select %A, %B, undef</div>=
+<div><br></div><div>without us knowing anything about %A or %B, we will rep=
+lace all uses of %S with %B.=C2=A0 This transform would be considered wrong=
+ with the RFC in mind.</div><div><br></div><div>If this transform was valid=
+, there could not be any value or value-like property in LLVM with semantic=
+s more powerful than undef.=C2=A0 This makes me think that what LLVM *actua=
+lly* implements is not poison or something like it.</div><div><br></div><di=
+v>On the flip side, we could say that this transform is nonsense but I&#39;=
+d rather not pessimize LLVM like that.</div><div>=C2=A0</div><blockquote cl=
+ass=3D"gmail_quote" style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px=
+;border-left-color:rgb(204,204,204);border-left-style:solid;padding-left:1e=
+x"><div lang=3D"EN-US" link=3D"#0563C1" vlink=3D"#954F72"><div><p class=3D"=
+MsoNormal"><span style=3D"font-size:11pt;font-family:Calibri,sans-serif"><u=
+></u><u></u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt=
+;font-family:Calibri,sans-serif"><u></u>=C2=A0<u></u></span></p><p class=3D=
+"MsoNormal"><span style=3D"font-size:11pt;font-family:Calibri,sans-serif">N=
+uno<u></u><u></u></span></p><p class=3D"MsoNormal"><span style=3D"font-size=
+:11pt;font-family:Calibri,sans-serif;color:rgb(31,73,125)"><u></u>=C2=A0<u>=
+</u></span></p><p class=3D"MsoNormal"><span style=3D"font-size:11pt;font-fa=
+mily:Calibri,sans-serif;color:rgb(31,73,125)"><u></u>=C2=A0<u></u></span></=
+p><p class=3D"MsoNormal"><b><span style=3D"font-size:11pt;font-family:Calib=
+ri,sans-serif">From:</span></b><span style=3D"font-size:11pt;font-family:Ca=
+libri,sans-serif"> David Majnemer<br><b>Sent:</b> 28 January 2015 02:50<br>=
+<b>To:</b> <a href=3D"mailto:llvmdev@cs.uiuc.edu" target=3D"_blank">llvmdev=
+@cs.uiuc.edu</a><br><b>Cc:</b> Sanjoy Das; Dan Gohman; John Regehr; Nuno Lo=
+pes<br><b>Subject:</b> RFC: Proposal for Poison Semantics<u></u><u></u></sp=
+an></p><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p><div><p class=3D"MsoN=
+ormal">Hello,<u></u><u></u></p><div><p class=3D"MsoNormal"><u></u>=C2=A0<u>=
+</u></p></div><div><p class=3D"MsoNormal">What follows is my attempt to des=
+cribe how poison works.=C2=A0 Let me know what you think.<u></u><u></u></p>=
+</div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p cla=
+ss=3D"MsoNormal">--=C2=A0<u></u><u></u></p></div><div><p class=3D"MsoNormal=
+">David<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u>=
+</u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><di=
+v><div><p class=3D"MsoNormal"># LLVM Poison Semantics<u></u><u></u></p></di=
+v><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=
+=3D"MsoNormal">Poison is an LLVM concept which exists solely to enable furt=
+her optimization of LLVM IR. The exact behavior of poison has been, to say =
+the least, confusing for users, researchers and engineers working with LLVM=
+.<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></=
+p></div><div><p class=3D"MsoNormal">This document hopes to clear up some of=
+ the confusion of poison and hopefully explain *why* it has its semantics.<=
+u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p>=
+</div><div><p class=3D"MsoNormal">## A Quick Introduction to Poison<u></u><=
+u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><=
+div><p class=3D"MsoNormal">Let&#39;s start with a concrete motivating examp=
+le in C:<u></u><u></u></p></div><div><p class=3D"MsoNormal">```<u></u><u></=
+u></p></div><div><p class=3D"MsoNormal">int isSumGreater(int a, int b) {<u>=
+</u><u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 return a + b &gt; a=
+;<u></u><u></u></p></div><div><p class=3D"MsoNormal">}<u></u><u></u></p></d=
+iv><div><p class=3D"MsoNormal">```<u></u><u></u></p></div><div><p class=3D"=
+MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">The C =
+specification permits us to optimize the comparison in `isSumGreater` to `b=
+ &gt; 0` because signed overflow results in undefined behavior.=C2=A0 A rea=
+sonable translation of `isSumGreater` to LLVM IR could be:<u></u><u></u></p=
+></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p cl=
+ass=3D"MsoNormal">```<u></u><u></u></p></div><div><p class=3D"MsoNormal">de=
+fine i32 @isSumGreater(i32 %a, i32 %b) {<u></u><u></u></p></div><div><p cla=
+ss=3D"MsoNormal">entry:<u></u><u></u></p></div><div><p class=3D"MsoNormal">=
+=C2=A0 %add =3D add i32 %a, %b<u></u><u></u></p></div><div><p class=3D"MsoN=
+ormal">=C2=A0 %cmp =3D icmp sgt i32 %add, %a<u></u><u></u></p></div><div><p=
+ class=3D"MsoNormal">=C2=A0 %conv =3D zext i1 %cmp to i32<u></u><u></u></p>=
+</div><div><p class=3D"MsoNormal">=C2=A0 ret i32 %conv<u></u><u></u></p></d=
+iv><div><p class=3D"MsoNormal">}<u></u><u></u></p></div><div><p class=3D"Ms=
+oNormal">```<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=
+=A0<u></u></p></div><div><p class=3D"MsoNormal">However, LLVM cannot determ=
+ine that `%cmp` should not consider cases where `%add` resulted in signed o=
+verflow.=C2=A0 We need a way to communicate this information to LLVM.<u></u=
+><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div=
+><div><p class=3D"MsoNormal">This is where the `nsw` and `nuw` flags come i=
+nto play. =C2=A0`nsw` is short for &quot;no signed wrap&quot;, `nuw` is sho=
+rt for &quot;no unsigned wrap&quot;.<u></u><u></u></p></div><div><p class=
+=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">Wi=
+th these, we can come up with a new formulation of `%add`: `add i32 nsw %a,=
+ %b`.<u></u><u></u></p></div><div><p class=3D"MsoNormal">LLVM can take this=
+ into account when it is optimizing the `%cmp` and replace it with: `icmp s=
+gt i32 %b, 0`.<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=
+=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">## Differences Between L=
+LVM and C/C++<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=
+=A0<u></u></p></div><div><p class=3D"MsoNormal">There are some interesting =
+differences between what C++ and C specify and how LLVM behaves with respec=
+t to performing an operationg which is not permitted to overflow. =C2=A0<u>=
+</u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></=
+div><div><p class=3D"MsoNormal">Perhaps chief among them is that evaluating=
+ an expression in C++ or C which results performs an overflow is undefined =
+behavior. In LLVM, executing an instruction which is marked `nsw` but which=
+ violates signed overflow results in poison. Values which have no relations=
+hip with poisoned values are not effected by them.<u></u><u></u></p></div><=
+div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"M=
+soNormal">Let us take the following C program into consideration:<u></u><u>=
+</u></p></div><div><p class=3D"MsoNormal">```<u></u><u></u></p></div><div><=
+p class=3D"MsoNormal">int calculateImportantResult(int a, int b) {<u></u><u=
+></u></p></div><div><p class=3D"MsoNormal">=C2=A0 int result =3D 0;<u></u><=
+u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 if (a) {<u></u><u></u></=
+p></div><div><p class=3D"MsoNormal">=C2=A0 =C2=A0 result =3D a + b;<u></u><=
+u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 }<u></u><u></u></p></div=
+><div><p class=3D"MsoNormal">=C2=A0 return result;<u></u><u></u></p></div><=
+div><p class=3D"MsoNormal">}<u></u><u></u></p></div><div><p class=3D"MsoNor=
+mal">```<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u=
+></u></p></div><div><p class=3D"MsoNormal">A straightforward lowering to LL=
+VM IR could be:<u></u><u></u></p></div><div><p class=3D"MsoNormal">```<u></=
+u><u></u></p></div><div><p class=3D"MsoNormal">define i32 @calculateImporta=
+ntResult(i32 %a, i32 %b) {<u></u><u></u></p></div><div><p class=3D"MsoNorma=
+l">entry:<u></u><u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 %tobool=
+ =3D icmp ne i32 %a, 0<u></u><u></u></p></div><div><p class=3D"MsoNormal">=
+=C2=A0 br i1 %tobool, label %if.then, label %if.end<u></u><u></u></p></div>=
+<div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"=
+MsoNormal">if.then:<u></u><u></u></p></div><div><p class=3D"MsoNormal">=C2=
+=A0 %add =3D add nsw i32 %a, %b<u></u><u></u></p></div><div><p class=3D"Mso=
+Normal">=C2=A0 br label %if.end<u></u><u></u></p></div><div><p class=3D"Mso=
+Normal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">if.end:<u=
+></u><u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 %result =3D phi i3=
+2 [ %add, %if.then ], [ 0, %entry ]<u></u><u></u></p></div><div><p class=3D=
+"MsoNormal">=C2=A0 ret i32 %result<u></u><u></u></p></div><div><p class=3D"=
+MsoNormal">}<u></u><u></u></p></div><div><p class=3D"MsoNormal">```<u></u><=
+u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><=
+div><p class=3D"MsoNormal">Moving `%add` to the `%entry` block would be pre=
+ferable and would allow further optimizations:<u></u><u></u></p></div><div>=
+<p class=3D"MsoNormal">```<u></u><u></u></p></div><div><p class=3D"MsoNorma=
+l">define i32 @calculateImportantResult(i32 %a, i32 %b) {<u></u><u></u></p>=
+</div><div><p class=3D"MsoNormal">entry:<u></u><u></u></p></div><div><p cla=
+ss=3D"MsoNormal">=C2=A0 %tobool =3D icmp ne i32 %a, 0<u></u><u></u></p></di=
+v><div><p class=3D"MsoNormal">=C2=A0 %add =3D add nsw i32 %a, %b<u></u><u><=
+/u></p></div><div><p class=3D"MsoNormal">=C2=A0 %result =3D select i1 %tobo=
+ol, i32 0, i32 %add<u></u><u></u></p></div><div><p class=3D"MsoNormal">=C2=
+=A0 ret i32 %result<u></u><u></u></p></div><div><p class=3D"MsoNormal">}<u>=
+</u><u></u></p></div><div><p class=3D"MsoNormal">```<u></u><u></u></p></div=
+><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D=
+"MsoNormal">In the original code, the calculation of `%add` was control dep=
+endent.<u></u><u></u></p></div><div><p class=3D"MsoNormal">Now, `%add` migh=
+t result in signed overflow in violation of the `nsw` flag.<u></u><u></u></=
+p></div><div><p class=3D"MsoNormal">Despite this, the program should behave=
+ as it did before because the poisoned value is masked-out by the select. T=
+he next section will dive into this in greater detail.<u></u><u></u></p></d=
+iv><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=
+=3D"MsoNormal"># Computation Involving Poison Values<u></u><u></u></p></div=
+><div><p class=3D"MsoNormal">Poison in a computation results in poison if t=
+he result cannot be constrained by its non-poison operands.<u></u><u></u></=
+p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p c=
+lass=3D"MsoNormal">Examples of this rule which will result in poison:<u></u=
+><u></u></p></div><div><p class=3D"MsoNormal">```<u></u><u></u></p></div><d=
+iv><p class=3D"MsoNormal">=C2=A0 %add =3D add i32 %x, %always_poison<u></u>=
+<u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 %sub =3D sub i32 %x, %a=
+lways_poison<u></u><u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 %xor=
+ =3D xor i32 %x, %always_poison<u></u><u></u></p></div><div><p class=3D"Mso=
+Normal">=C2=A0 %mul =3D mul i32 %always_poison, 1<u></u><u></u></p></div><d=
+iv><p class=3D"MsoNormal">```<u></u><u></u></p></div><div><p class=3D"MsoNo=
+rmal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">Examples of=
+ this rule which do not result in poison:<u></u><u></u></p></div><div><p cl=
+ass=3D"MsoNormal">```<u></u><u></u></p></div><div><p class=3D"MsoNormal">=
+=C2=A0 %or =C2=A0=3D or =C2=A0i32 %always_poison, 2<u></u><u></u></p></div>=
+<div><p class=3D"MsoNormal">=C2=A0 %and =3D and i32 %always_poison, 2<u></u=
+><u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 %mul =3D mul i32 %alwa=
+ys_poison, 0<u></u><u></u></p></div><div><p class=3D"MsoNormal">```<u></u><=
+u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><=
+div><p class=3D"MsoNormal">In fact, it would be reasonable to optimize `%or=
+` to `2` and `%and` to `0`.=C2=A0 In this respect, poison is not different =
+from `undef`.<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=
+=A0<u></u></p></div><div><p class=3D"MsoNormal">The following example is on=
+ly poison if `%cond` is false:<u></u><u></u></p></div><div><p class=3D"MsoN=
+ormal">```<u></u><u></u></p></div><div><p class=3D"MsoNormal">=C2=A0 %sel =
+=3D select i1 %cond, i32 2, %always_poison<u></u><u></u></p></div><div><p c=
+lass=3D"MsoNormal">```<u></u><u></u></p></div><div><p class=3D"MsoNormal"><=
+u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">### Is it safe to =
+have poison as a `call` argument?<u></u><u></u></p></div><div><p class=3D"M=
+soNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">A `call=
+` instruction may or may not result in poison depending on exactly how the =
+callee =C2=A0uses the supplied arguments, it is not necessarily the case th=
+at `call i32 @someFunction(i32 %always_poison)` results in poison.<u></u><u=
+></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><d=
+iv><p class=3D"MsoNormal">LLVM cannot forbid poison from entering `call` ar=
+guments without prohibiting an optimization pass from outlining code.<u></u=
+><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div=
+><div><p class=3D"MsoNormal">### Is it safe to store poison to memory?<u></=
+u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></di=
+v><div><p class=3D"MsoNormal">`store i32 %always_poison, i32* %mem` does no=
+t result in undefined behavior. A subsequent load instruction like `%load =
+=3D load i32* %mem` will result in `%load` being a poison value.<u></u><u><=
+/u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div=
+><p class=3D"MsoNormal">### Is it safe to load or store a poison memory loc=
+ation?<u></u><u></u></p></div><div><p class=3D"MsoNormal"><u></u>=C2=A0<u><=
+/u></p></div><div><p class=3D"MsoNormal">No.=C2=A0 Poison works just like `=
+undef` in this respect.<u></u><u></u></p></div><div><p class=3D"MsoNormal">=
+<u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">### Does comparin=
+g a poison value result in poison?<u></u><u></u></p></div><div><p class=3D"=
+MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">It dep=
+ends.=C2=A0 If the comparison couldn&#39;t solely be determined by looking =
+at the other operand, the result is poison.<u></u><u></u></p></div><div><p =
+class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNorma=
+l">For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not po=
+ison.<u></u><u></u></p></div><div><p class=3D"MsoNormal">However, `icmp i32=
+ ne %always_poison, 7` is poison.<u></u><u></u></p></div><div><p class=3D"M=
+soNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"MsoNormal">### Wha=
+t if the condition operand in a `select` is poison?<u></u><u></u></p></div>=
+<div><p class=3D"MsoNormal"><u></u>=C2=A0<u></u></p></div><div><p class=3D"=
+MsoNormal">In the example `%sel =3D select i1 %always_poison, i1 true, fals=
+e`, `%sel` is either `true` or `false`.=C2=A0 Because, `%sel` depends on `%=
+always_poison` it too is poison.<u></u><u></u></p></div></div></div></div><=
+/div></blockquote></div><br></div></div>
+
+--001a11426c3cde3be7050e3284b2--
+
+--===============5770039696841736901==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============5770039696841736901==--
+
+From llvmdev-bounces@cs.uiuc.edu Tue Feb  3 12:21:24 2015
+Return-Path: <llvmdev-bounces@cs.uiuc.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=0.6 required=5.0 tests=AWL,HK_RANDOM_ENVFROM,
+	HTML_MESSAGE autolearn=no version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from mail-svr1.cs.utah.edu (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 1DFE16501A4;
+	Tue,  3 Feb 2015 12:21:24 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (dcs-maillist2.engr.illinois.edu [130.126.112.106])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTPS;
+	Tue,  3 Feb 2015 12:21:23 -0700 (MST)
+Received: from dcs-maillist2.engr.illinois.edu (localhost [127.0.0.1])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id t13JJXbB012977;
+	Tue, 3 Feb 2015 13:19:33 -0600
+Received: from engr-mail-prod.engr.illinois.edu
+	(engr-mail-prod.engr.illinois.edu [192.17.58.72])
+	by dcs-maillist2.engr.illinois.edu (8.14.4/8.13.1) with ESMTP id
+	t13JAp0D012334
+	for <llvmdev@dcs-maillist.cs.uiuc.edu>; Tue, 3 Feb 2015 13:10:51 -0600
+Received: from pps05.cites.illinois.edu ([192.17.82.72])
+	by engr-mail-prod.engr.illinois.edu with esmtps (TLSv1:AES256-SHA:256)
+	(Exim 4.72) (envelope-from <listmail@philipreames.com>)
+	id 1YIis6-0000Ml-QW
+	for llvmdev@cs.uiuc.edu; Tue, 03 Feb 2015 13:10:51 -0600
+Received: from mout.perfora.net (mout.perfora.net [74.208.4.197])
+	by pps05.cites.illinois.edu (8.14.5/8.14.5) with ESMTP id
+	t13JAgfB022997
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NOT)
+	for <llvmdev@cs.uiuc.edu>; Tue, 3 Feb 2015 13:10:43 -0600
+Received: from [192.168.200.212] (c-50-184-78-248.hsd1.ca.comcast.net
+	[50.184.78.248])
+	by mrelay.perfora.net (node=mreueus001) with ESMTP (Nemesis)
+	id 0MdMQ9-1Y1T890Drv-00Iedk; Tue, 03 Feb 2015 20:10:38 +0100
+Message-ID: <54D11D25.2010208@philipreames.com>
+Date: Tue, 03 Feb 2015 11:10:29 -0800
+From: Philip Reames <listmail@philipreames.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64;
+	rv:31.0) Gecko/20100101 Thunderbird/31.4.0
+MIME-Version: 1.0
+To: David Majnemer <david.majnemer@gmail.com>,
+        "llvmdev@cs.uiuc.edu" <llvmdev@cs.uiuc.edu>
+References: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+In-Reply-To: <CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=L_X2hx2PKeA@mail.gmail.com>
+X-Provags-ID: V02:K0:3KkJK+X4SFNJq5MKpTlk/uFhBY7g4BPYH9Z/JQvlG5e
+	uWTOC0ZRu81Io+J77UXjlHKUaIEF8iRKmx7dAjKUNuD5UYfAPx
+	fmptwPePTGLK5ccn/JfTxKVwJ/khpWZTI6q/Mb9Z7jIdMghzkl
+	+hg7ToFtC3PuSxsiib+Wbe1RVyHUWd4WhCtAFCI41FunXkt3Vt
+	ACEQdfJOfbktEngrw/OWVo/QohjWhkah0xBdXVYfhRA4k+ZbBb
+	IgJZV1Otz1ZMIZ4nNFTR5Zs7//7HPlDtCE6vdg/MgRyzj/NhKF
+	g/4W9s7J+dGPduwFrpq8OBfyZ5SJ4d9mjJy5A+QbMyJAOMesXM
+	2Taj1tRpDmPnRwm7rOPkd0L3k1WBO3Xti3HCISPnX
+X-UI-Out-Filterresults: notjunk:1;
+Cc: Nuno Lopes <nuno.lopes@ist.utl.pt>, bruce@hoult.org,
+        John Regehr <regehr@cs.utah.edu>
+Subject: Re: [LLVMdev] RFC: Proposal for Poison Semantics
+X-BeenThere: llvmdev@cs.uiuc.edu
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: LLVM Developers Mailing List <llvmdev.cs.uiuc.edu>
+List-Unsubscribe: <http://lists.cs.uiuc.edu/mailman/options/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=unsubscribe>
+List-Archive: <http://lists.cs.uiuc.edu/pipermail/llvmdev/>
+List-Post: <mailto:llvmdev@cs.uiuc.edu>
+List-Help: <mailto:llvmdev-request@cs.uiuc.edu?subject=help>
+List-Subscribe: <http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev>,
+	<mailto:llvmdev-request@cs.uiuc.edu?subject=subscribe>
+Content-Type: multipart/mixed; boundary="===============9096117035003318315=="
+Sender: llvmdev-bounces@cs.uiuc.edu
+Errors-To: llvmdev-bounces@cs.uiuc.edu
+X-CAS-Duplicate-Message: No 
+Status: RO
+
+This is a multi-part message in MIME format.
+--===============9096117035003318315==
+Content-Type: multipart/alternative;
+ boundary="------------060203070404070108070000"
+
+This is a multi-part message in MIME format.
+--------------060203070404070108070000
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: 7bit
+
+(Responding to original post since this is somewhat orthogonal to the 
+discussion to date.)
+
+After reading through the thread to date, I'm coming to conclusion that 
+finding a single semantics for poison that both allows speculation and 
+optimization of a nsw optimization under the assumption that overflow 
+"never happens" is *hard*.  Thinking about it a bit, do we actually need 
+to solve that problem?
+
+An alternate approach would be to split "nsw" into two pieces: "nsw 
+unreachable" and "nsw undef".  A frontend for C or C++ would produce 
+"nsw unreachable".
+
+"nsw unreachable" allows the compiler to assume that the overflow path 
+can't happen.  This enables all of the zext, comparison folding, and 
+other desirable optimizations we've mentioned.
+
+"nsw undef" only allows to the compiler to assume that overflow produces 
+an undefined value.  In particular, the value produced is not "poison"; 
+it is simply undef.
+
+When the compiler speculates an "nsw unreachable" instruction, it would 
+replace it with an "nsw undef".  However, if the compiler can *prove* 
+that the original instruction would execute on all paths without a 
+constraint which prevents overflow, it can preserve "nsw unreachable".  
+LICM today has logic that is close to this in the form of 
+isGuaranteedToExecute.  (i.e. an add with loop invariant operands 
+overflows in the preheader exactly when it does in the loop header)
+
+This approach would suffer from a tension between the profitability of 
+speculation and the potential lost optimizations by going from "nsw 
+unreachable" to "nsw undef".  In practice, I don't have a strong sense 
+for how painful this would be.  Does anyone have a good sense for how 
+aggressive we are, in practice, about exploiting nsw?
+
+My intuition is that we already work hard to handle the "guaranteed to 
+execute" case due to needing to avoid newly faulting loads.  I suspect 
+that we do (or at least can and should) be surprisingly effective about 
+recognizing the cases where we can safely speculate the full "nsw 
+unreachable" semantic.
+
+(An alternate way to phrase the above would be to say that a) add "nsw 
+unreachable" faults on overflow and b) we can't introduce faults into a 
+well defined program.  This is very very similar to how we reason about 
+loads and dereferencability.)
+
+Philip
+
+p.s. It would also be interesting to weigh the profitability of 
+speculating a guarded/predicated form of an "add nsw unreachable".  But 
+we should probably do predicated loads and stores before we consider 
+predication for simple arithmetic.
+
+On 01/27/2015 06:50 PM, David Majnemer wrote:
+> Hello,
+>
+> What follows is my attempt to describe how poison works. Let me know 
+> what you think.
+>
+> -- 
+> David
+>
+>
+> # LLVM Poison Semantics
+>
+> Poison is an LLVM concept which exists solely to enable further 
+> optimization of LLVM IR. The exact behavior of poison has been, to say 
+> the least, confusing for users, researchers and engineers working with 
+> LLVM.
+>
+> This document hopes to clear up some of the confusion of poison and 
+> hopefully explain *why* it has its semantics.
+>
+> ## A Quick Introduction to Poison
+>
+> Let's start with a concrete motivating example in C:
+> ```
+> int isSumGreater(int a, int b) {
+>   return a + b > a;
+> }
+> ```
+>
+> The C specification permits us to optimize the comparison in 
+> `isSumGreater` to `b > 0` because signed overflow results in undefined 
+> behavior.  A reasonable translation of `isSumGreater` to LLVM IR could be:
+>
+> ```
+> define i32 @isSumGreater(i32 %a, i32 %b) {
+> entry:
+>   %add = add i32 %a, %b
+>   %cmp = icmp sgt i32 %add, %a
+>   %conv = zext i1 %cmp to i32
+>   ret i32 %conv
+> }
+> ```
+>
+> However, LLVM cannot determine that `%cmp` should not consider cases 
+> where `%add` resulted in signed overflow.  We need a way to 
+> communicate this information to LLVM.
+>
+> This is where the `nsw` and `nuw` flags come into play.  `nsw` is 
+> short for "no signed wrap", `nuw` is short for "no unsigned wrap".
+>
+> With these, we can come up with a new formulation of `%add`: `add i32 
+> nsw %a, %b`.
+> LLVM can take this into account when it is optimizing the `%cmp` and 
+> replace it with: `icmp sgt i32 %b, 0`.
+>
+> ## Differences Between LLVM and C/C++
+>
+> There are some interesting differences between what C++ and C specify 
+> and how LLVM behaves with respect to performing an operationg which is 
+> not permitted to overflow.
+>
+> Perhaps chief among them is that evaluating an expression in C++ or C 
+> which results performs an overflow is undefined behavior. In LLVM, 
+> executing an instruction which is marked `nsw` but which violates 
+> signed overflow results in poison. Values which have no relationship 
+> with poisoned values are not effected by them.
+>
+> Let us take the following C program into consideration:
+> ```
+> int calculateImportantResult(int a, int b) {
+>   int result = 0;
+>   if (a) {
+>     result = a + b;
+>   }
+>   return result;
+> }
+> ```
+>
+> A straightforward lowering to LLVM IR could be:
+> ```
+> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> entry:
+>   %tobool = icmp ne i32 %a, 0
+>   br i1 %tobool, label %if.then, label %if.end
+>
+> if.then:
+>   %add = add nsw i32 %a, %b
+>   br label %if.end
+>
+> if.end:
+>   %result = phi i32 [ %add, %if.then ], [ 0, %entry ]
+>   ret i32 %result
+> }
+> ```
+>
+> Moving `%add` to the `%entry` block would be preferable and would 
+> allow further optimizations:
+> ```
+> define i32 @calculateImportantResult(i32 %a, i32 %b) {
+> entry:
+>   %tobool = icmp ne i32 %a, 0
+>   %add = add nsw i32 %a, %b
+>   %result = select i1 %tobool, i32 0, i32 %add
+>   ret i32 %result
+> }
+> ```
+>
+> In the original code, the calculation of `%add` was control dependent.
+> Now, `%add` might result in signed overflow in violation of the `nsw` 
+> flag.
+> Despite this, the program should behave as it did before because the 
+> poisoned value is masked-out by the select. The next section will dive 
+> into this in greater detail.
+>
+> # Computation Involving Poison Values
+> Poison in a computation results in poison if the result cannot be 
+> constrained by its non-poison operands.
+>
+> Examples of this rule which will result in poison:
+> ```
+>   %add = add i32 %x, %always_poison
+>   %sub = sub i32 %x, %always_poison
+>   %xor = xor i32 %x, %always_poison
+>   %mul = mul i32 %always_poison, 1
+> ```
+>
+> Examples of this rule which do not result in poison:
+> ```
+>   %or  = or  i32 %always_poison, 2
+>   %and = and i32 %always_poison, 2
+>   %mul = mul i32 %always_poison, 0
+> ```
+>
+> In fact, it would be reasonable to optimize `%or` to `2` and `%and` to 
+> `0`.  In this respect, poison is not different from `undef`.
+>
+> The following example is only poison if `%cond` is false:
+> ```
+>   %sel = select i1 %cond, i32 2, %always_poison
+> ```
+>
+> ### Is it safe to have poison as a `call` argument?
+>
+> A `call` instruction may or may not result in poison depending on 
+> exactly how the callee  uses the supplied arguments, it is not 
+> necessarily the case that `call i32 @someFunction(i32 %always_poison)` 
+> results in poison.
+>
+> LLVM cannot forbid poison from entering `call` arguments without 
+> prohibiting an optimization pass from outlining code.
+>
+> ### Is it safe to store poison to memory?
+>
+> `store i32 %always_poison, i32* %mem` does not result in undefined 
+> behavior. A subsequent load instruction like `%load = load i32* %mem` 
+> will result in `%load` being a poison value.
+>
+> ### Is it safe to load or store a poison memory location?
+>
+> No.  Poison works just like `undef` in this respect.
+>
+> ### Does comparing a poison value result in poison?
+>
+> It depends.  If the comparison couldn't solely be determined by 
+> looking at the other operand, the result is poison.
+>
+> For example, `icmp i32 ule %always_poison, 4294967295` is `true`, not 
+> poison.
+> However, `icmp i32 ne %always_poison, 7` is poison.
+>
+> ### What if the condition operand in a `select` is poison?
+>
+> In the example `%sel = select i1 %always_poison, i1 true, false`, 
+> `%sel` is either `true` or `false`.  Because, `%sel` depends on 
+> `%always_poison` it too is poison.
+>
+>
+> _______________________________________________
+> LLVM Developers mailing list
+> LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+> http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+
+--------------060203070404070108070000
+Content-Type: text/html; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by pps05.cites.illinois.edu id t13JAgfB022997
+
+<html>
+  <head>
+    <meta content=3D"text/html; charset=3Dwindows-1252"
+      http-equiv=3D"Content-Type">
+  </head>
+  <body bgcolor=3D"#FFFFFF" text=3D"#000000">
+    <div class=3D"moz-cite-prefix">(Responding to original post since thi=
+s
+      is somewhat orthogonal to the discussion to date.)=A0 <br>
+      <br>
+      After reading through the thread to date, I'm coming to conclusion
+      that finding a single semantics for poison that both allows
+      speculation and optimization of a nsw optimization under the
+      assumption that overflow "never happens" is *hard*.=A0 Thinking
+      about it a bit, do we actually need to solve that problem?<br>
+      <br>
+      An alternate approach would be to split "nsw" into two pieces:
+      "nsw unreachable" and "nsw undef".=A0 A frontend for C or C++ would
+      produce "nsw unreachable".<br>
+      <br>
+      "nsw unreachable" allows the compiler to assume that the overflow
+      path can't happen.=A0 This enables all of the zext, comparison
+      folding, and other desirable optimizations we've mentioned.<br>
+      <br>
+      "nsw undef" only allows to the compiler to assume that overflow
+      produces an undefined value.=A0 In particular, the value produced i=
+s
+      not "poison"; it is simply undef.<br>
+      <br>
+      When the compiler speculates an "nsw unreachable" instruction, it
+      would replace it with an "nsw undef".=A0 However, if the compiler
+      can *prove* that the original instruction would execute on all
+      paths without a constraint which prevents overflow, it can
+      preserve "nsw unreachable".=A0 LICM today has logic that is close t=
+o
+      this in the form of isGuaranteedToExecute.=A0 (i.e. an add with loo=
+p
+      invariant operands overflows in the preheader exactly when it does
+      in the loop header)<br>
+      <br>
+      This approach would suffer from a tension between the
+      profitability of speculation and the potential lost optimizations
+      by going from "nsw unreachable" to "nsw undef".=A0 In practice, I
+      don't have a strong sense for how painful this would be.=A0 Does
+      anyone have a good sense for how aggressive we are, in practice,
+      about exploiting nsw?=A0=A0 <br>
+      <br>
+      My intuition is that we already work hard to handle the
+      "guaranteed to execute" case due to needing to avoid newly
+      faulting loads.=A0 I suspect that we do (or at least can and should=
+)
+      be surprisingly effective about recognizing the cases where we can
+      safely speculate the full "nsw unreachable" semantic.=A0 <br>
+      <br>
+      (An alternate way to phrase the above would be to say that a) add
+      "nsw unreachable" faults on overflow and b) we can't introduce
+      faults into a well defined program.=A0 This is very very similar to
+      how we reason about loads and dereferencability.)<br>
+      <br>
+      Philip<br>
+      <br>
+      p.s. It would also be interesting to weigh the profitability of
+      speculating a guarded/predicated form of an "add nsw
+      unreachable".=A0 But we should probably do predicated loads and
+      stores before we consider predication for simple arithmetic.=A0 <br=
+>
+      <br>
+      On 01/27/2015 06:50 PM, David Majnemer wrote:<br>
+    </div>
+    <blockquote
+cite=3D"mid:CAL7bZ_dbtGC1fUBzoN75DWGnpzp5kmeBDUjWLA=3DL_X2hx2PKeA@mail.gm=
+ail.com"
+      type=3D"cite">
+      <div dir=3D"ltr">Hello,
+        <div><br>
+        </div>
+        <div>What follows is my attempt to describe how poison works.=A0
+          Let me know what you think.</div>
+        <div><br>
+        </div>
+        <div>--=A0</div>
+        <div>David</div>
+        <div><br>
+        </div>
+        <div><br>
+        </div>
+        <div>
+          <div># LLVM Poison Semantics</div>
+          <div><br>
+          </div>
+          <div>Poison is an LLVM concept which exists solely to enable
+            further optimization of LLVM IR. The exact behavior of
+            poison has been, to say the least, confusing for users,
+            researchers and engineers working with LLVM.</div>
+          <div><br>
+          </div>
+          <div>This document hopes to clear up some of the confusion of
+            poison and hopefully explain *why* it has its semantics.</div=
+>
+          <div><br>
+          </div>
+          <div>## A Quick Introduction to Poison</div>
+          <div><br>
+          </div>
+          <div>Let's start with a concrete motivating example in C:</div>
+          <div>```</div>
+          <div>int isSumGreater(int a, int b) {</div>
+          <div>=A0 return a + b &gt; a;</div>
+          <div>}</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>The C specification permits us to optimize the comparison
+            in `isSumGreater` to `b &gt; 0` because signed overflow
+            results in undefined behavior.=A0 A reasonable translation of
+            `isSumGreater` to LLVM IR could be:</div>
+          <div><br>
+          </div>
+          <div>```</div>
+          <div>define i32 @isSumGreater(i32 %a, i32 %b) {</div>
+          <div>entry:</div>
+          <div>=A0 %add =3D add i32 %a, %b</div>
+          <div>=A0 %cmp =3D icmp sgt i32 %add, %a</div>
+          <div>=A0 %conv =3D zext i1 %cmp to i32</div>
+          <div>=A0 ret i32 %conv</div>
+          <div>}</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>However, LLVM cannot determine that `%cmp` should not
+            consider cases where `%add` resulted in signed overflow.=A0 W=
+e
+            need a way to communicate this information to LLVM.</div>
+          <div><br>
+          </div>
+          <div>This is where the `nsw` and `nuw` flags come into play.
+            =A0`nsw` is short for "no signed wrap", `nuw` is short for "n=
+o
+            unsigned wrap".</div>
+          <div><br>
+          </div>
+          <div>With these, we can come up with a new formulation of
+            `%add`: `add i32 nsw %a, %b`.</div>
+          <div>LLVM can take this into account when it is optimizing the
+            `%cmp` and replace it with: `icmp sgt i32 %b, 0`.</div>
+          <div><br>
+          </div>
+          <div>## Differences Between LLVM and C/C++</div>
+          <div><br>
+          </div>
+          <div>There are some interesting differences between what C++
+            and C specify and how LLVM behaves with respect to
+            performing an operationg which is not permitted to overflow.
+            =A0</div>
+          <div><br>
+          </div>
+          <div>Perhaps chief among them is that evaluating an expression
+            in C++ or C which results performs an overflow is undefined
+            behavior. In LLVM, executing an instruction which is marked
+            `nsw` but which violates signed overflow results in poison.
+            Values which have no relationship with poisoned values are
+            not effected by them.</div>
+          <div><br>
+          </div>
+          <div>Let us take the following C program into consideration:</d=
+iv>
+          <div>```</div>
+          <div>int calculateImportantResult(int a, int b) {</div>
+          <div>=A0 int result =3D 0;</div>
+          <div>=A0 if (a) {</div>
+          <div>=A0 =A0 result =3D a + b;</div>
+          <div>=A0 }</div>
+          <div>=A0 return result;</div>
+          <div>}</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>A straightforward lowering to LLVM IR could be:</div>
+          <div>```</div>
+          <div>define i32 @calculateImportantResult(i32 %a, i32 %b) {</di=
+v>
+          <div>entry:</div>
+          <div>=A0 %tobool =3D icmp ne i32 %a, 0</div>
+          <div>=A0 br i1 %tobool, label %if.then, label %if.end</div>
+          <div><br>
+          </div>
+          <div>if.then:</div>
+          <div>=A0 %add =3D add nsw i32 %a, %b</div>
+          <div>=A0 br label %if.end</div>
+          <div><br>
+          </div>
+          <div>if.end:</div>
+          <div>=A0 %result =3D phi i32 [ %add, %if.then ], [ 0, %entry ]<=
+/div>
+          <div>=A0 ret i32 %result</div>
+          <div>}</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>Moving `%add` to the `%entry` block would be preferable
+            and would allow further optimizations:</div>
+          <div>```</div>
+          <div>define i32 @calculateImportantResult(i32 %a, i32 %b) {</di=
+v>
+          <div>entry:</div>
+          <div>=A0 %tobool =3D icmp ne i32 %a, 0</div>
+          <div>=A0 %add =3D add nsw i32 %a, %b</div>
+          <div>=A0 %result =3D select i1 %tobool, i32 0, i32 %add</div>
+          <div>=A0 ret i32 %result</div>
+          <div>}</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>In the original code, the calculation of `%add` was
+            control dependent.</div>
+          <div>Now, `%add` might result in signed overflow in violation
+            of the `nsw` flag.</div>
+          <div>Despite this, the program should behave as it did before
+            because the poisoned value is masked-out by the select. The
+            next section will dive into this in greater detail.</div>
+          <div><br>
+          </div>
+          <div># Computation Involving Poison Values</div>
+          <div>Poison in a computation results in poison if the result
+            cannot be constrained by its non-poison operands.</div>
+          <div><br>
+          </div>
+          <div>Examples of this rule which will result in poison:</div>
+          <div>```</div>
+          <div>=A0 %add =3D add i32 %x, %always_poison</div>
+          <div>=A0 %sub =3D sub i32 %x, %always_poison</div>
+          <div>=A0 %xor =3D xor i32 %x, %always_poison</div>
+          <div>=A0 %mul =3D mul i32 %always_poison, 1</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>Examples of this rule which do not result in poison:</div>
+          <div>```</div>
+          <div>=A0 %or =A0=3D or =A0i32 %always_poison, 2</div>
+          <div>=A0 %and =3D and i32 %always_poison, 2</div>
+          <div>=A0 %mul =3D mul i32 %always_poison, 0</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>In fact, it would be reasonable to optimize `%or` to `2`
+            and `%and` to `0`.=A0 In this respect, poison is not differen=
+t
+            from `undef`.</div>
+          <div><br>
+          </div>
+          <div>The following example is only poison if `%cond` is false:<=
+/div>
+          <div>```</div>
+          <div>=A0 %sel =3D select i1 %cond, i32 2, %always_poison</div>
+          <div>```</div>
+          <div><br>
+          </div>
+          <div>### Is it safe to have poison as a `call` argument?</div>
+          <div><br>
+          </div>
+          <div>A `call` instruction may or may not result in poison
+            depending on exactly how the callee =A0uses the supplied
+            arguments, it is not necessarily the case that `call i32
+            @someFunction(i32 %always_poison)` results in poison.</div>
+          <div><br>
+          </div>
+          <div>LLVM cannot forbid poison from entering `call` arguments
+            without prohibiting an optimization pass from outlining
+            code.</div>
+          <div><br>
+          </div>
+          <div>### Is it safe to store poison to memory?</div>
+          <div><br>
+          </div>
+          <div>`store i32 %always_poison, i32* %mem` does not result in
+            undefined behavior. A subsequent load instruction like
+            `%load =3D load i32* %mem` will result in `%load` being a
+            poison value.</div>
+          <div><br>
+          </div>
+          <div>### Is it safe to load or store a poison memory location?<=
+/div>
+          <div><br>
+          </div>
+          <div>No.=A0 Poison works just like `undef` in this respect.</di=
+v>
+          <div><br>
+          </div>
+          <div>### Does comparing a poison value result in poison?</div>
+          <div><br>
+          </div>
+          <div>It depends.=A0 If the comparison couldn't solely be
+            determined by looking at the other operand, the result is
+            poison.</div>
+          <div><br>
+          </div>
+          <div>For example, `icmp i32 ule %always_poison, 4294967295` is
+            `true`, not poison.</div>
+          <div>However, `icmp i32 ne %always_poison, 7` is poison.</div>
+          <div><br>
+          </div>
+          <div>### What if the condition operand in a `select` is
+            poison?</div>
+          <div><br>
+          </div>
+          <div>In the example `%sel =3D select i1 %always_poison, i1 true=
+,
+            false`, `%sel` is either `true` or `false`.=A0 Because, `%sel=
+`
+            depends on `%always_poison` it too is poison.</div>
+        </div>
+      </div>
+      <br>
+      <fieldset class=3D"mimeAttachmentHeader"></fieldset>
+      <br>
+      <pre wrap=3D"">_______________________________________________
+LLVM Developers mailing list
+<a class=3D"moz-txt-link-abbreviated" href=3D"mailto:LLVMdev@cs.uiuc.edu"=
+>LLVMdev@cs.uiuc.edu</a>         <a class=3D"moz-txt-link-freetext" href=3D=
+"http://llvm.cs.uiuc.edu">http://llvm.cs.uiuc.edu</a>
+<a class=3D"moz-txt-link-freetext" href=3D"http://lists.cs.uiuc.edu/mailm=
+an/listinfo/llvmdev">http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev</a=
+>
+</pre>
+    </blockquote>
+    <br>
+  </body>
+</html>
+
+--------------060203070404070108070000--
+
+--===============9096117035003318315==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+LLVM Developers mailing list
+LLVMdev@cs.uiuc.edu         http://llvm.cs.uiuc.edu
+http://lists.cs.uiuc.edu/mailman/listinfo/llvmdev
+
+--===============9096117035003318315==--
+
