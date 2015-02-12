@@ -1,0 +1,58 @@
+
+Compilers optimize code to make it run faster:
+
+For example:
+in C: 
+   timeout= timeout / 4;
+
+in unoptimized assembler:
+	%1= LOAD @timeout
+	%2= div %1, 4;
+	STORE @timeout, %1 ;; TODO: check this syntax
+
+in optimized assembler:
+	%1= LOAD @timeout
+	%2= ashr %1, 2;
+	STORE @timeout, %1 ;; TODO: check this syntax
+
+On modern processors, the "ashr" instruction runs about 10x faster than a
+"div" instruction.
+
+But some optimizations don't hold for all data values.
+{TODO: find an example, preferably involving a poison issue}
+
+And sometimes, when the optimization does not hold, it does not matter.
+{TODO: find an example}
+
+The LLVM compiler family calls the results in these corner cases "poison".  
+If the optimized assembler code can ever generate a poison value, AND the
+poison value can be output (as opposed to being dropped), the optimization is
+dangerous and must be avoided.
+
+Research tack: create a tool that checks for poison values and halts when they
+are output.  This has shown that some optimizations inadvertantly create
+poison values under some circumstances.
+
+Some definitions of poison are themselves ambiguous.
+
+{TODO: insert the example of generating a poison value, bitshifting it left 8
+places, and then masking off the high order bits, leaving only the lower 8.
+
+Research tack: create a formal, mathematical definition of poison that can be
+used to verify proposed compiler optimizations.
+
+Research tack: compare formal poison definitions with the intuitive
+expectations of the compiler development community, and justify discrepancies.
+
+Research tack: make sure that formal poison definitions still allow compilers
+to optimize code enough that end-users' applications run reasonably quickly.
+
+(end of poster)
+
+
+
+
+
+
+   
+
