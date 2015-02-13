@@ -7,12 +7,12 @@ in C:
 
 in unoptimized pseudo-assembler:
 	r1= LOAD @timeout
-	r2= div r1, 4;
+	r2= DIV r1, 4;
 	STORE @timeout, r2 
 
 in optimized pseudo-assembler:
 	r1= LOAD @timeout
-	r2= arithmetic_shift_right r1, 2;
+	r2= ARITHMETIC_SHIFT_RIGHT r1, 2;
 	STORE @timeout, r2 
 
 On modern processors, the shift instruction usually runs about 10x
@@ -21,17 +21,35 @@ faster than a "div" instruction.
 But some optimizations don't hold for all data values.
 {TODO: find an example, preferably involving a poison issue}
 
-And sometimes, when the optimization does not hold, it does not matter.
-{TODO: find an example}
+in C:
+   unsigned compute_tax ( unsigned income ) 
+   {
+      tax= income* FEDERAL_RATE/ 100 + income* STATE_RATE/ 100;
+      return tax;
+   }
+
+optimized to:
+   unsigned compute_business_tax ( unsigned income ) 
+   {
+      // One division fewer!  One multiplication fewer!  
+      tax= income * (FEDERAL_RATE+ STATE_RATE)/ 100; 
+      return tax;
+   }
+
+What happens when the business grows enough that variable "income" exceeds 1
+billion?  (Assume a 32-bit integer length.)
 
 The LLVM compiler family calls the results in these corner cases "poison".  
 If the optimized assembler code can ever generate a poison value, AND the
 poison value can be output (as opposed to being dropped), the optimization is
 dangerous and must be avoided.
 
+And sometimes, when the optimization does not hold, it does not matter.
+{TODO: find an example}
+
 Research tack: create a tool that checks for poison values and halts when they
-are output.  This has shown that some optimizations inadvertantly create
-poison values under some circumstances.
+are output.  This has shown that some optimizations thought to be correct
+inadvertantly create poison values under some circumstances.
 
 Some definitions of poison are themselves ambiguous.
 
