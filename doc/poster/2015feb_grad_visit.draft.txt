@@ -5,18 +5,18 @@ For example:
 in C: 
    timeout= timeout / 4;
 
-in unoptimized assembler:
-	%1= LOAD @timeout
-	%2= div %1, 4;
-	STORE @timeout, %1 ;; TODO: check this syntax
+in unoptimized pseudo-assembler:
+	r1= LOAD @timeout
+	r2= div r1, 4;
+	STORE @timeout, r2 
 
-in optimized assembler:
-	%1= LOAD @timeout
-	%2= ashr %1, 2;
-	STORE @timeout, %1 ;; TODO: check this syntax
+in optimized pseudo-assembler:
+	r1= LOAD @timeout
+	r2= arithmetic_shift_right r1, 2;
+	STORE @timeout, r2 
 
-On modern processors, the "ashr" instruction runs about 10x faster than a
-"div" instruction.
+On modern processors, the shift instruction usually runs about 10x
+faster than a "div" instruction.
 
 But some optimizations don't hold for all data values.
 {TODO: find an example, preferably involving a poison issue}
