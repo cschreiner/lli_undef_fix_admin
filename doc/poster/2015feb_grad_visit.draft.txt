@@ -12,11 +12,13 @@ in unoptimized pseudo-assembler:
 
 in optimized pseudo-assembler:
 	r1= LOAD @timeout
-	r2= ARITHMETIC_SHIFT_RIGHT r1, 2;
+	r2= SHIFT_RIGHT r1, 2;
 	STORE @timeout, r2 
 
 On modern processors, the shift instruction usually runs about 10x
 faster than a "div" instruction.
+
+==============================================================================
 
 But some optimizations don't hold for all data values.
 {TODO: find an example, preferably involving a poison issue}
@@ -36,34 +38,87 @@ optimized to:
       return tax;
    }
 
+{TODO: should this question be on the next "slide"?}
 What happens when the business grows enough that variable "income" exceeds 1
 billion?  (Assume a 32-bit integer length.)
+
+==============================================================================
 
 The LLVM compiler family calls the results in these corner cases "poison".  
 If the optimized assembler code can ever generate a poison value, AND the
 poison value can be output (as opposed to being dropped), the optimization is
 dangerous and must be avoided.
 
-And sometimes, when the optimization does not hold, it does not matter.
-{TODO: find an example}
+Does this generate poison?  If so, where, and why?
+
+   int16_t compute_result( int16_t aa )
+   {
+      return 75 << aa;
+   }
+
+   int16_t foo= compute_result( 20 );
+
+
+==============================================================================
+
+Sometimes, when code generates poison, it does not matter.
+
+  int16_t do_something_important( int16_t aa, int16_t bb )
+  {
+      int16_t result= aa- 16;
+      if ( bb < 0 )  {
+         return result= result+ bb;
+      }
+      return result;
+  }
+
+  do_something_important( INT16_MIN+ 1, 45 );
+
+Question: Does this generate poison?  If so, where, and why?
+
+==============================================================================
 
 Research tack: create a tool that checks for poison values and halts when they
 are output.  This has shown that some optimizations thought to be correct
 inadvertantly create poison values under some circumstances.
+
+==============================================================================
 
 Some definitions of poison are themselves ambiguous.
 
 {TODO: insert the example of generating a poison value, bitshifting it left 8
 places, and then masking off the high order bits, leaving only the lower 8.
 
+in C:
+   int16_t seed= INT16_MAX- 1;
+   
+   seed+= 5; // generates poison
+   seed= seed << 8;
+   seed= seed && 0xff;
+
+Should "seed" contain poison?  Should the programmer expect a specific
+value for "seed", or can an optimizer insert any value it desires?
+
 Research tack: create a formal, mathematical definition of poison that can be
 used to verify proposed compiler optimizations.
+
+==============================================================================
+
+The formal poison specification has to make enough sense to the compiler
+maintainers that they can adopt and use our results.
 
 Research tack: compare formal poison definitions with the intuitive
 expectations of the compiler development community, and justify discrepancies.
 
-Research tack: make sure that formal poison definitions still allow compilers
-to optimize code enough that end-users' applications run reasonably quickly.
+And, of course, the results have to still allow enough optimization
+that end-users' applications run reasonably quickly.
+
+Research tack: make sure that as many optimizations as possible are
+still possible.  Verify speed and accuracy differences on end-user
+applications.
+
+==============================================================================
+
 
 (end of poster)
 
