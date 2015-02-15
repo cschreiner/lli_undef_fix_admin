@@ -1,4 +1,7 @@
 
+==============================================================================
+slide 1
+
 Compilers optimize code to make it run faster:
 
 For example:
@@ -19,6 +22,7 @@ On modern processors, the shift instruction usually runs about 10x
 faster than a "div" instruction.
 
 ==============================================================================
+slide 2
 
 But some optimizations don't hold for all data values.
 
@@ -42,6 +46,7 @@ business grows enough that the variable "income" exceeds 1 billion?  (Assume a
 32-bit integer length. The sum of the two tax rates is at least 10.)
 
 ==============================================================================
+slide 3
 
 The LLVM compiler family calls the results in these corner cases "poison".  
 If the optimized assembler code can ever generate a poison value, AND the
@@ -59,6 +64,7 @@ Does this generate poison?  If so, where, and why?
 
 
 ==============================================================================
+slide 4
 
 Summary of rules for handling poison:
 
@@ -85,6 +91,7 @@ Does this generate poison?  If so, where, and why?
 
 
 ==============================================================================
+slide 5
 
 Consider this code:
 
@@ -102,6 +109,7 @@ Consider this code:
 Question: Does this generate poison?  If so, where, and why?
 
 ==============================================================================
+slide 6
 
 Sometimes, when code generates poison, it does not matter.  
 
@@ -136,12 +144,14 @@ the final return value poisoned?  Why or why not?
    irrelevant_poison( 32770, -1 );
 
 ==============================================================================
+slide 7
 
 Research tack: create a tool that detects poison values, traces them, and
 halts when they are output.  This has shown that some optimizations thought to
 be correct inadvertantly create poison values under some circumstances.
 
 ==============================================================================
+slide 8
 
 Some definitions of poison are themselves ambiguous.
 
@@ -164,9 +174,10 @@ Research tack: create a formal, mathematical definition of poison that can be
 used to verify proposed compiler optimizations.
 
 ==============================================================================
+slide 9
 
 The formal poison specification has to make enough sense to the compiler
-maintainers that they can adopt and use our results.
+maintainers that they can understand and use our results.
 
 Research tack: compare formal poison definitions with the intuitive
 expectations of the LLVM compiler development community, and justify
