@@ -150,7 +150,7 @@ in C:
    
    seed+= 5; // generates poison
    seed= seed << 8;
-   seed= seed && 0xff;
+   seed= seed & 0xff;
 
 Should "seed" contain poison?  Should the programmer expect a specific
 value for "seed", or can an optimizer insert any value it desires?
