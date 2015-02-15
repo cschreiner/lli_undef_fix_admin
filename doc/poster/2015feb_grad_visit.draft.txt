@@ -21,7 +21,6 @@ faster than a "div" instruction.
 ==============================================================================
 
 But some optimizations don't hold for all data values.
-{TODO: find an example, preferably involving a poison issue}
 
 in C:
    unsigned compute_tax ( unsigned income ) 
@@ -38,9 +37,9 @@ optimized to:
       return tax;
    }
 
-{TODO: should this question be on the next "slide"?}
-What happens when the business grows enough that variable "income" exceeds 1
-billion?  (Assume a 32-bit integer length.)
+{TODO: should this question be on the next "slide"?}  What happens when the
+business grows enough that the variable "income" exceeds 1 billion?  (Assume a
+32-bit integer length. The sum of the two tax rates is at least 10.)
 
 ==============================================================================
 
@@ -61,7 +60,33 @@ Does this generate poison?  If so, where, and why?
 
 ==============================================================================
 
-Sometimes, when code generates poison, it does not matter.
+Summary of rules for handling poison:
+
+[ ] Once a poison value is generated, all values derived from it are also
+poison.
+
+[ ] Poison can be passed into a function, and/or returned from a function.
+
+[ ] A value remains poisoned when stored in memory, and when recalled from
+memory.
+
+Note that in the common case that the argument values passed to functions are
+not known at compile time, the compiler can not ignore any possible argument
+values when optimizing.
+
+Does this generate poison?  If so, where, and why?
+
+   int get_answer( int xx )
+   {
+      return (xx- 1)/ -1;
+   }
+
+   get_answer( INT_MIN+ 1 );
+
+
+==============================================================================
+
+Consider this code:
 
   int16_t do_something_important( int16_t aa, int16_t bb )
   {
@@ -78,16 +103,47 @@ Question: Does this generate poison?  If so, where, and why?
 
 ==============================================================================
 
-Research tack: create a tool that checks for poison values and halts when they
-are output.  This has shown that some optimizations thought to be correct
-inadvertantly create poison values under some circumstances.
+Sometimes, when code generates poison, it does not matter.  
+
+Note that branching is expensive. (It forcibly clears the processor's
+instruction decoding pipeline, and while branch prediction is useful, it is
+not nearly as accurate as one would hope.)  Many optimizations go to great
+lengths to eliminate branches.
+
+   int16_t irrelevant_poison( int16_t xx, int16_t yy )
+   {
+      int16_t return_value= xx;
+      if ( yy > 7 )  {
+         return_value= xx+ 7;
+      } else {
+         return_value= xx* 2+ 3;
+      }
+      return return_value;
+   }
+
+   irrelevant_poison( 32770, -1 );
+
+This often gets optimized into the following code, which generates poison.  Is
+the final return value poisoned?  Why or why not?
+
+   int16_t irrelevant_poison( int16_t xx, int16_t yy )
+   {
+      int16_t tmp1= xx+ 7;
+      int16_t tmp2= xx* 2+ 3;
+      return (yy > 7) ? tmp1 : tmp2;
+   }
+
+   irrelevant_poison( 32770, -1 );
+
+==============================================================================
+
+Research tack: create a tool that detects poison values, traces them, and
+halts when they are output.  This has shown that some optimizations thought to
+be correct inadvertantly create poison values under some circumstances.
 
 ==============================================================================
 
 Some definitions of poison are themselves ambiguous.
-
-{TODO: insert the example of generating a poison value, bitshifting it left 8
-places, and then masking off the high order bits, leaving only the lower 8.
 
 in C:
    int16_t seed= INT16_MAX- 1;
@@ -99,6 +155,11 @@ in C:
 Should "seed" contain poison?  Should the programmer expect a specific
 value for "seed", or can an optimizer insert any value it desires?
 
+The current compiler specification defines poison rather vaguely.  It is a
+tribute to the intuition and intelligence of the compiler contributors that
+this has worked so far.  We have been lucky.  But we find it does not work for
+the next generation of compiler optimizations.
+
 Research tack: create a formal, mathematical definition of poison that can be
 used to verify proposed compiler optimizations.
 
@@ -108,12 +169,13 @@ The formal poison specification has to make enough sense to the compiler
 maintainers that they can adopt and use our results.
 
 Research tack: compare formal poison definitions with the intuitive
-expectations of the compiler development community, and justify discrepancies.
+expectations of the LLVM compiler development community, and justify
+any discrepancies.
 
 And, of course, the results have to still allow enough optimization
 that end-users' applications run reasonably quickly.
 
-Research tack: make sure that as many optimizations as possible are
+Research tack: make sure that as many existing optimizations as possible are
 still possible.  Verify speed and accuracy differences on end-user
 applications.
 
