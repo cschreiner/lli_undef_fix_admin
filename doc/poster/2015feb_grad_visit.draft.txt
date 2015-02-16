@@ -76,6 +76,9 @@ poison.
 [ ] A value remains poisoned when stored in memory, and when recalled from
 memory.
 
+[ ] If a poison value is every output, the program has failed.  (A poison
+value must be dropped internally.)
+
 Note that in the common case that the argument values passed to functions are
 not known at compile time, the compiler can not ignore any possible argument
 values when optimizing.
