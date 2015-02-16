@@ -41,12 +41,15 @@ optimized to:
       return tax;
    }
 
-{TODO: should this question be on the next "slide"?}  What happens when the
-business grows enough that the variable "income" exceeds 1 billion?  (Assume a
-32-bit integer length. The sum of the two tax rates is at least 10.)
-
 ==============================================================================
 slide 3
+
+Question: What happens when the business grows enough that the variable
+"income" exceeds 1 billion?  (Assume a 32-bit integer length. The sum of the
+two tax rates is at least 10.)
+
+==============================================================================
+slide 4
 
 The LLVM compiler family calls the results in these corner cases "poison".  
 If the optimized assembler code can ever generate a poison value, AND the
@@ -64,7 +67,7 @@ Does this generate poison?  If so, where, and why?
 
 
 ==============================================================================
-slide 4
+slide 5
 
 Summary of rules for handling poison:
 
@@ -79,9 +82,15 @@ memory.
 [ ] If a poison value is every output, the program has failed.  (A poison
 value must be dropped internally.)
 
-Note that in the common case that the argument values passed to functions are
-not known at compile time, the compiler can not ignore any possible argument
-values when optimizing.
+
+==============================================================================
+slide 6
+
+When the argument values passed to a function are not known at compile time,
+the compiler can not ignore any possible argument values when optimizing.
+
+Unknown argument values happen often.
+
 
 Does this generate poison?  If so, where, and why?
 
@@ -94,7 +103,7 @@ Does this generate poison?  If so, where, and why?
 
 
 ==============================================================================
-slide 5 (dropped for length reasons)
+slide 5.5 (dropped for length reasons)
 
 Consider this code:
 
@@ -112,7 +121,7 @@ Consider this code:
 Question: Does this generate poison?  If so, where, and why?
 
 ==============================================================================
-slide 6
+slide 7-8
 
 Sometimes, when code generates poison, it does not matter.  
 
@@ -147,14 +156,14 @@ not nearly accurate enough to compensate.)  Branch-removing optimizations like
 the above are critical to make code run fast enough to be useful.
 
 ==============================================================================
-slide 7
+slide 9
 
-Research tack: create a tool that detects poison values, traces them, and
+Research track: create a tool that detects poison values, traces them, and
 halts when they are output.  This has shown that some optimizations thought to
 be correct inadvertantly create poison values under some circumstances.
 
 ==============================================================================
-slide 8
+slide 10-11
 
 Some definitions of poison are themselves ambiguous.
 
@@ -173,23 +182,23 @@ tribute to the intuition and intelligence of the compiler contributors that
 this has worked so far.  We have been lucky.  But we find it does not work for
 the next generation of compiler optimizations.
 
-Research tack: create a formal, mathematical definition of poison that can be
+Research track: create a formal, mathematical definition of poison that can be
 used to verify proposed compiler optimizations.
 
 ==============================================================================
-slide 9
+slide 12
 
 The formal poison specification has to make enough sense to the compiler
 maintainers that they can understand and use our results.
 
-Research tack: compare formal poison definitions with the intuitive
+Research track: compare formal poison definitions with the intuitive
 expectations of the LLVM compiler development community, and justify
 any discrepancies.
 
 And, of course, the results have to still allow enough optimization
 that end-users' applications run reasonably quickly.
 
-Research tack: make sure that as many existing optimizations as possible are
+Research track: make sure that as many existing optimizations as possible are
 still possible.  Verify speed and accuracy differences on end-user
 applications.
 
