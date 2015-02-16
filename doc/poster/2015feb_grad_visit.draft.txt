@@ -113,11 +113,6 @@ slide 6
 
 Sometimes, when code generates poison, it does not matter.  
 
-Note that branching is expensive. (It forcibly clears the processor's
-instruction decoding pipeline, and while branch prediction is useful, it is
-not nearly as accurate as one would hope.)  Many optimizations go to great
-lengths to eliminate branches.
-
    int16_t irrelevant_poison( int16_t xx, int16_t yy )
    {
       int16_t result= xx;
@@ -142,6 +137,11 @@ the final return value poisoned?  Why or why not?
    }
 
    int16_t foo= irrelevant_poison( 32770, -1 );
+
+Note that branching has been very time consuming on processors designed over
+the last 20+ years.  (Branching flushes pipelines, and branch prediction is
+not nearly accurate enough to compensate.)  Branch-removing optimizations like
+the above are critical to make code run fast enough to be useful.
 
 ==============================================================================
 slide 7
