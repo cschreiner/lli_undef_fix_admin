@@ -91,7 +91,7 @@ Does this generate poison?  If so, where, and why?
 
 
 ==============================================================================
-slide 5
+slide 5 (dropped for length reasons)
 
 Consider this code:
 
