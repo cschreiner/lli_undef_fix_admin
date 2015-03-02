@@ -60,6 +60,9 @@ fi
 # Note: fixing the ctypes warning can be resolved on Ubuntu 14.04 by
 # 	installing:
 #	libctypes-ocaml		libctypes-ocaml-dev
+echo TODO: try using --enable-libffi to allow lli to load the standard
+echo C library.
+echo ======================================================================
 $PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
       --enable-optimized --disable-bindings \
       $host_specific_options "$@"
