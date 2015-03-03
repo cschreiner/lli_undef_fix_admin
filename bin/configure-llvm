@@ -33,8 +33,9 @@ while [ $# -gt 0 ]; do
          shift
          ;;
       --config)
-         # Remaining argument need to be passed directly to the 
+         # Args after this one need to be passed directly to the 
 	 # <src_tree>/configure script.
+         shift
          break
          ;;
       *)
@@ -86,6 +87,21 @@ fi
 if [ $arg_distcc = "true" ]; then
    export CC="distcc ${CC:-gcc}"
    export CXX="distcc ${CXX:-g++}"
+fi
+
+
+# ----------------------------------------------------------------------------
+# print our setup and exit (only when debugging this script)
+
+if false; then 
+   echo " "
+   echo would proceed with:
+   echo arg_distcc=\"$arg_distcc\"
+   echo extra args to configure=\< "$@" \>
+   echo CC=\"$CC\"
+   echo CXX=\"$CXX\"
+   echo " "
+   exit 0
 fi
 
 # ----------------------------------------------------------------------------
