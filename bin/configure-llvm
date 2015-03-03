@@ -2,7 +2,11 @@
 # Run llvm's configure script with customizations necessary for the current
 # development host.
 
+# ----------------------------------------------------------------------------
+# most basic setup
+
 scriptname=lli_undef_fix3/admin/bin/configure-llvm
+
 if [ -z "$PROJ_ROOT" ]; then
    echo ${scriptname}: environment variable PROJ_ROOT not set.
    exit 255
@@ -17,11 +21,44 @@ fi
 BUILD_DIR=`pwd`
 
 # ----------------------------------------------------------------------------
-# check the build directory
+# read command line arguments
+
+need_to_exit="false"
+
+arg_distcc="false"
+while [ $# -gt 0 ]; do
+   case "$1" in
+      --distcc)
+         arg_distcc="true"
+         shift
+         ;;
+      --config)
+         # Args after this one need to be passed directly to the 
+	 # <src_tree>/configure script.
+         shift
+         break
+         ;;
+      *)
+         echo ${scriptname}: do not recognize argument "$1".
+         need_to_exit="true"
+         ;;
+   esac
+done
+
+if [ $need_to_exit = "true" ]; then
+   echo ${scriptname}: too many errors.  Unable to continue.
+   exit 255
+fi
+
+# ----------------------------------------------------------------------------
+# check the build directory and parameters
 
 # is the current directory the intended build directory?
 echo configuring to build in this directory:
 echo "  " \"$BUILD_DIR\"
+echo with distcc=\"$arg_distcc\"
+echo configure args="$@"
+echo " "
 echo -n "Is that correct? (Y/n) "
 read input
 case $input in
@@ -45,6 +82,29 @@ else
 fi
 
 # ----------------------------------------------------------------------------
+# setup based on above parameters
+
+if [ $arg_distcc = "true" ]; then
+   export CC="distcc ${CC:-gcc}"
+   export CXX="distcc ${CXX:-g++}"
+fi
+
+
+# ----------------------------------------------------------------------------
+# print our setup and exit (only when debugging this script)
+
+if false; then 
+   echo " "
+   echo would proceed with:
+   echo arg_distcc=\"$arg_distcc\"
+   echo extra args to configure=\< "$@" \>
+   echo CC=\"$CC\"
+   echo CXX=\"$CXX\"
+   echo " "
+   exit 0
+fi
+
+# ----------------------------------------------------------------------------
 # configure the build
 
 # note: configure requires --disable-bindings to avoid these warnings:
@@ -60,6 +120,9 @@ fi
 # Note: fixing the ctypes warning can be resolved on Ubuntu 14.04 by
 # 	installing:
 #	libctypes-ocaml		libctypes-ocaml-dev
+echo TODO: try using --enable-libffi to allow lli to load the standard
+echo C library.
+echo ======================================================================
 $PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
       --enable-optimized --disable-bindings \
       $host_specific_options "$@"
