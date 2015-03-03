@@ -69,6 +69,8 @@ exit status="0"
 ===================================================================
 2-O1.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
 1 
 exit status="0"
 ===================================================================
@@ -105,18 +107,24 @@ exit status="0"
 ===================================================================
 3-O2.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
  
 exit status="0"
 ===================================================================
 ===================================================================
 3-O3.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
  
 exit status="0"
 ===================================================================
 ===================================================================
 3-Os.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
  
 exit status="0"
 ===================================================================
@@ -167,30 +175,34 @@ exit status="0"
 ===================================================================
 5-O1.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 5-O2.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 5-O3.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 5-Os.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 6-O0.ll:
@@ -239,24 +251,36 @@ exit status="0"
 ===================================================================
 7-O1.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
 ===================================================================
 7-O2.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
 ===================================================================
 7-O3.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
 ===================================================================
 7-Os.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
@@ -269,30 +293,34 @@ exit status="0"
 ===================================================================
 8-O1.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 8-O2.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 8-O3.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 8-Os.ll:
  
-LLVM ERROR: Tried to execute an unknown external function: putchar
- 
-exit status="1"
+using proposed 2-way poison behavior for 'select'.
+in select: 
+x 
+exit status="0"
 ===================================================================
 ===================================================================
 9-O0.ll:
@@ -303,24 +331,38 @@ exit status="0"
 ===================================================================
 9-O1.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
 ===================================================================
 9-O2.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
 ===================================================================
 9-O3.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
 0 
 exit status="0"
 ===================================================================
 ===================================================================
 9-Os.ll:
  
+using proposed 2-way poison behavior for 'select'.
+in select: 
+in select: 
+in select: 
 0 
 exit status="0"
 ===================================================================
