@@ -486,6 +486,12 @@ code that first generates poison.
 
 =item
 
+I<optllreduce> first runs the .ll file through poison-aware lli, to
+see if the code generates any poison.  If it does, I<optllreduce>
+prints a message to that effect and exits.
+
+=item
+
 I<optllreduce> runs opt on an llvm .ll file.  (Recall that opt is the
 llvm optimizer executeable.)  A typical opt command line loks like this:
 
