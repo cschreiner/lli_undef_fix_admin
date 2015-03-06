@@ -231,7 +231,8 @@ mkdir $tmpdir;
 # the opt command line should look something like this:
 #   opt -S <other options from the optllreduce command line> \
 #         --print-after-all file.ll
-our $opt_out, $opt_err, $opt_errfile;
+our $opt_out; 
+our $opt_err;
 our $opt_errfile= "$tmpdir/opt.stderr";
 {
    my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
