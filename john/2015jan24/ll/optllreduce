@@ -372,6 +372,8 @@ sub feed_pass_to_lli
 {{
    my( $pass_ref, $ir_program_listref )= @_;
 
+   # . . . . . . . . . . . . . . . . . . . .
+   # determine filenames
    my( $fileable_title )= $pass_ref->{'title'};
    $fileable_title=~ s/^W+//;
    $fileable_title=~ s/W+$//;
@@ -383,21 +385,39 @@ sub feed_pass_to_lli
    my( $stdout_file )= "$workdir/$num.$fileable_title.lli.stdout";
    my( $stderr_file )= "$workdir/$num.$fileable_title.lli.stderr";
    my( $ll_file )= "$workdir/$num.$fileable_title.ll";
+   my( $ll_part_file )= "$workdir/$num.$fileable_title.llpart";
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # write out the optimized code, for reference
+   {
+      my $fh= new FileHandle;
+      $fh->open( ">$ll_part_file" ) or
+	die $main::scriptname . ": can't open llpart file for writing, \n" .
+	      "\t" . "file=\"$ll_part_file\", \n" .
+	      "\t" . "$!. \n";
+      $fh->print( $pass_ref->{'txt'} );
+      $fh->close() or
+	die $main::scriptname . ": can't close llpart file after writing, \n" .
+	      "\t" . "file=\"$ll_part_file\", \n" .
+	      "\t" . "$!. \n";
+   }
 
    # . . . . . . . . . . . . . . . . . . . .
    # write out the IR program
    my( $opt_ir_program )= insert_opt_txt_into_ir_program( 
 	 $ir_prog_listref, $pass_ref->{'txt'} );
-   my $fh= new FileHandle;
-   $fh->open( ">$ll_file" ) or
-     die $main::scriptname . ": can't open pass ll file for writing, \n" .
-           "\t" . "file=\"$ll_file\", \n" .
-           "\t" . "$!. \n";
-   $fh->print( $pass_ref->{'txt'} );
-   $fh->close() or
-     die $main::scriptname . ": can't close pass ll file after writing, \n" .
-           "\t" . "file=\"$ll_file\", \n" .
-           "\t" . "$!. \n";
+   {
+      my $fh= new FileHandle;
+      $fh->open( ">$ll_file" ) or
+	die $main::scriptname . ": can't open pass ll file for writing, \n" .
+	      "\t" . "file=\"$ll_file\", \n" .
+	      "\t" . "$!. \n";
+      $fh->print( $opt_ir_program );
+      $fh->close() or
+	die $main::scriptname . ": can't close pass ll file after writing, \n" .
+	      "\t" . "file=\"$ll_file\", \n" .
+	      "\t" . "$!. \n";
+   }
 
    # . . . . . . . . . . . . . . . . . . . .
    # run lli
@@ -502,6 +522,9 @@ sub insert_opt_txt_into_ir_program
    for ( my $ii= $i_stop+1; $ii <= $#$ir_prog_listref; $ii++ )  {
       $ret_val.= $$ir_prog_listref[$ii];
    }
+
+   print "i_start=$i_start \t i_stop=$i_stop \n";;
+   print "o_start=$o_start \t o_stop=$o_stop \n";;
    
    # clean up and return
    return $ret_val;
