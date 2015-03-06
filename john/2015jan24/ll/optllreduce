@@ -263,8 +263,8 @@ our $arg_opt_pass_listref= opt_output_to_list( \@opt_err_list );
 ## ===========================================================================
 ##   print out what we got out of opt
 
+print "opt yielded " . scalar(@$arg_opt_pass_listref) . " passes. \n";
 if ( $arg_print_opt_passes )  {
-   print "opt yielded " . scalar(@$arg_opt_pass_listref) . " passes. \n";
    foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       print "="x 70 . "\n";
       if ( ref($pass_ref) ne "HASH" )  {
@@ -283,7 +283,15 @@ if ( $arg_print_opt_passes )  {
 ##   feed through lli
 
 foreach my $pass_ref ( @$arg_opt_pass_listref )  {
-   print "running lli on \"" . $pass_ref->{'title'} . "\": \n";;
+   if ( $pass_ref->{'title'} eq "" )  {
+      print "skipping pass " . $pass_ref->{'num'} . " without a title \n";
+      if ( $pass_ref->{'txt'} ne "" )  {
+         print "   note: pass had text. \n";
+      }
+      next;
+   }
+   print "running lli on " . $pass_ref->{'num'} . 
+	 ":\"" . $pass_ref->{'title'} . "\": \n";;
    my $result= feed_pass_to_lli( $pass_ref );
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
