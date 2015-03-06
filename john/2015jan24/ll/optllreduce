@@ -326,11 +326,14 @@ sub opt_output_to_list
    my ( @ret_list, @line_list );
    @line_list= split( /$/m, $in_st );
 
-   my $instance_ref= { title=>"", txt=>"", num=>0 };
+   my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0 };
+   print "*** reading opt pass 0\n";
    foreach my $line ( @line_list )  {
       if ( $line=~ m/^\*\*\* / )  {
          push @ret_list, $instance_ref;
-         $instance_ref= { title=>"", txt=>"", num=> $instance_ref->{num}+1 };
+         $instance_ref= { 
+	       'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
+         print "*** reading opt pass " . $instance_ref->{'num'} . "\n";;
          my $tmp= $line;
          chomp $tmp;
          $tmp=~ s/^\*\*\*\s*//;
