@@ -242,6 +242,10 @@ our $opt_errfile= "$workdir/opt.stderr";
    }
    $opt_out= `$opt_cmd`;
 }
+
+## ===========================================================================
+##   parse opt's output
+
 {
    my $fh= new FileHandle;
    $fh->open( "<$opt_errfile" ) or
@@ -258,6 +262,26 @@ our $opt_errfile= "$workdir/opt.stderr";
 }
 
 our $arg_opt_pass_listref= opt_output_to_list( \@opt_err_list );
+
+
+## ===========================================================================
+##   make a RAM copy of the original .ll file
+
+our $ll_program= "";
+{
+   my $fh= new FileHandle;
+   $fh->open( "<$arg_infile" ) or
+     die $main::scriptname . ": can't open original ll file for reading, \n" .
+           "\t" . "file=\"$arg_infile\", \n" .
+           "\t" . "$!. \n";
+   # ideally, we'd like to: $fh->input_record_separator(undef);
+   my @line_list= $fh->getlines(); # slurp in the whole file
+   $fh->close() or
+     die $main::scriptname . ": can't close original ll file after reading, \n" .
+           "\t" . "file=\"$arg_infile\", \n" .
+           "\t" . "$!. \n";
+   $ll_program= join( "", @line_list );
+}
 
 
 ## ===========================================================================
