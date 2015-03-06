@@ -238,8 +238,13 @@ our @arg_opt_pass_list= opt_output_to_list( $opt_out );
 ##   print out what we got out of opt
 
 if ( $arg_print_opt_passes )  {
+   print "opt yielded " . scalar(@arg_opt_pass_list) . " passes. \n";
    foreach my $pass_ref ( @arg_opt_pass_list )  {
       print "="x 70 . "\n";
+      if ( ref($pass_ref) ne "HASH" )  {
+         print "this is not a hash ref \n";
+         next;
+      }
       print $pass_ref->{'num'} . ': "' . $pass_ref->{'title'} . ": \n";
       print $pass_ref->{'txt'};
       print "="x 70 . "\n";
