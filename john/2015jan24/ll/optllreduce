@@ -4,7 +4,6 @@
 # Project Name: lli_undef_fix
 # Script Name: optllreduce 
 #
-#
 # For a copyright information, see the statement in the POD documentation at
 # the end of this file.  
 #
@@ -26,7 +25,7 @@
 # ****************************************************************************
 # Compiler Directives (use's)
 # make sure we are using this Perl version or later
-use 5.6.0;
+use 5.10.0;
 
 use strict;
 use Getopt::Long;
