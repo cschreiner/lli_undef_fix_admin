@@ -341,6 +341,7 @@ sub opt_output_to_list
          $tmp=~ s/\*\*\*\s*$//;
          $instance_ref->{'title'}= $tmp;
       } else {
+         print "line is " . length($line) . " characters long. \n";;
          $instance_ref->{'txt'}.= $line;
       }
    }
