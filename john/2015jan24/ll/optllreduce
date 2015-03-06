@@ -272,6 +272,7 @@ if ( $arg_print_opt_passes )  {
          next;
       }
       print $pass_ref->{'num'} . ': "' . $pass_ref->{'title'} . ": \n";
+      print "text: \n\n";
       print $pass_ref->{'txt'};
       print "="x 70 . "\n";
    } 
