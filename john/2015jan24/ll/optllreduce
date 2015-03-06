@@ -326,12 +326,14 @@ sub opt_output_to_list
    my ( @ret_list );
 
    my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0 };
+   print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
    print "*** reading opt pass 0\n";
    foreach my $line ( $in_listref )  {
       if ( $line=~ m/^\*\*\* / )  {
          push @ret_list, $instance_ref;
          $instance_ref= { 
 	       'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
+	 print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
          print "*** reading opt pass " . $instance_ref->{'num'} . "\n";;
          my $tmp= $line;
          chomp $tmp;
