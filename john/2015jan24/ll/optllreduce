@@ -229,6 +229,9 @@ our $opt_out;
 {
    my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
 	 " --print-after-all $arg_infile";
+   if ( $debug_flag or $main::TRUE )  { ;;
+      print "opt cmd= \"$opt_cmd\"\n";
+   }
    $opt_out= `$opt_cmd`;
 }
 our @arg_opt_pass_list= opt_output_to_list( $opt_out );
