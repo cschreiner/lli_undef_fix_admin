@@ -139,6 +139,9 @@ $need_to_exit= $FALSE;
 ## -----------------------------------------------------------------------
 ##   set up defaults
 
+our $arg_infile= "";
+our @arg_opt_options_list= "";
+our $arg_print_opt_passes= $main::FALSE;
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -173,6 +176,8 @@ if ( scalar(@ARGV) > 0 )  {
    GetOptions ( "help|h" => \$arg_help, 
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
+         "opt" => \@arg_opt_options_list,
+         "print-opt-passes" => \$arg_print_opt_passes,
 	 );
 
    if ( $arg_help )  {
@@ -194,8 +199,15 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOptions left behind
 
+$arg_infile= shift @ARGV;
+
 ## -----------------------------------------------------------------------
 ##   check arguments
+
+if ( $arg_infile eq "" )  {
+   warn $scriptname . ": no input file found on command line. \n";
+   $need_to_exit= $main::TRUE;
+}
 
 if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 
@@ -208,7 +220,35 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
+##   run opt
+
+# the opt command line should look something like this:
+#   opt -S <other options from the optllreduce command line> \
+#         --print-after-all file.ll
+our $opt_out= `opt -S $arg_opt_options --print-after-all $arg_infile`;
+our @arg_opt_pass_list= opt_output_to_list( $opt_out );
+
+
+## ===========================================================================
+##   print out what we got out of opt
+
+if ( $arg_print_opt_passes )  {
+   foreach my $pass_ref ( @arg_opt_pass_list )  {
+      print "="x 70 . "\n";
+      print $pass_ref->{'num'} . ': "' . $pass_ref->{'title'} . ": \n";
+      print $pass_ref->{'txt'};
+      print "="x 70 . "\n";
+   }
+   exit $main::PERL_SUCCESS;
+}
+
+## ===========================================================================
 ##   
+
+# TODO: fill this in
+print "this code not written yet. \n";
+exit $main::PERL_SUCCESS;
+
 
 ## ===========================================================================
 ##   
@@ -220,10 +260,54 @@ if ( $debug_flag )  {
 ##   
 
 ## ===========================================================================
-##   
-
+## Subroutine opt_output_to_list()
 ## ===========================================================================
-##   
+# Description: takes the output of opt and converts it into a list of 
+#	optimization passes, useful for later processing.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   in_st: string containing the output from opt
+# 
+# Outputs: none
+#   
+# Return Value: a reference to a list of hash references.
+#   Each hash has these fields:
+#   title: the title of the pass that produced the output
+#   txt: the program text from the pass output
+#   num: the sequence number of this optimization pass, starting at 1
+#
+# ============================================================================
+sub opt_output_to_list
+{{
+   my( $in_st )= @_;
+
+   my ( @ret_list, @line_list );
+   @line_list= split( /$/m, $in_st );
+
+   my $instance_ref= { title=>"", txt=>"", num=>0 };
+   foreach my $line ( @line_list )  {
+      if ( $line=~ m/^\*\*\* / )  {
+         push @ret_list, $instance_ref;
+         $instance_ref= { title=>"", txt=>"", num=> $instance_ref->{num}+1 };
+         $tmp= $line;
+         chomp $tmp;
+         $tmp=~ s/^\*\*\*\s*//;
+         $tmp=~ s/\*\*\*\s*$//;
+         $instance_ref->{'title'}= $tmp;
+      } else {
+         $instance_ref->{'txt'}.= $line;
+      }
+   }
+   push @ret_list, $instance_ref;
+   return \@ret_list;
+}}
+
 
 
 # template 25 lines long
