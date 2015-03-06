@@ -378,9 +378,9 @@ sub feed_pass_to_lli
    # . . . . . . . . . . . . . . . . . . . .
    # determine filenames
    my( $fileable_title )= $pass_ref->{'title'};
-   $fileable_title=~ s/^W+//;
-   $fileable_title=~ s/W+$//;
-   $fileable_title=~ s/W+/_/g;
+   $fileable_title=~ s/^\W+//;
+   $fileable_title=~ s/\W+$//;
+   $fileable_title=~ s/\W+/_/g;
    $fileable_title=~ s/\s+/_/g;
 
    my( $num )= sprintf ("%3.3d", $pass_ref->{'num'} );
