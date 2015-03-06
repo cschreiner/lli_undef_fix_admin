@@ -232,7 +232,7 @@ mkdir $tmpdir;
 #   opt -S <other options from the optllreduce command line> \
 #         --print-after-all file.ll
 our $opt_out; 
-our $opt_err;
+our @opt_err_list; # list of the lines from opt's stderr
 our $opt_errfile= "$tmpdir/opt.stderr";
 {
    my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
@@ -250,14 +250,14 @@ our $opt_errfile= "$tmpdir/opt.stderr";
            "\t" . "$!. \n";
    # ideally, we'd like to: $fh->input_record_separator(undef);
    local $/;
-   $opt_err= $fh->getline(); # slurp in the whole file
+   @opt_err_list= $fh->getlines(); # slurp in the whole file
    $fh->close() or
      die $main::scriptname . ": can't close opt stderr file after reading, \n" .
            "\t" . "file=\"$opt_errfile\", \n" .
            "\t" . "$!. \n";
 }
 
-our @arg_opt_pass_list= opt_output_to_list( $opt_err );
+our @arg_opt_pass_list= opt_output_to_list( \@opt_err_list );
 
 
 ## ===========================================================================
@@ -268,7 +268,7 @@ if ( $arg_print_opt_passes )  {
    foreach my $pass_ref ( @arg_opt_pass_list )  {
       print "="x 70 . "\n";
       if ( ref($pass_ref) ne "HASH" )  {
-         print "this is not a hash ref \n";
+         print "this is not a hash ref, but a \"" . ref($pass_ref) . "\". \n";
          next;
       }
       print $pass_ref->{'num'} . ': "' . $pass_ref->{'title'} . ": \n";
@@ -308,7 +308,7 @@ exit $main::PERL_SUCCESS;
 # Warnings: 
 #
 # Inputs: 
-#   in_st: string containing the output from opt
+#   $in_listref: a list of the lines from opt's per-pass diagnostics
 # 
 # Outputs: none
 #   
@@ -321,14 +321,13 @@ exit $main::PERL_SUCCESS;
 # ============================================================================
 sub opt_output_to_list
 {{
-   my( $in_st )= @_;
+   my( $in_listref )= @_;
 
-   my ( @ret_list, @line_list );
-   @line_list= split( /$/m, $in_st );
+   my ( @ret_list );
 
    my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0 };
    print "*** reading opt pass 0\n";
-   foreach my $line ( @line_list )  {
+   foreach my $line ( $in_listref )  {
       if ( $line=~ m/^\*\*\* / )  {
          push @ret_list, $instance_ref;
          $instance_ref= { 
