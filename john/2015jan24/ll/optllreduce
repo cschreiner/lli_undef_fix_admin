@@ -267,7 +267,7 @@ our $arg_opt_pass_listref= opt_output_to_list( \@opt_err_list );
 ## ===========================================================================
 ##   make a RAM copy of the original .ll file
 
-our $ir_program= "";
+our $ir_prog_listref= undef;
 {
    my $fh= new FileHandle;
    $fh->open( "<$arg_infile" ) or
@@ -277,10 +277,11 @@ our $ir_program= "";
    # ideally, we'd like to: $fh->input_record_separator(undef);
    my @line_list= $fh->getlines(); # slurp in the whole file
    $fh->close() or
-     die $main::scriptname . ": can't close original ll file after reading, \n" .
-           "\t" . "file=\"$arg_infile\", \n" .
-           "\t" . "$!. \n";
-   $ir_program= join( "", @line_list );
+      die $main::scriptname . 
+	    ": can't close original ll file after reading, \n" .
+            "\t" . "file=\"$arg_infile\", \n" .
+            "\t" . "$!. \n";
+   $ir_prog_listref= \@line_list;
 }
 
 
@@ -317,7 +318,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    # TODO2: only print this in verbose mode
    print "running lli on " . $pass_ref->{'num'} . 
 	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
-   my $result= feed_pass_to_lli( $pass_ref, $ir_program );
+   my $result= feed_pass_to_lli( $pass_ref, $ir_prog_listref );
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
       exit $main::PERL_SUCCESS;
@@ -358,8 +359,7 @@ exit $main::PERL_SUCCESS;
 #
 # Inputs: 
 #   $pass_ref: a hashref from the list returned by opt_output_to_list()
-#   $ir_program: a hashref from the list returned by opt_output_to_list()
-asdf
+#   $ir_prog_listref: a list of the lines in the original IR program
 # 
 # Outputs: none
 #   
@@ -370,7 +370,7 @@ asdf
 # ============================================================================
 sub feed_pass_to_lli
 {{
-   my( $pass_ref, $ir_program )= @_;
+   my( $pass_ref, $ir_program_listref )= @_;
 
    my( $fileable_title )= $pass_ref->{'title'};
    $fileable_title=~ s/^W+//;
@@ -387,7 +387,7 @@ sub feed_pass_to_lli
    # . . . . . . . . . . . . . . . . . . . .
    # write out the IR program
    my( $opt_ir_program )= insert_opt_txt_into_ir_program( 
-	 $ir_program, $pass_ref->{'txt'} );
+	 $ir_prog_listref, $pass_ref->{'txt'} );
    my $fh= new FileHandle;
    $fh->open( ">$ll_file" ) or
      die $main::scriptname . ": can't open pass ll file for writing, \n" .
@@ -425,6 +425,34 @@ sub feed_pass_to_lli
    # clean up and return
    return "";
 }}
+
+## ===========================================================================
+## Subroutine insert_opt_txt_into_ir_program()
+## ===========================================================================
+# Description: 
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   
+# 
+# Outputs: 
+#   
+#
+# Return Value: 
+#   
+#
+# ============================================================================
+sub insert_opt_txt_into_ir_program
+{{
+   my( )= @_;
+}}
+
+
 
 ## ===========================================================================
 ## Subroutine opt_output_to_list()
@@ -485,7 +513,6 @@ sub opt_output_to_list
    push @ret_list, $instance_ref;
    return \@ret_list;
 }}
-
 
 
 # template 25 lines long
