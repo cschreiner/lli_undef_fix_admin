@@ -301,7 +301,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       print "got to earth \n";;
       warn $main::scriptname . ": something went wrong running lli, \n" . 
 	    "\t" . "pass= \"" . $pass_ref->{'title'} . "\"\n" .
-	    "\t" . "msg= \"$result\"\n" .
+	    "\t" . "msg= \"$result\"\n";
       exit $main::PERL_FAILURE;
    }
    print "got to mars \n";;
