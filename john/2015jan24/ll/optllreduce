@@ -257,7 +257,7 @@ our $opt_errfile= "$tmpdir/opt.stderr";
            "\t" . "$!. \n";
 }
 
-our @arg_opt_pass_list= opt_output_to_list( \@opt_err_list );
+our $arg_opt_pass_listref= opt_output_to_list( \@opt_err_list );
 
 
 ## ===========================================================================
@@ -265,7 +265,7 @@ our @arg_opt_pass_list= opt_output_to_list( \@opt_err_list );
 
 if ( $arg_print_opt_passes )  {
    print "opt yielded " . scalar(@arg_opt_pass_list) . " passes. \n";
-   foreach my $pass_ref ( @arg_opt_pass_list )  {
+   foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       print "="x 70 . "\n";
       if ( ref($pass_ref) ne "HASH" )  {
          print "this is not a hash ref, but a \"" . ref($pass_ref) . "\". \n";
