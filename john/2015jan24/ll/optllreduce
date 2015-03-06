@@ -222,8 +222,8 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   set up
 
-our $tmpdir= $main::scriptname . "_" . time() . "_" . $$;
-mkdir $tmpdir;
+our $workdir= $main::scriptname . "_" . time() . "_" . $$;
+mkdir $workdir;
 
 ## ===========================================================================
 ##   run opt
@@ -233,7 +233,7 @@ mkdir $tmpdir;
 #         --print-after-all file.ll
 our $opt_out; 
 our @opt_err_list; # list of the lines from opt's stderr
-our $opt_errfile= "$tmpdir/opt.stderr";
+our $opt_errfile= "$workdir/opt.stderr";
 {
    my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
 	 " --print-after-all $arg_infile 2> $opt_errfile";
@@ -295,6 +295,74 @@ exit $main::PERL_SUCCESS;
 
 ## ===========================================================================
 ##   
+
+## ===========================================================================
+## Subroutine feed_pass_to_lli()
+## ===========================================================================
+# Description: runs the code output from a compiler pass through lli
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   a hashref from the list returned by opt_output_to_list()
+# 
+# Outputs: none
+#   
+# Return Value: if everything ran successfully, undef.
+#   If lli detected poison, "poison".
+#   If an error happened, a string describing the error.
+#
+# ============================================================================
+sub feed_pass_to_lli
+{{
+   my( $hashref )= @_;
+
+   my( $fileable_title )= $hashref->{'title'};
+   $fileable_title=~ s/^W+//;
+   $fileable_title=~ s/W+$//;
+   $fileable_title=~ s/W+/_/;
+
+   my( $num )= sprintf ("%3.3d", $hashref->{'num'} );
+
+   my( $stdout_file )= "$workdir/$num.$fileable_title.lli.stdout";
+   my( $stderr_file )= "$workdir/$num.$fileable_title.lli.stderr";
+   my( $ll_file )= "$workdir/$num.$fileable_title.ll";
+
+   my $fh= new FileHandle;
+   $fh->open( ">$ll_file" ) or
+     die $main::scriptname . ": can't open pass ll file for writing, \n" .
+           "\t" . "file=\"$ll_file\", \n" .
+           "\t" . "$!. \n";
+   $fh->print( $hashref->{'txt'} );
+   $fh->close() or
+     die $main::scriptname . ": can't close pass ll file after writing, \n" .
+           "\t" . "file=\"$ll_file\", \n" .
+           "\t" . "$!. \n";
+
+   my $status= undef;
+   my $lli_cmd= 
+	 "lli -force-interpreter $ll_file 1> $stdout_file 2> $stderr_file";
+   ( $status, undef, undef )= system_wrapper( $lli_cmd, "" );
+   if ( $status != 0 )  {
+      return "lli exited with status \"$status\". \n";
+   }
+
+   my $grep_cmd= "grep -qi poison $stdout_file $stderr_file";
+   ( $status, undef, undef )= system_wrapper( $lli_cmd, "" );
+   if ( $status == 0 )  {
+      return "poison";
+   }
+   if ( $status != 1 )  {
+      return "grep (for poison) exited with error status \"$status\". \n";
+   }
+
+   # clean up and return
+   return "";
+}}
 
 ## ===========================================================================
 ## Subroutine opt_output_to_list()
