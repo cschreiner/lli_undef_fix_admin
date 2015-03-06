@@ -237,7 +237,7 @@ our $opt_errfile= "$workdir/opt.stderr";
 {
    my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
 	 " --print-after-all $arg_infile 2> $opt_errfile";
-   if ( $debug_flag or $main::TRUE )  { ;;
+   if ( $debug_flag or $main::TRUE )  { ;; # TODO2: also do in verbose mode
       print "opt cmd= \"$opt_cmd\"\n";
    }
    $opt_out= `$opt_cmd`;
@@ -290,21 +290,19 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       }
       next;
    }
+   # TODO2: only print this in verbose mode
    print "running lli on " . $pass_ref->{'num'} . 
-	 ":\"" . $pass_ref->{'title'} . "\": \n";;
+	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
    my $result= feed_pass_to_lli( $pass_ref );
-   print "got to venus, result=\"$result\" \n";;
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
       exit $main::PERL_SUCCESS;
    } elsif ( $result ne "" )  {
-      print "got to earth \n";;
       warn $main::scriptname . ": something went wrong running lli, \n" . 
 	    "\t" . "pass= \"" . $pass_ref->{'title'} . "\"\n" .
 	    "\t" . "msg= \"$result\"\n";
       exit $main::PERL_FAILURE;
    }
-   print "got to mars \n";;
 }
 
 
@@ -376,7 +374,6 @@ sub feed_pass_to_lli
 	 "lli -force-interpreter $ll_file 1> $stdout_file 2> $stderr_file";
    ( $status, undef, undef )= system_wrapper( $lli_cmd, "" );
    if ( $status != 0 )  {
-      print "got to mercury \n";;
       return "lli exited with status \"$status\", " . 
 	    "see this file for details: \n" .
             "\t" . "\"$stderr_file\". ";
@@ -439,7 +436,8 @@ sub opt_output_to_list
 	    $instance_ref= { 
 		  'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
 	    #print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
-	    print "*** reading opt pass " . $instance_ref->{'num'} . "\n";;
+            # TODO2: only print this in verbose mode:
+	    print "*** reading opt pass " . $instance_ref->{'num'} . "\n";
 	    my $tmp= $line;
 	    chomp $tmp;
 	    $tmp=~ s/^\s*\*\*\*\s*//;
