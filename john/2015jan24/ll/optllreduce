@@ -280,15 +280,29 @@ if ( $arg_print_opt_passes )  {
 }
 
 ## ===========================================================================
-##   
+##   feed through lli
 
-# TODO: fill this in
-print "this code not written yet. \n";
-exit $main::PERL_SUCCESS;
+foreach my $pass_ref ( @$arg_opt_pass_listref )  {
+   my $result= feed_pass_to_lli( $pass_ref );
+   if ( $result eq 'poison' )  {
+      print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
+      exit $main::PERL_SUCCESS;
+   } elsif ( $result ne "" )  {
+      warn $main::scriptname . ": something went wrong running lli on \"" .
+	    $pass_ref->{'title'} . "\"\n";
+      exit $main::PERL_FAILURE;
+   }
+}
 
 
 ## ===========================================================================
-##   
+##   TODO2: see if there is anything else to do
+
+## ===========================================================================
+##   clean up and return
+
+print "No poison found on any pass. \n";
+exit $main::PERL_SUCCESS;
 
 ## ===========================================================================
 ##   
@@ -308,7 +322,7 @@ exit $main::PERL_SUCCESS;
 # Warnings: 
 #
 # Inputs: 
-#   a hashref from the list returned by opt_output_to_list()
+#   $pass_ref: a hashref from the list returned by opt_output_to_list()
 # 
 # Outputs: none
 #   
@@ -319,14 +333,14 @@ exit $main::PERL_SUCCESS;
 # ============================================================================
 sub feed_pass_to_lli
 {{
-   my( $hashref )= @_;
+   my( $pass_ref )= @_;
 
-   my( $fileable_title )= $hashref->{'title'};
+   my( $fileable_title )= $pass_ref->{'title'};
    $fileable_title=~ s/^W+//;
    $fileable_title=~ s/W+$//;
    $fileable_title=~ s/W+/_/;
 
-   my( $num )= sprintf ("%3.3d", $hashref->{'num'} );
+   my( $num )= sprintf ("%3.3d", $pass_ref->{'num'} );
 
    my( $stdout_file )= "$workdir/$num.$fileable_title.lli.stdout";
    my( $stderr_file )= "$workdir/$num.$fileable_title.lli.stderr";
@@ -337,7 +351,7 @@ sub feed_pass_to_lli
      die $main::scriptname . ": can't open pass ll file for writing, \n" .
            "\t" . "file=\"$ll_file\", \n" .
            "\t" . "$!. \n";
-   $fh->print( $hashref->{'txt'} );
+   $fh->print( $pass_ref->{'txt'} );
    $fh->close() or
      die $main::scriptname . ": can't close pass ll file after writing, \n" .
            "\t" . "file=\"$ll_file\", \n" .
