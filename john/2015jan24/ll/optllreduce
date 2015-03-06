@@ -264,7 +264,7 @@ our $arg_opt_pass_listref= opt_output_to_list( \@opt_err_list );
 ##   print out what we got out of opt
 
 if ( $arg_print_opt_passes )  {
-   print "opt yielded " . scalar(@arg_opt_pass_list) . " passes. \n";
+   print "opt yielded " . scalar(@$arg_opt_pass_listref) . " passes. \n";
    foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       print "="x 70 . "\n";
       if ( ref($pass_ref) ne "HASH" )  {
