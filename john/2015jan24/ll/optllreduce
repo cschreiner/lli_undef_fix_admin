@@ -309,6 +309,8 @@ exit $main::PERL_SUCCESS;
 #
 # Inputs: 
 #   $in_listref: a list of the lines from opt's per-pass diagnostics
+#	In practice, each element of this list is a chunk of lines merged
+#	into one string, and this function can handle that.
 # 
 # Outputs: none
 #   
@@ -328,21 +330,24 @@ sub opt_output_to_list
    my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0 };
    print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
    print "*** reading opt pass 0\n";
-   foreach my $line ( @$in_listref )  {
-      print "line is " . length($line) . " characters long. \n";;
-      if ( $line=~ m/^\*\*\* / )  {
-         push @ret_list, $instance_ref;
-         $instance_ref= { 
-	       'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
-	 print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
-         print "*** reading opt pass " . $instance_ref->{'num'} . "\n";;
-         my $tmp= $line;
-         chomp $tmp;
-         $tmp=~ s/^\*\*\*\s*//;
-         $tmp=~ s/\*\*\*\s*$//;
-         $instance_ref->{'title'}= $tmp;
-      } else {
-         $instance_ref->{'txt'}.= $line;
+   foreach my $line_chunk ( @$in_listref )  {
+      my @line_list= split( /^/m, $line_chunk );
+      foreach my $line ( @line_list )  {
+	 print "line is " . length($line) . " characters long. \n";;
+	 if ( $line=~ m/^\*\*\* / )  {
+	    push @ret_list, $instance_ref;
+	    $instance_ref= { 
+		  'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
+	    print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
+	    print "*** reading opt pass " . $instance_ref->{'num'} . "\n";;
+	    my $tmp= $line;
+	    chomp $tmp;
+	    $tmp=~ s/^\*\*\*\s*//;
+	    $tmp=~ s/\*\*\*\s*$//;
+	    $instance_ref->{'title'}= $tmp;
+	 } else {
+	    $instance_ref->{'txt'}.= $line;
+	 }
       }
    }
    push @ret_list, $instance_ref;
