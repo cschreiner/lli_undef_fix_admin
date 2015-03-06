@@ -248,7 +248,8 @@ our $opt_errfile= "$tmpdir/opt.stderr";
      die $main::scriptname . ": can't open opt stderr file for reading, \n" .
            "\t" . "file=\"$opt_errfile\", \n" .
            "\t" . "$!. \n";
-   $fh->input_record_separator(undef);
+   # ideally, we'd like to: $fh->input_record_separator(undef);
+   local $/;
    $opt_err= $fh->read(); # slurp in the whole file
    $fh->close() or
      die $main::scriptname . ": can't close opt stderr file after reading, \n" .
