@@ -143,6 +143,7 @@ our $arg_infile= "";
 our @arg_opt_options_list= "";
 our $arg_print_opt_passes= $main::FALSE;
 our $arg_verbosity= 0;
+our $arg_optlevel= undef;
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -180,6 +181,7 @@ if ( scalar(@ARGV) > 0 )  {
          "opt=s" => \@arg_opt_options_list,
          "print-opt-passes" => \$arg_print_opt_passes,
          "v|verbose+" => \$arg_verbosity,
+         "O=s" => \$arg_optlevel,
 	 );
 
    if ( $arg_help )  {
@@ -237,7 +239,11 @@ our $opt_out;
 our @opt_err_list; # list of the lines from opt's stderr
 our $opt_errfile= "$workdir/opt.stderr";
 {
-   my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
+   my $optlevel= "";
+   if ( $arg_optlevel ne "" )  {
+      $optlevel= "-O$arg_optlevel";
+   }
+   my $opt_cmd="opt -S $optlevel " . join( " ", @arg_opt_options_list ) . 
 	 " --print-after-all $arg_infile 2> $opt_errfile";
    if ( $debug_flag or $arg_verbosity >= 1 or $main::TRUE )  { ;; 
       print "opt cmd= \"$opt_cmd\"\n";
