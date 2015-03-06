@@ -142,6 +142,7 @@ $need_to_exit= $FALSE;
 our $arg_infile= "";
 our @arg_opt_options_list= "";
 our $arg_print_opt_passes= $main::FALSE;
+our $arg_verbosity= 0;
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -178,6 +179,7 @@ if ( scalar(@ARGV) > 0 )  {
 	 "revision" => \$arg_revision,
          "opt=s" => \@arg_opt_options_list,
          "print-opt-passes" => \$arg_print_opt_passes,
+         "v|verbose+" => \$arg_verbosity,
 	 );
 
    if ( $arg_help )  {
@@ -237,7 +239,7 @@ our $opt_errfile= "$workdir/opt.stderr";
 {
    my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
 	 " --print-after-all $arg_infile 2> $opt_errfile";
-   if ( $debug_flag or $main::TRUE )  { ;; # TODO2: also do in verbose mode
+   if ( $debug_flag or $arg_verbosity >= 1 or $main::TRUE )  { ;; 
       print "opt cmd= \"$opt_cmd\"\n";
    }
    $opt_out= `$opt_cmd`;
@@ -435,9 +437,7 @@ sub feed_pass_to_lli
    # . . . . . . . . . . . . . . . . . . . .
    # look at its results
    my $grep_cmd= "grep -qi poison $stdout_file $stderr_file";
-   print "grep command= \"$grep_cmd\" \n";;
    ( $status, undef, undef )= system_wrapper( $grep_cmd, "" );
-   print "grep status= \"$status\" \n";;
    if ( $status == 0 )  {
       return "poison";
    }
@@ -526,8 +526,13 @@ sub insert_opt_txt_into_ir_program
       $ret_val.= $$ir_prog_listref[$ii];
    }
 
-   print "i_start=$i_start \t i_stop=$i_stop \n";;
-   print "o_start=$o_start \t o_stop=$o_stop \n";;
+   if ( $arg_verbosity >= 1 )  {
+      print "lines substituted: \n";
+      print "   original IR program start=" . ($i_start+1) . 
+	    "\t stop=" . ($i_stop+1) . " \n";
+      print "   optimized fragment start=" . ($o_start+1) . 
+	    "\t stop=" . ($o_stop+1) . " \n";
+   }
    
    # clean up and return
    return $ret_val;
