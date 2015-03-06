@@ -176,7 +176,7 @@ if ( scalar(@ARGV) > 0 )  {
    GetOptions ( "help|h" => \$arg_help, 
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
-         "opt" => \@arg_opt_options_list,
+         "opt=s" => \@arg_opt_options_list,
          "print-opt-passes" => \$arg_print_opt_passes,
 	 );
 
@@ -250,7 +250,7 @@ our $opt_errfile= "$tmpdir/opt.stderr";
            "\t" . "$!. \n";
    # ideally, we'd like to: $fh->input_record_separator(undef);
    local $/;
-   $opt_err= $fh->getlines(); # slurp in the whole file
+   $opt_err= $fh->getline(); # slurp in the whole file
    $fh->close() or
      die $main::scriptname . ": can't close opt stderr file after reading, \n" .
            "\t" . "file=\"$opt_errfile\", \n" .
@@ -274,7 +274,7 @@ if ( $arg_print_opt_passes )  {
       print $pass_ref->{'num'} . ': "' . $pass_ref->{'title'} . ": \n";
       print $pass_ref->{'txt'};
       print "="x 70 . "\n";
-   }
+   } 
    exit $main::PERL_SUCCESS;
 }
 
