@@ -297,8 +297,9 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
       exit $main::PERL_SUCCESS;
    } elsif ( $result ne "" )  {
-      warn $main::scriptname . ": something went wrong running lli on \"" .
-	    $pass_ref->{'title'} . "\"\n";
+      warn $main::scriptname . ": something went wrong running lli, \n" . 
+	    "\t" . "pass= \"" . $pass_ref->{'title'} . "\"\n" .
+	    "\t" . "msg= \"$result\"\n" .
       exit $main::PERL_FAILURE;
    }
 }
@@ -434,8 +435,8 @@ sub opt_output_to_list
 	    print "*** reading opt pass " . $instance_ref->{'num'} . "\n";;
 	    my $tmp= $line;
 	    chomp $tmp;
-	    $tmp=~ s/^\*\*\*\s*//;
-	    $tmp=~ s/\*\*\*\s*$//;
+	    $tmp=~ s/^\s*\*\*\*\s*//;
+	    $tmp=~ s/\s*\*\*\*\s*$//;
 	    $instance_ref->{'title'}= $tmp;
 	 } else {
 	    $instance_ref->{'txt'}.= $line;
