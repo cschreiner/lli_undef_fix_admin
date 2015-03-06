@@ -283,6 +283,7 @@ if ( $arg_print_opt_passes )  {
 ##   feed through lli
 
 foreach my $pass_ref ( @$arg_opt_pass_listref )  {
+   print "running lli on \"" . $pass_ref->{'title'} . "\": \n";;
    my $result= feed_pass_to_lli( $pass_ref );
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
