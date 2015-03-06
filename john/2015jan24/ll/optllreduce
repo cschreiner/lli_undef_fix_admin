@@ -327,7 +327,6 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    print "running lli on " . $pass_ref->{'num'} . 
 	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
    my $result= feed_pass_to_lli( $pass_ref, $ir_prog_listref );
-   print "feed_pass_to_lli(~) returned \"$result\" \n";;
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
       exit $main::PERL_SUCCESS;
