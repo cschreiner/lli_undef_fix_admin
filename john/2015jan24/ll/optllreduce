@@ -429,7 +429,10 @@ sub feed_pass_to_lli
 ## ===========================================================================
 ## Subroutine insert_opt_txt_into_ir_program()
 ## ===========================================================================
-# Description: 
+# Description: The output from each opt pass shows one function of the IR 
+#	program that got changed.  This function removes the original 
+#	function from the IR program and replaces it with its optimized
+#	version.
 #
 # Method: 
 #
@@ -438,21 +441,71 @@ sub feed_pass_to_lli
 # Warnings: 
 #
 # Inputs: 
-#   
+#   $ir_prog_listref: a list of each line in the original IR program.
+#   $opt_txt: the optimization text to insert into the IR program
 # 
-# Outputs: 
+# Outputs: none
 #   
-#
 # Return Value: 
-#   
+#   the resulting IR program
 #
 # ============================================================================
 sub insert_opt_txt_into_ir_program
 {{
-   my( )= @_;
+   my( $ir_prog_listref, $opt_txt )= @_;
+
+   my @opt_txt_list= split( /^/m, $opt_txt );
+
+   # find the first non-comment line of @opt_txt_list
+   my $o_start= $[;
+   while ( $o_start <= $#opt_txt_list )  {
+      if ( $opt_txt_list[$o_start] !~ m/^\s*;/ and
+	    $opt_txt_list[$o_start] !~ m/^\s*$/ )  { last; }
+      $o_start++;
+   }
+   #assert ( $o_start < $#opt_txt_list );
+
+   # find the corresponding line in @$ir_prog_listref
+   my $i_start= $[;
+   while ( $i_start <= $#$ir_prog_listref )  {
+      # Note: instead of straight eq, we may need to call an equivalency 
+      # function that ignores beginning & ending whitespace, internal 
+      # whitespace changes, and perhaps less important parts of the IR syntax.
+      if ( $$ir_prog_listref[$i_start] eq $opt_txt_list[$o_start] )  { last; }
+      $i_start++;
+   }
+
+   # find the last non-comment line of @opt_txt_list
+   my $o_stop= $#opt_txt_list;
+   while ( $o_stop > $o_start )  {
+      if ( $opt_txt_list[$o_stop] !~ m/^\s*;/ and
+	    $opt_txt_list[$o_stop] !~ m/^\s*$/ )  { last; }
+      $o_stop--;
+   }
+   #assert( $o_stop - $o_start > 2
+
+   # find a corresponding line in $ir_prog_listref
+   my $i_stop= $i_start+ 1;
+   while ( $i_stop < $#$ir_prog_listref )  {
+      if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { last; }
+      $i_stop++;
+   }
+
+   # and substitute $opt_txt into @$ir_prog_listref
+   my $ret_val="";
+   for ( my $ii= $[; $ii < $i_start; $ii++ )  {
+      $ret_val.= $$ir_prog_listref[$ii];
+   }
+   for ( my $oo= $o_start; $oo <= $o_stop; $oo++ )  {
+      $ret_val.= $opt_txt_list[$oo];
+   }
+   for ( my $ii= $i_stop+1; $ii <= $#$ir_prog_listref; $ii++ )  {
+      $ret_val.= $$ir_prog_listref[$ii];
+   }
+   
+   # clean up and return
+   return $ret_val;
 }}
-
-
 
 ## ===========================================================================
 ## Subroutine opt_output_to_list()
