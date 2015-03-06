@@ -225,7 +225,12 @@ if ( $debug_flag )  {
 # the opt command line should look something like this:
 #   opt -S <other options from the optllreduce command line> \
 #         --print-after-all file.ll
-our $opt_out= `opt -S $arg_opt_options --print-after-all $arg_infile`;
+our $opt_out;
+{
+   my $opt_cmd="opt -S " . join( " ", @arg_opt_options_list ) . 
+	 " --print-after-all $arg_infile";
+   $opt_out= `$opt_cmd`;
+}
 our @arg_opt_pass_list= opt_output_to_list( $opt_out );
 
 
@@ -295,7 +300,7 @@ sub opt_output_to_list
       if ( $line=~ m/^\*\*\* / )  {
          push @ret_list, $instance_ref;
          $instance_ref= { title=>"", txt=>"", num=> $instance_ref->{num}+1 };
-         $tmp= $line;
+         my $tmp= $line;
          chomp $tmp;
          $tmp=~ s/^\*\*\*\s*//;
          $tmp=~ s/\*\*\*\s*$//;
