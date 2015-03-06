@@ -293,6 +293,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    print "running lli on " . $pass_ref->{'num'} . 
 	 ":\"" . $pass_ref->{'title'} . "\": \n";;
    my $result= feed_pass_to_lli( $pass_ref );
+   print "got to venus \n";;
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
       exit $main::PERL_SUCCESS;
@@ -302,6 +303,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
 	    "\t" . "msg= \"$result\"\n" .
       exit $main::PERL_FAILURE;
    }
+   print "got to earth \n";;
 }
 
 
@@ -348,7 +350,8 @@ sub feed_pass_to_lli
    my( $fileable_title )= $pass_ref->{'title'};
    $fileable_title=~ s/^W+//;
    $fileable_title=~ s/W+$//;
-   $fileable_title=~ s/W+/_/;
+   $fileable_title=~ s/W+/_/g;
+   $fileable_title=~ s/\s+/_/g;
 
    my( $num )= sprintf ("%3.3d", $pass_ref->{'num'} );
 
@@ -372,6 +375,7 @@ sub feed_pass_to_lli
 	 "lli -force-interpreter $ll_file 1> $stdout_file 2> $stderr_file";
    ( $status, undef, undef )= system_wrapper( $lli_cmd, "" );
    if ( $status != 0 )  {
+      print "got to mercury \n";;
       return "lli exited with status \"$status\". \n";
    }
 
