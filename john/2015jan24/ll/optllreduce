@@ -556,11 +556,11 @@ sub insert_opt_txt_into_ir_program
 	    "\t" . "worse, cause this program to emit incorrect results.  \n" . 
 	    "\t" . "code=\"$problem\" (message 2015mar6_181115) \n";
       print "\t" . "first and last lines of text to be removed: \n";
-      print "\t" . "\"" . $$ir_prog_listref[$i_start] . "\"\n";
-      print "\t" . "\"" . $$ir_prog_listref[$i_stop] . "\"\n";
+      print "\t" . "first: \"" . $$ir_prog_listref[$i_start] . "\"\n";
+      print "\t" . "last: \"" . $$ir_prog_listref[$i_stop] . "\"\n";
       print "\t" . "first and last lines of text to be inserted: \n";
-      print "\t" . "\"" . $opt_txt_list[$o_start] . "\"\n";
-      print "\t" . "\"" . $opt_txt_list[$o_stop] . "\"\n";
+      print "\t" . "first: \"" . $opt_txt_list[$o_start] . "\"\n";
+      print "\t" . "last: \"" . $opt_txt_list[$o_stop] . "\"\n";
    }
 
    # . . . . . . . . . . . . . . . . . . . .
