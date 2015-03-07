@@ -604,10 +604,10 @@ sub opt_output_to_list
 	    $instance_ref->{'txt'}.= $line;
 	 }
       }
-      # Make sure there is a newline after the 'reading opt pass' active 
-      # display.
-      print "\n"; 
    }
+   # Make sure there is a newline after the 'reading opt pass' active 
+   # display.
+   print "\n"; 
    push @ret_list, $instance_ref;
    return \@ret_list;
 }}
