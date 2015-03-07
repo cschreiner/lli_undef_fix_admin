@@ -479,7 +479,9 @@ sub feed_pass_to_lli
 #	checking that the first 2 lines of the outgoing and incoming
 #	text exactly agree, check the first n non-blank lines agree.
 #	This might be extended to ignore differences due to comments,
-#	amount of whitespace, or even identifier names.
+#	amount of whitespace.  Maybe even identifier name (but not
+#	type) differences should be ignored, so `ret i32 %45` and `ret
+#	i32 %38` compare the same.
 #
 # Inputs: 
 #   $ir_prog_listref: a list of each line in the original IR program.
