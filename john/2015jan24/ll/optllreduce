@@ -317,13 +317,12 @@ if ( $arg_print_opt_passes )  {
 
 foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    if ( $pass_ref->{'title'} eq "" )  {
-      print "skipping pass " . $pass_ref->{'num'} . " without a title \n";
+      print "skipping pass " . $pass_ref->{'num'} . ", it has no title. \n";
       if ( $pass_ref->{'txt'} ne "" )  {
-         print "   note: pass had text. \n";
+         print "   Note: however, the pass did have text. \n";
       }
       next;
    }
-   # TODO2: only print this in verbose mode
    print "running lli on " . $pass_ref->{'num'} . 
 	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
    my $result= feed_pass_to_lli( $pass_ref, $ir_prog_listref );
@@ -489,6 +488,7 @@ sub insert_opt_txt_into_ir_program
 
    my @opt_txt_list= split( /^/m, $opt_txt );
 
+   # . . . . . . . . . . . . . . . . . . . .
    # find the first non-comment line of @opt_txt_list
    my $o_start= $[;
    while ( $o_start <= $#opt_txt_list )  {
@@ -498,6 +498,7 @@ sub insert_opt_txt_into_ir_program
    }
    #assert ( $o_start < $#opt_txt_list );
 
+   # . . . . . . . . . . . . . . . . . . . .
    # find the corresponding line in @$ir_prog_listref
    my $i_start= $[;
    while ( $i_start <= $#$ir_prog_listref )  {
@@ -508,6 +509,7 @@ sub insert_opt_txt_into_ir_program
       $i_start++;
    }
 
+   # . . . . . . . . . . . . . . . . . . . .
    # find the last non-comment line of @opt_txt_list
    my $o_stop= $#opt_txt_list;
    while ( $o_stop > $o_start )  {
@@ -517,6 +519,7 @@ sub insert_opt_txt_into_ir_program
    }
    #assert( $o_stop - $o_start > 2
 
+   # . . . . . . . . . . . . . . . . . . . .
    # find a corresponding line in $ir_prog_listref
    my $i_stop= $i_start+ 1;
    while ( $i_stop < $#$ir_prog_listref )  {
@@ -524,6 +527,43 @@ sub insert_opt_txt_into_ir_program
       $i_stop++;
    }
 
+   # . . . . . . . . . . . . . . . . . . . .
+   # sanity check that the lines to be exchanged have the form we expect:
+   my $problem= "";
+   if ( $$ir_prog_listref[$i_start] !~ m/^\s* define \b .*{/x )   {
+      # this line does not begin a function
+      $problem.= "a";
+   }
+   if ( $$ir_prog_listref[$i_stop] !~ m/^\s* } \s* $/x and
+	 $$ir_prog_listref[$i_stop] !~ m/^\s* } \s* ;/x )  {
+      # this line does not end a function
+      $problem.= "b";
+   }
+   if ( $opt_txt_list[$o_start] !~ m/^\s* define \b .*{/x )   {
+      # this line does not begin a function
+      $problem.= "c";
+   }
+   if ( $opt_txt_list[$o_stop] !~ m/^\s* } \s* $/x and
+	 $opt_txt_list[$o_stop] !~ m/^\s* } \s* ;/x )  {
+      # this line does not end a function
+      $problem.= "d";
+   }
+
+   if ( $problem ne "" )  {
+      print $main::scriptname . ": WARNING: the text specified by the \n" . 
+	    "\t" . "current optimization pass does not seem to correspond \n" .
+	    "\t" . "to a whole function.  This may make lli fail, or, \n" . 
+	    "\t" . "worse, cause this program to emit incorrect results.  \n" . 
+	    "\t" . "code=\"$problem\" (message 2015mar6_181115) \n";
+      print "\t" . "first and last lines of text to be removed: \n";
+      print "\t" . "\"" . $$ir_prog_listref[$i_start] . "\"\n";
+      print "\t" . "\"" . $$ir_prog_listref[$i_stop] . "\"\n";
+      print "\t" . "first and last lines of text to be inserted: \n";
+      print "\t" . "\"" . $opt_txt_list[$o_start] . "\"\n";
+      print "\t" . "\"" . $opt_txt_list[$o_stop] . "\"\n";
+   }
+
+   # . . . . . . . . . . . . . . . . . . . .
    # and substitute $opt_txt into @$ir_prog_listref
    my $ret_val="";
    for ( my $ii= $[; $ii < $i_start; $ii++ )  {
@@ -536,7 +576,7 @@ sub insert_opt_txt_into_ir_program
       $ret_val.= $$ir_prog_listref[$ii];
    }
 
-   if ( $arg_verbosity >= 1 )  {
+   if ( $arg_verbosity >= 1 or $problem ne "" )  {
       print "lines substituted: \n";
       print "   original IR program start=" . ($i_start+1) . 
 	    "\t stop=" . ($i_stop+1) . " \n";
@@ -544,6 +584,7 @@ sub insert_opt_txt_into_ir_program
 	    "\t stop=" . ($o_stop+1) . " \n";
    }
    
+   # . . . . . . . . . . . . . . . . . . . .
    # clean up and return
    return $ret_val;
 }}
