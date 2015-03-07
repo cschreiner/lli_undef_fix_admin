@@ -470,7 +470,10 @@ sub feed_pass_to_lli
 #
 # Notes: 
 #
-# Warnings: 
+# Warnings: Despite this ftn's internal sanity checks, the algorithm
+#	for determining what text to replace is rather simplistic, and could
+#	occasionally give some surprising results.  Keep an eye out to see
+#	if a more sophisticated algorithm is necessary.
 #
 # Inputs: 
 #   $ir_prog_listref: a list of each line in the original IR program.
@@ -530,30 +533,41 @@ sub insert_opt_txt_into_ir_program
    # . . . . . . . . . . . . . . . . . . . .
    # sanity check that the lines to be exchanged have the form we expect:
    my $problem= "";
-   if ( $$ir_prog_listref[$i_start] !~ m/^\s* define \b .*{/x )   {
-      # this line does not begin a function
-      $problem.= "a";
+   if ( $$ir_prog_listref[$i_start] ne $opt_txt_list[$o_start] or 
+	 $$ir_prog_listref[$i_start+1] ne $opt_txt_list[$o_start+1] )  {
+      # the two starting lines to not agree exactly
+      if ( $$ir_prog_listref[$i_start] !~ m/^\s* define \b .*{/x )   {
+	 # this line does not begin a function
+	 $problem.= "a";
+      }
+      if ( $opt_txt_list[$o_start] !~ m/^\s* define \b .*{/x )   {
+	 # this line does not begin a function
+	 $problem.= "c";
+      }
    }
-   if ( $$ir_prog_listref[$i_stop] !~ m/^\s* } \s* $/x and
-	 $$ir_prog_listref[$i_stop] !~ m/^\s* } \s* ;/x )  {
-      # this line does not end a function
-      $problem.= "b";
-   }
-   if ( $opt_txt_list[$o_start] !~ m/^\s* define \b .*{/x )   {
-      # this line does not begin a function
-      $problem.= "c";
-   }
-   if ( $opt_txt_list[$o_stop] !~ m/^\s* } \s* $/x and
-	 $opt_txt_list[$o_stop] !~ m/^\s* } \s* ;/x )  {
-      # this line does not end a function
-      $problem.= "d";
+
+   
+   if ( $$ir_prog_listref[$i_stop] ne $opt_txt_list[$o_stop] or
+	 $$ir_prog_listref[$i_stop-1] ne $opt_txt_list[$o_stop-1] )  {
+      # the two ending lines to not agree exactly
+      if ( $$ir_prog_listref[$i_stop] !~ m/^\s* } \s* $/x and
+	    $$ir_prog_listref[$i_stop] !~ m/^\s* } \s* ;/x )  {
+	 # this line does not end a function
+	 $problem.= "b";
+      }
+      if ( $opt_txt_list[$o_stop] !~ m/^\s* } \s* $/x and
+	    $opt_txt_list[$o_stop] !~ m/^\s* } \s* ;/x )  {
+	 # this line does not end a function
+	 $problem.= "d";
+      }
    }
 
    if ( $problem ne "" )  {
-      print $main::scriptname . ": WARNING: the text specified by the \n" . 
-	    "\t" . "current optimization pass does not seem to correspond \n" .
-	    "\t" . "to a whole function.  This may make lli fail, or, \n" . 
-	    "\t" . "worse, cause this program to emit incorrect results.  \n" . 
+      print $main::scriptname . ": WARNING: the program text specified by \n" . 
+	    "\t" . "the current optimization pass does not seem to \n" .
+	    "\t" . "correspond to the expected whole function or whole \n" . 
+	    "\t" . "program.  This may make lli fail, or, worse, \n" . 
+	    "\t" . "cause this program to emit incorrect results.  \n" . 
 	    "\t" . "code=\"$problem\" (message 2015mar6_181115) \n";
       print "\t" . "first and last lines of text to be removed: \n";
       print "\t" . "first: \"" . $$ir_prog_listref[$i_start] . "\"\n";
