@@ -475,6 +475,12 @@ sub feed_pass_to_lli
 #	occasionally give some surprising results.  Keep an eye out to see
 #	if a more sophisticated algorithm is necessary.
 #
+#	One slightly more sophisticated algorithm might, instead of
+#	checking that the first 2 lines of the outgoing and incoming
+#	text exactly agree, check the first n non-blank lines agree.
+#	This might be extended to ignore differences due to comments,
+#	amount of whitespace, or even identifier names.
+#
 # Inputs: 
 #   $ir_prog_listref: a list of each line in the original IR program.
 #   $opt_txt: the optimization text to insert into the IR program
