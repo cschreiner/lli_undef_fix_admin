@@ -431,28 +431,31 @@ sub feed_pass_to_lli
 
    # . . . . . . . . . . . . . . . . . . . .
    # run lli
-   my $status= undef;
+   my $lli_status= undef;
    my $lli_cmd= 
 	 "lli -force-interpreter $ll_file 1> $stdout_file 2> $stderr_file";
-   ( $status, undef, undef )= system_wrapper( $lli_cmd, "" );
-   if ( $status != 0 )  {
-      return "lli exited with status \"$status\", " . 
-	    "see this file for details: \n" .
-            "\t" . "\"$stderr_file\". ";
+   ( $lli_status, undef, undef )= system_wrapper( $lli_cmd, "" );
+   # check $lli_status after the poison check-- it may explain a failure.
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # look at its results, did it find poison?
+   my $grep_cmd= "grep -qi poison $stdout_file $stderr_file";
+   my $grep_status= undef;
+   ( $grep_status, undef, undef )= system_wrapper( $grep_cmd, "" );
+   if ( $grep_status == 0 )  {
+      return "poison";
+   }
+   if ( $grep_status != 1 )  {
+      return "grep (for poison) exited with error status \"$grep_status\". \n";
    }
 
    # . . . . . . . . . . . . . . . . . . . .
-   # look at its results
-   my $grep_cmd= "grep -qi poison $stdout_file $stderr_file";
-   ( $status, undef, undef )= system_wrapper( $grep_cmd, "" );
-   if ( $status == 0 )  {
-      return "poison";
-   }
-   if ( $status != 1 )  {
-      return "grep (for poison) exited with error status \"$status\". \n";
-   }
-
    # clean up and return
+   if ( $lli_status != 0 )  {
+      return "lli exited with status \"$lli_status\", " . 
+	    "see this file for details: \n" .
+            "\t" . "\"$stderr_file\". ";
+   }
    return "";
 }}
 
