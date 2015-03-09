@@ -136,6 +136,8 @@ if ( scalar(@ARGV) > 0 )  {
 use vars qw( $need_to_exit );
 $need_to_exit= $FALSE;
 
+our( @ORIG_ARGV )= @ARGV; # a pristine copy of @ARGV for use later.
+
 ## -----------------------------------------------------------------------
 ##   set up defaults
 
@@ -228,6 +230,24 @@ if ( $debug_flag )  {
 
 our $workdir= $main::scriptname . "_" . time() . "_" . $$;
 mkdir $workdir;
+
+# write out a copy of the command line args
+{
+   my $fh= new FileHandle;
+   $fh->open( ">$workdir/args" ) or
+      die $main::scriptname . 
+	    ": can't open command-line argument file for writing, \n" .
+            "file=\"$workdir/args\", \n" .
+            "$!. \n";
+   foreach my $aa ( @ORIG_ARGV )  {
+      $fh->print( "\"$aa\"\n" );
+   }
+   $fh->close() or
+      die $main::scriptname . 
+	    ": can't close command-line argument file after writing, \n" .
+            "file=\"$workdir/args\", \n" .
+            "$!. \n";
+}
 
 ## ===========================================================================
 ##   run opt
