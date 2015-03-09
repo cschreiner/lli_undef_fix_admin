@@ -237,15 +237,16 @@ mkdir $workdir;
    $fh->open( ">$workdir/args" ) or
       die $main::scriptname . 
 	    ": can't open command-line argument file for writing, \n" .
-            "file=\"$workdir/args\", \n" .
+            "file=\"$workdir/log\", \n" .
             "$!. \n";
+   $fh->print( "command line arguments: \n" );
    foreach my $aa ( @ORIG_ARGV )  {
-      $fh->print( "\"$aa\"\n" );
+      $fh->print( "   \"$aa\"\n" );
    }
    $fh->close() or
       die $main::scriptname . 
 	    ": can't close command-line argument file after writing, \n" .
-            "file=\"$workdir/args\", \n" .
+            "file=\"$workdir/log\", \n" .
             "$!. \n";
 }
 
@@ -265,9 +266,25 @@ our $opt_errfile= "$workdir/opt.stderr";
    }
    my $opt_cmd="opt -S $optlevel " . join( " ", @arg_opt_options_list ) . 
 	 " --print-after-all $arg_infile 2> $opt_errfile";
-   if ( $debug_flag or $arg_verbosity >= 1 or $main::TRUE )  { ;; 
+   if ( $debug_flag or $arg_verbosity >= 1 )  { 
       print "opt cmd= \"$opt_cmd\"\n";
    }
+
+   # record the command passed to opt:
+   my $fh= new FileHandle;
+   $fh->open( ">>$workdir/args" ) or
+      die $main::scriptname . 
+	    ": can't open command-line argument file for writing, \n" .
+            "file=\"$workdir/log\", \n" .
+            "$!. \n";
+   $fh->print( "opt command: \"$opt_cmd\" \n" );
+   $fh->close() or
+      die $main::scriptname . 
+	    ": can't close command-line argument file after writing, \n" .
+            "file=\"$workdir/log\", \n" .
+            "$!. \n";
+
+   # and run opt
    $opt_out= `$opt_cmd`;
 }
 
