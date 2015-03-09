@@ -461,27 +461,30 @@ sub feed_pass_to_lli
 ## ===========================================================================
 ## Subroutine insert_opt_txt_into_ir_program()
 ## ===========================================================================
-# Description: The output from each opt pass shows one function of the IR 
-#	program that got changed.  This function removes the original 
-#	function from the IR program and replaces it with its optimized
-#	version.
+# Description: 
+#	The output from each opt pass seen (to date) shows either the
+#	one function of the IR program that got changed, or a whole
+#	program that replaces the original one.  This function here
+#	removes the original function/program from the IR program file
+#	and replaces it with its optimized version.
 #
 # Method: 
 #
 # Notes: 
 #
-# Warnings: Despite this ftn's internal sanity checks, the algorithm
-#	for determining what text to replace is rather simplistic, and could
-#	occasionally give some surprising results.  Keep an eye out to see
-#	if a more sophisticated algorithm is necessary.
+# Warnings: Despite this ftn's internal sanity checks, the algorithm used 
+#	here for determining what text to replace is rather
+#	simplistic, and could occasionally give some surprising
+#	results.  Keep an eye out to see if a more sophisticated
+#	algorithm is necessary.
 #
 #	One slightly more sophisticated algorithm might, instead of
 #	checking that the first 2 lines of the outgoing and incoming
 #	text exactly agree, check the first n non-blank lines agree.
-#	This might be extended to ignore differences due to comments,
-#	amount of whitespace.  Maybe even identifier name (but not
-#	type) differences should be ignored, so `ret i32 %45` and `ret
-#	i32 %38` compare the same.
+#	(n is probably 2 or 3.)  This might be extended to ignore
+#	differences due to comments, or amount of whitespace.  Maybe
+#	even identifier name (but not type) differences should be
+#	ignored, so `ret i32 %45` and `ret i32 %38` compare the same.
 #
 # Inputs: 
 #   $ir_prog_listref: a list of each line in the original IR program.
