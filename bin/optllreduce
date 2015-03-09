@@ -235,7 +235,7 @@ mkdir $workdir;
 # write out a copy of the command line args
 {
    my $fh= new FileHandle;
-   $fh->open( ">$workdir/args" ) or
+   $fh->open( ">$workdir/log" ) or
       die $main::scriptname . 
 	    ": can't open command-line argument file for writing, \n" .
             "file=\"$workdir/log\", \n" .
@@ -273,7 +273,7 @@ our $opt_errfile= "$workdir/opt.stderr";
 
    # record the command passed to opt:
    my $fh= new FileHandle;
-   $fh->open( ">>$workdir/args" ) or
+   $fh->open( ">>$workdir/log" ) or
       die $main::scriptname . 
 	    ": can't open command-line argument file for writing, \n" .
             "file=\"$workdir/log\", \n" .
