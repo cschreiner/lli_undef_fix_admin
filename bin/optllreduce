@@ -90,6 +90,7 @@ use FileHandle;
       # ----------------------------------------------------------------------
       # require's and use's needed in the BEGIN block
 
+      require cas_timestamp;
 
       # ----------------------------------------------------------------------
       # script-wide config options
@@ -228,7 +229,7 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   set up
 
-our $workdir= $main::scriptname . "_" . time() . "_" . $$;
+our $workdir= $main::scriptname . "_" . cas_timestamp::get() . "_" . $$;
 mkdir $workdir;
 
 # write out a copy of the command line args
