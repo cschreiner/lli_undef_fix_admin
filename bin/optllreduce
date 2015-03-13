@@ -532,13 +532,22 @@ sub feed_pass_to_lli
 # Outputs: none
 #   
 # Return Value: 
-#   the resulting IR program
+#   a single string containing the resulting IR program
 #
 # ============================================================================
 sub insert_opt_txt_into_ir_program
 {{
    my( $ir_prog_listref, $opt_txt )= @_;
 
+   # . . . . . . . . . . . . . . . . . . . .
+   # handle special case where opt pass just produces "Printing <null> Function"
+   if ( $opt_txt =~ m/^\s*Printing <null> Function\s*$/ )  {
+      # return the original IR program verbatim
+      return join ( "", @$ir_prog_listref );
+   }
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # set up
    my @opt_txt_list= split( /^/m, $opt_txt );
 
    # . . . . . . . . . . . . . . . . . . . .
