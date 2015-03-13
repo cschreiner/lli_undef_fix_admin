@@ -370,7 +370,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    } elsif ( $result ne "" )  {
       warn $main::scriptname . ": something went wrong running lli, \n" . 
 	    "\t" . "pass= \"" . $pass_ref->{'title'} . "\"\n" .
-	    "\t" . "msg= \"$result\"\n";
+	    "\t" . "msg: <<EOF\n" . $result . "\nEOF\n";
       exit $main::PERL_FAILURE;
    }
 }
@@ -410,7 +410,8 @@ exit $main::PERL_SUCCESS;
 #   
 # Return Value: if everything ran successfully, undef.
 #   If lli detected poison, "poison".
-#   If an error happened, a string describing the error.
+#   If an error happened, a string describing the error.  The string will
+#	probably be several lines long.
 #
 # ============================================================================
 sub feed_pass_to_lli
@@ -492,7 +493,10 @@ sub feed_pass_to_lli
    if ( $lli_status != 0 )  {
       return "lli exited with status \"$lli_status\", " . 
 	    "see this file for details: \n" .
-            "\t" . "\"$stderr_file\". ";
+            "\t" . "\"$stderr_file\". \n" .
+            "\t" . "The extracted text starts on line " . 
+	    $pass_ref->{'line_num'} . " of the lli output, \n" .
+            "\t" . "lli out file=\"$opt_errfile\". \n";
    }
    return "";
 }}
@@ -686,6 +690,8 @@ sub insert_opt_txt_into_ir_program
 #   title: the title of the pass that produced the output
 #   txt: the program text from the pass output
 #   num: the sequence number of this optimization pass, starting at 1
+#   line_num: the number of the line in the opt output where the program 
+#	text starts.
 #
 # ============================================================================
 sub opt_output_to_list
@@ -694,17 +700,20 @@ sub opt_output_to_list
 
    my ( @ret_list );
 
-   my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0 };
+   my $line_num= 0;
+   my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0, 'line_num'=>0 };
    #print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
    print "*** reading opt pass 0      \r";
    foreach my $line_chunk ( @$in_listref )  {
       my @line_list= split( /^/m, $line_chunk );
       foreach my $line ( @line_list )  {
+	 $line_num++;
 	 #print "line is " . length($line) . " characters long. \n";;
 	 if ( $line=~ m/^\*\*\* / )  {
 	    push @ret_list, $instance_ref;
 	    $instance_ref= { 
-		  'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
+		  'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1,
+                  'line_num' => $line_num };
 	    #print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
             # TODO2: only print this in verbose mode:
 	    print "*** reading opt pass " . $instance_ref->{'num'} . " "x 5 . 
