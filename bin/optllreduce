@@ -363,8 +363,8 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
       next;
    }
    print "running lli on " . $pass_ref->{'num'} . 
-	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
-   print "   " . "from opt output line " . $pass_ref->{'line_num'} . ":\n";;
+	 ":\"" . $pass_ref->{'title'} . "\", \n" .
+         "   " . "from opt output line " . $pass_ref->{'line_num'} . ":\n";
    my $result= feed_pass_to_lli( $pass_ref, $ir_prog_listref );
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
@@ -836,17 +836,14 @@ sub are_lines_equal_enough
 {{
    my( $aa, $bb )= @_;
 
-   print "received these lines: \n" .
-	 "\t" . "aa=\"$aa\"\n" .
-	 "\t" . "bb=\"$bb\"\n";;
-   {
-      my $chomped_aa= $aa;;
-      chomp $chomped_aa;;
-      my $chomped_bb= $bb;;
-      chomp $chomped_bb;;
+   if ( $main::TRUE )  { ;;
+      my $chomped_aa= $aa;
+      chomp $chomped_aa;
+      my $chomped_bb= $bb;
+      chomp $chomped_bb;
       print "comparing these lines: \n" .
 	    "\t" . "aa=\"$chomped_aa\"\n" .
-	    "\t" . "bb=\"$chomped_bb\"\n";;
+	    "\t" . "bb=\"$chomped_bb\"\n";
    }
 
    # if it is a simple decision, decide now.
