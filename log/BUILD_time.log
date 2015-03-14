@@ -963,3 +963,193 @@ build status=0 (should be 0)
 build time 0:32 (32 s)
    start time=Tue Mar 3 14:56:04 MST 2015
    stop time=Tue Mar 3 14:56:36 MST 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:00 (0 s)
+   start time=Thu Mar 12 00:18:59 MDT 2015
+   stop time=Thu Mar 12 00:18:59 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:00 (0 s)
+   start time=Thu Mar 12 00:20:31 MDT 2015
+   stop time=Thu Mar 12 00:20:31 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:00 (0 s)
+   start time=Thu Mar 12 00:22:43 MDT 2015
+   stop time=Thu Mar 12 00:22:43 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:24:22 MDT 2015
+   stop time=Thu Mar 12 00:24:23 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:26:25 MDT 2015
+   stop time=Thu Mar 12 00:26:26 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:30 (30 s)
+   start time=Thu Mar 12 00:29:02 MDT 2015
+   stop time=Thu Mar 12 00:29:32 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:04 (4 s)
+   start time=Thu Mar 12 00:35:28 MDT 2015
+   stop time=Thu Mar 12 00:35:32 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:42:57 MDT 2015
+   stop time=Thu Mar 12 00:42:58 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:45:22 MDT 2015
+   stop time=Thu Mar 12 00:45:23 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:47:03 MDT 2015
+   stop time=Thu Mar 12 00:47:04 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:47:48 MDT 2015
+   stop time=Thu Mar 12 00:47:49 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 00:48:15 MDT 2015
+   stop time=Thu Mar 12 00:48:16 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:12 (12 s)
+   start time=Thu Mar 12 00:48:22 MDT 2015
+   stop time=Thu Mar 12 00:48:34 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:13 (13 s)
+   start time=Thu Mar 12 00:50:46 MDT 2015
+   stop time=Thu Mar 12 00:50:59 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:31 (31 s)
+   start time=Thu Mar 12 00:53:01 MDT 2015
+   stop time=Thu Mar 12 00:53:32 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:11 (11 s)
+   start time=Thu Mar 12 00:55:13 MDT 2015
+   stop time=Thu Mar 12 00:55:24 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 01:04:25 MDT 2015
+   stop time=Thu Mar 12 01:04:26 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:32 (32 s)
+   start time=Thu Mar 12 01:06:26 MDT 2015
+   stop time=Thu Mar 12 01:06:58 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:02 (2 s)
+   start time=Thu Mar 12 01:12:57 MDT 2015
+   stop time=Thu Mar 12 01:12:59 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:03 (3 s)
+   start time=Thu Mar 12 01:13:58 MDT 2015
+   stop time=Thu Mar 12 01:14:01 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:11 (11 s)
+   start time=Thu Mar 12 01:14:43 MDT 2015
+   stop time=Thu Mar 12 01:14:54 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Thu Mar 12 01:17:51 MDT 2015
+   stop time=Thu Mar 12 01:18:01 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:05 (5 s)
+   start time=Thu Mar 12 01:19:31 MDT 2015
+   stop time=Thu Mar 12 01:19:36 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:09 (9 s)
+   start time=Thu Mar 12 01:21:36 MDT 2015
+   stop time=Thu Mar 12 01:21:45 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Thu Mar 12 01:23:22 MDT 2015
+   stop time=Thu Mar 12 01:23:32 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Thu Mar 12 01:25:40 MDT 2015
+   stop time=Thu Mar 12 01:25:50 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Thu Mar 12 01:27:52 MDT 2015
+   stop time=Thu Mar 12 01:28:02 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:09 (9 s)
+   start time=Thu Mar 12 01:30:11 MDT 2015
+   stop time=Thu Mar 12 01:30:20 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Thu Mar 12 01:35:06 MDT 2015
+   stop time=Thu Mar 12 01:35:16 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:07 (7 s)
+   start time=Thu Mar 12 20:30:50 MDT 2015
+   stop time=Thu Mar 12 20:30:57 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Mar 12 20:43:00 MDT 2015
+   stop time=Thu Mar 12 20:43:01 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:33 (33 s)
+   start time=Thu Mar 12 20:43:20 MDT 2015
+   stop time=Thu Mar 12 20:43:53 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:32 (32 s)
+   start time=Thu Mar 12 20:52:09 MDT 2015
+   stop time=Thu Mar 12 20:52:41 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:33 (33 s)
+   start time=Thu Mar 12 20:53:44 MDT 2015
+   stop time=Thu Mar 12 20:54:17 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:00 (0 s)
+   start time=Thu Mar 12 21:38:31 MDT 2015
+   stop time=Thu Mar 12 21:38:31 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:14 (14 s)
+   start time=Thu Mar 12 21:38:41 MDT 2015
+   stop time=Thu Mar 12 21:38:55 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:23 (23 s)
+   start time=Thu Mar 12 21:39:28 MDT 2015
+   stop time=Thu Mar 12 21:39:51 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:05 (5 s)
+   start time=Thu Mar 12 21:42:17 MDT 2015
+   stop time=Thu Mar 12 21:42:21 MDT 2015

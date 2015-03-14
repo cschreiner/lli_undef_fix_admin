@@ -364,6 +364,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    }
    print "running lli on " . $pass_ref->{'num'} . 
 	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
+   print "   " . "from opt output line " . $pass_ref->{'line_num'} . ":\n";;
    my $result= feed_pass_to_lli( $pass_ref, $ir_prog_listref );
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
@@ -371,7 +372,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    } elsif ( $result ne "" )  {
       warn $main::scriptname . ": something went wrong running lli, \n" . 
 	    "\t" . "pass= \"" . $pass_ref->{'title'} . "\"\n" .
-	    "\t" . "msg= \"$result\"\n";
+	    "\t" . "msg: <<EOF\n" . $result . "\nEOF\n";
       exit $main::PERL_FAILURE;
    }
 }
@@ -411,7 +412,8 @@ exit $main::PERL_SUCCESS;
 #   
 # Return Value: if everything ran successfully, undef.
 #   If lli detected poison, "poison".
-#   If an error happened, a string describing the error.
+#   If an error happened, a string describing the error.  The string will
+#	probably be several lines long.
 #
 # ============================================================================
 sub feed_pass_to_lli
@@ -477,7 +479,8 @@ sub feed_pass_to_lli
 
    # . . . . . . . . . . . . . . . . . . . .
    # look at its results, did it find poison?
-   my $grep_cmd= "grep -qi poison $stdout_file $stderr_file";
+   my $grep_cmd= "grep -qi \"exiting due to external poison propogation\" " . 
+         "$stdout_file $stderr_file";
    my $grep_status= undef;
    ( $grep_status, undef, undef )= system_wrapper( $grep_cmd, "" );
    if ( $grep_status == 0 )  {
@@ -492,7 +495,10 @@ sub feed_pass_to_lli
    if ( $lli_status != 0 )  {
       return "lli exited with status \"$lli_status\", " . 
 	    "see this file for details: \n" .
-            "\t" . "\"$stderr_file\". ";
+            "\t" . "\"$stderr_file\". \n" .
+            "\t" . "The extracted text starts on line " . 
+	    $pass_ref->{'line_num'} . " of the lli output, \n" .
+            "\t" . "lli out file=\"$opt_errfile\". \n";
    }
    return "";
 }}
@@ -532,14 +538,26 @@ sub feed_pass_to_lli
 # Outputs: none
 #   
 # Return Value: 
-#   the resulting IR program
+#   a single string containing the resulting IR program
 #
 # ============================================================================
 sub insert_opt_txt_into_ir_program
 {{
    my( $ir_prog_listref, $opt_txt )= @_;
 
+   # . . . . . . . . . . . . . . . . . . . .
+   # set up
    my @opt_txt_list= split( /^/m, $opt_txt );
+   my $match= $main::FALSE;
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # handle special cases that can be handled early
+
+   # case where opt pass just produces "Printing <null> Function"
+   if ( $opt_txt =~ m/^\s*Printing <null> Function\s*$/ )  {
+      # return the original IR program verbatim
+      return join ( "", @$ir_prog_listref );
+   }
 
    # . . . . . . . . . . . . . . . . . . . .
    # find the first non-comment line of @opt_txt_list
@@ -554,12 +572,23 @@ sub insert_opt_txt_into_ir_program
    # . . . . . . . . . . . . . . . . . . . .
    # find the corresponding line in @$ir_prog_listref
    my $i_start= $[;
+   $match= $main::FALSE;
    while ( $i_start <= $#$ir_prog_listref )  {
       # Note: instead of straight eq, we may need to call an equivalency 
       # function that ignores beginning & ending whitespace, internal 
-      # whitespace changes, and perhaps less important parts of the IR syntax.
-      if ( $$ir_prog_listref[$i_start] eq $opt_txt_list[$o_start] )  { last; }
+      # whitespace changes, "#nn" attribute group changes, and perhaps other 
+      # less important parts of the IR syntax.
+      # TODO2: may be needed.
+      if ( $$ir_prog_listref[$i_start] eq $opt_txt_list[$o_start] )  { 
+	  $match= $main::TRUE;
+	 last; 
+      }
       $i_start++;
+   }
+   if ( ! $match )  {
+      warn $main::scriptname . ": no matching start line found, proceeding \n" .
+	    "\t" . "as well as possible.  Note that this may lead to \n" . 
+	    "\t" . "invalid outputs. \n";
    }
 
    # . . . . . . . . . . . . . . . . . . . .
@@ -570,14 +599,56 @@ sub insert_opt_txt_into_ir_program
 	    $opt_txt_list[$o_stop] !~ m/^\s*$/ )  { last; }
       $o_stop--;
    }
-   #assert( $o_stop - $o_start > 2
 
    # . . . . . . . . . . . . . . . . . . . .
    # find a corresponding line in $ir_prog_listref
    my $i_stop= $i_start+ 1;
+   $match= $main::FALSE;
    while ( $i_stop < $#$ir_prog_listref )  {
-      if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { last; }
+      if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { 
+	 $match= $main::TRUE;
+	 last; 
+      }
       $i_stop++;
+   }
+   if ( ! $match )  {
+      warn $main::scriptname . ": no matching stop line found, proceeding \n" . 
+	    "\t" . "as well as possible.  Note that this may lead to \n" . 
+	    "\t" . "invalid outputs. \n";
+   }
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # check that the number of lines is meaningful
+   my $return_wo_modification= $main::FALSE;
+   if ( ($o_stop - $o_start) == 0 )  {
+      # the pass just produced comments
+      print $main::scriptname . ": FYI: pass just produced comments. \n"; 
+      $return_wo_modification= $main::TRUE;
+   } elsif ( ($o_stop - $o_start) == 1 )  {
+      # case where opt_pass consists of a single line function declaration
+
+      # see if this is a single line function declaration
+      # e.g.: declare i32 @printf(i8* nocapture readonly, ...) #2
+      if ( @opt_txt_list[ $o_start ] =~ 
+            # TODO: fix this
+	    #m/^ \s* declare \s+ i[0-9]+ \s+ \@\w+ \s* \( .* \) / )  {
+	    m/^ \s* declare \s+ i[0-9]+ \s+ / )  {
+         # Do nothing, every case like this it appears that the declaration
+         # repeats something already in the program.
+	 $return_wo_modification= $main::TRUE;
+      }
+      
+      my $opt_txt_no_newline= $opt_txt;
+      chomp $opt_txt_no_newline;
+      warn $main::scriptname . 
+	    ": warning: can't understand one line opt pass result: \n" .
+	    "   " . "line=\"$opt_txt_no_newline\", \n" .
+	    "   " . "skipping. (message 2015mar13_183607) \n";
+      $return_wo_modification= $main::TRUE;
+      return join( "", @$ir_prog_listref );
+   }
+   if ( $return_wo_modification )  {
+      return join( "", @$ir_prog_listref );
    }
 
    # . . . . . . . . . . . . . . . . . . . .
@@ -595,7 +666,6 @@ sub insert_opt_txt_into_ir_program
 	 $problem.= "c";
       }
    }
-
    
    if ( $$ir_prog_listref[$i_stop] ne $opt_txt_list[$o_stop] or
 	 $$ir_prog_listref[$i_stop-1] ne $opt_txt_list[$o_stop-1] )  {
@@ -677,6 +747,8 @@ sub insert_opt_txt_into_ir_program
 #   title: the title of the pass that produced the output
 #   txt: the program text from the pass output
 #   num: the sequence number of this optimization pass, starting at 1
+#   line_num: the number of the line in the opt output where the program 
+#	text starts.
 #
 # ============================================================================
 sub opt_output_to_list
@@ -685,17 +757,20 @@ sub opt_output_to_list
 
    my ( @ret_list );
 
-   my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0 };
+   my $line_num= 0;
+   my $instance_ref= { 'title'=>"", 'txt'=>"", 'num'=>0, 'line_num'=>0 };
    #print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
    print "*** reading opt pass 0      \r";
    foreach my $line_chunk ( @$in_listref )  {
       my @line_list= split( /^/m, $line_chunk );
       foreach my $line ( @line_list )  {
+	 $line_num++;
 	 #print "line is " . length($line) . " characters long. \n";;
 	 if ( $line=~ m/^\*\*\* / )  {
 	    push @ret_list, $instance_ref;
 	    $instance_ref= { 
-		  'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1 };
+		  'title'=>"", 'txt'=>"", 'num'=> $instance_ref->{'num'}+1,
+                  'line_num' => $line_num };
 	    #print "ref(\$instance_ref)= \"" . ref($instance_ref) . "\" \n";;
             # TODO2: only print this in verbose mode:
 	    print "*** reading opt pass " . $instance_ref->{'num'} . " "x 5 . 
