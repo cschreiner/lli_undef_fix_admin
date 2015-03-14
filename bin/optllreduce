@@ -693,8 +693,8 @@ sub insert_opt_txt_into_ir_program
       # up error message formatting.
       my $i_start_st= $$ir_prog_listref[$i_start];
       my $i_stop_st= $$ir_prog_listref[$i_stop];
-      my $o_start_st= $$ir_prog_listref[$o_start];
-      my $o_stop_st= $$ir_prog_listref[$o_stop];
+      my $o_start_st= $opt_txt_list[$o_start];
+      my $o_stop_st= $opt_txt_list[$o_stop];
       chomp $i_start_st;
       chomp $i_stop_st;
       chomp $o_start_st;
