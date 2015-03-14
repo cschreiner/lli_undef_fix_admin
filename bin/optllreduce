@@ -579,8 +579,9 @@ sub insert_opt_txt_into_ir_program
       # whitespace changes, "#nn" attribute group changes, and perhaps other 
       # less important parts of the IR syntax.
       # TODO2: may be needed.
-      if ( $$ir_prog_listref[$i_start] eq $opt_txt_list[$o_start] )  { 
-	  $match= $main::TRUE;
+      if ( are_lines_equal_enough( $$ir_prog_listref[$i_start],
+				   $opt_txt_list[$o_start] ) )  {
+	 $match= $main::TRUE;
 	 last; 
       }
       $i_start++;
@@ -605,7 +606,8 @@ sub insert_opt_txt_into_ir_program
    my $i_stop= $i_start+ 1;
    $match= $main::FALSE;
    while ( $i_stop < $#$ir_prog_listref )  {
-      if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { 
+      if ( are_lines_equal_enough( $$ir_prog_listref[$i_stop] eq 
+				   $opt_txt_list[$o_stop] ) )  { 
 	 $match= $main::TRUE;
 	 last; 
       }
@@ -791,6 +793,94 @@ sub opt_output_to_list
    push @ret_list, $instance_ref;
    return \@ret_list;
 }}
+
+## ===========================================================================
+## Subroutine are_lines_equal_enough()
+## ===========================================================================
+# Description: compares two lines from an IR program.  Determines if they 
+#	are similar enough to delineate where text should be inserted or 
+#	deleted.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $aa, $bb: strings containing the lines
+# 
+# Outputs: none
+#   
+# Return Value: TRUE or FALSE
+#   
+# ============================================================================
+sub are_lines_equal_enough
+{{
+   my( $aa, $bb )= @_;
+
+   # if it is a simple decision, decide now.
+   if ( $aa eq $bb )  { return $main::TRUE; }
+
+   # .  . . . . . . . . . . . . . . . . . .
+   # do basic cleanup
+   my $clean_aa= $aa;
+   $clean_aa=~ s/;.*$//; # eliminate comments at the end of the line
+   $clean_aa=~ s/^\s+//;
+   $clean_aa=~ s/\s+$//;
+
+   my $clean_bb= $bb;
+   $clean_bb=~ s/;.*$//; # eliminate comments at the end of the line
+   $clean_bb=~ s/^\s+//;
+   $clean_bb=~ s/\s+$//;
+
+   my @aa_list= split( /\s+/, $aa );
+   my @bb_list= split( /\s+/, $bb );
+
+   if ( $aa_list[$[] eq "" )  { shift @aa_list; }
+   if ( $bb_list[$[] eq "" )  { shift @bb_list; }
+   
+   # .  . . . . . . . . . . . . . . . . . .
+   # eliminate irrelevant syntactic elements
+
+   # attribute group tags (e.g. #2 or #34 embedded somewhere in the line)
+   for ( my $ii= $[; $ii <= $#aa_list; $ii++ )  {
+      if ( $aa_list[$ii] =~ m/^#\d+$/ )  {
+         $aa_list[$ii]= undef;
+      }
+   }
+   for ( my $ii= $[; $ii <= $#bb_list; $ii++ )  {
+      if ( $bb_list[$ii] =~ m/^#\d+$/ )  {
+         $bb_list[$ii]= undef;
+      }
+   }
+
+   # plug the elements we just eliminated
+   for ( my $ii= $[; $ii <= $#aa_list; $ii++ )  {
+      if ( !defined($aa_list[$ii]) ) {
+         $aa_list[$ii..($#aa_list-1)]= $aa_list[($ii+1)..$#aa_list];
+         $#aa_list= $#aa_list- 1;
+      }
+   }
+   for ( my $ii= $[; $ii <= $#bb_list; $ii++ )  {
+      if ( !defined($bb_list[$ii]) ) {
+         $bb_list[$ii..($#bb_list-1)]= $bb_list[($ii+1)..$#bb_list];
+         $#bb_list= $#bb_list- 1;
+      }
+   }
+
+   # .  . . . . . . . . . . . . . . . . . .
+   # do an actual comparison and return
+   if ( $#aa_list != $#bb_list )  {
+      return $main::FALSE;
+   }
+   for ( my $ii= $[; $ii <= $#aa_list; $ii++ )  {
+      if ( $aa_list[$ii] ne $bb_list[$ii] )  { return $main::FALSE; }
+   }
+
+   return $main::TRUE;
+}}
+
 
 
 # template 25 lines long
