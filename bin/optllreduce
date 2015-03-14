@@ -689,6 +689,18 @@ sub insert_opt_txt_into_ir_program
    }
 
    if ( $problem ne "" )  {
+      # Create copies of relevant strings without training newlines that mess
+      # up error message formatting.
+      my $i_start_st= $$ir_prog_listref[$i_start];
+      my $i_stop_st= $$ir_prog_listref[$i_stop];
+      my $o_start_st= $$ir_prog_listref[$o_start];
+      my $o_stop_st= $$ir_prog_listref[$o_stop];
+      chomp $i_start_st;
+      chomp $i_stop_st;
+      chomp $o_start_st;
+      chomp $o_stop_st;
+
+      # give an error message
       print $main::scriptname . ": WARNING: the program text specified by \n" . 
 	    "\t" . "the current optimization pass does not seem to \n" .
 	    "\t" . "correspond to the expected whole function or whole \n" . 
@@ -696,11 +708,11 @@ sub insert_opt_txt_into_ir_program
 	    "\t" . "cause this program to emit incorrect results.  \n" . 
 	    "\t" . "code=\"$problem\" (message 2015mar6_181115) \n";
       print "\t" . "first and last lines of text to be removed: \n";
-      print "\t" . "first: \"" . $$ir_prog_listref[$i_start] . "\"\n";
-      print "\t" . "last: \"" . $$ir_prog_listref[$i_stop] . "\"\n";
+      print "\t" . "first: \"" . $i_start_st . "\"\n";
+      print "\t" . "last: \"" . $i_stop_st . "\"\n";
       print "\t" . "first and last lines of text to be inserted: \n";
-      print "\t" . "first: \"" . $opt_txt_list[$o_start] . "\"\n";
-      print "\t" . "last: \"" . $opt_txt_list[$o_stop] . "\"\n";
+      print "\t" . "first: \"" . $o_start_st . "\"\n";
+      print "\t" . "last: \"" . $o_stop_st . "\"\n";
    }
 
    # . . . . . . . . . . . . . . . . . . . .
@@ -823,6 +835,16 @@ sub are_lines_equal_enough
 {{
    my( $aa, $bb )= @_;
 
+   {
+      my $chomped_aa= $aa;;
+      chomp $chomped_aa;;
+      my $chomped_bb= $bb;;
+      chomp $chomped_bb;;
+      print "comparing these lines: \n" .
+	    "\t" . "aa=\"$chomped_aa\"\n" .
+	    "\t" . "bb=\"$chomped_bb\"\n";;
+   }
+
    # if it is a simple decision, decide now.
    if ( $aa eq $bb )  { return $main::TRUE; }
 
@@ -832,10 +854,6 @@ sub are_lines_equal_enough
    chomp $clean_aa;
    my $clean_bb= $bb;
    chomp $clean_bb;
-
-   print "comparing these lines: \n" .
-         "\t" . "aa=\"$clean_aa\"\n" .
-         "\t" . "bb=\"$clean_bb\"\n";;
 
    $clean_aa=~ s/;.*$//; # eliminate comments at the end of the line
    $clean_aa=~ s/^\s+//;
