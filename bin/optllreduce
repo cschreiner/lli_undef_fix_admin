@@ -607,6 +607,7 @@ sub insert_opt_txt_into_ir_program
    my $i_stop= $i_start+ 1;
    $match= $main::FALSE;
    print "   " . "i_stop=$i_stop, limit=" . $#$ir_prog_listref . ". \n";;
+   print "   " . "i_stop line=\"" . $$ir_prog_listref[$i_stop] . "\"\n";;
    while ( $i_stop < $#$ir_prog_listref )  {
       print "   " . "i_stop=$i_stop\n";;
       if ( are_lines_equal_enough( $$ir_prog_listref[$i_stop] eq 
