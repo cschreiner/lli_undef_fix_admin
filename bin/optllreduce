@@ -610,7 +610,7 @@ sub insert_opt_txt_into_ir_program
    print "   " . "i_stop line=\"" . $$ir_prog_listref[$i_stop] . "\"\n";;
    while ( $i_stop < $#$ir_prog_listref )  {
       print "   " . "i_stop=$i_stop\n";;
-      if ( are_lines_equal_enough( $$ir_prog_listref[$i_stop] eq 
+      if ( are_lines_equal_enough( $$ir_prog_listref[$i_stop], 
 				   $opt_txt_list[$o_stop] ) )  { 
 	 $match= $main::TRUE;
 	 last; 
