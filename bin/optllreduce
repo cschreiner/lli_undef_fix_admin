@@ -835,6 +835,9 @@ sub are_lines_equal_enough
 {{
    my( $aa, $bb )= @_;
 
+   print "received these lines: \n" .
+	 "\t" . "aa=\"$aa\"\n" .
+	 "\t" . "bb=\"$bb\"\n";;
    {
       my $chomped_aa= $aa;;
       chomp $chomped_aa;;
