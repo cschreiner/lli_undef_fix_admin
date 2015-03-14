@@ -363,6 +363,7 @@ foreach my $pass_ref ( @$arg_opt_pass_listref )  {
    }
    print "running lli on " . $pass_ref->{'num'} . 
 	 ":\"" . $pass_ref->{'title'} . "\": \n"; 
+   print "   " . "from opt output line " . $pass_ref->{'line_num'} . ":\n";;
    my $result= feed_pass_to_lli( $pass_ref, $ir_prog_listref );
    if ( $result eq 'poison' )  {
       print "found poison at pass \"" . $pass_ref->{'title'} . "\". \n";
@@ -561,15 +562,21 @@ sub insert_opt_txt_into_ir_program
       # see if this is a single line function declaration
       # e.g.: declare i32 @printf(i8* nocapture readonly, ...) #2
       if ( @opt_txt_list[ $[ ] =~ 
-	    m/^ \s* declare \s+ i[0-9]+ \s+ \@\w+ \s* \( .* \) / )  {
+	    #m/^ \s* declare \s+ i[0-9]+ \s+ \@\w+ \s* \( .* \) / )  {
+	    m/^ \s* declare \s+ i[0-9]+ \s+ / )  {
          # Do nothing, every case like this it appears that the declaration
          # repeats something already in the program.
 	 return join( "", @$ir_prog_listref );
       }
-      warn $main::scriptname . 
-	    ": warning: can't understand one line opt pass result: \n" .
-            "line=\"$opt_txt\", \n" .
-            "skipping. (message 2015mar13_183607) \n";
+      {
+	 my $opt_txt_no_newline= $opt_txt;
+         chomp $opt_txt_no_newline;
+	 warn $main::scriptname . 
+	       ": warning: can't understand one line opt pass result: \n" .
+	       "   " . "line=\"$opt_txt_no_newline\", \n" .
+	       "   " . "skipping. (message 2015mar13_183607) \n";
+	 return join( "", @$ir_prog_listref );
+      }
    }
 
    # . . . . . . . . . . . . . . . . . . . .
