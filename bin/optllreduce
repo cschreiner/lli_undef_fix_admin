@@ -547,6 +547,7 @@ sub insert_opt_txt_into_ir_program
    # . . . . . . . . . . . . . . . . . . . .
    # set up
    my @opt_txt_list= split( /^/m, $opt_txt );
+   my $match= $main::FALSE;
 
    # . . . . . . . . . . . . . . . . . . . .
    # handle special cases that can be handled early
@@ -570,12 +571,23 @@ sub insert_opt_txt_into_ir_program
    # . . . . . . . . . . . . . . . . . . . .
    # find the corresponding line in @$ir_prog_listref
    my $i_start= $[;
+   $match= $main::FALSE;
    while ( $i_start <= $#$ir_prog_listref )  {
       # Note: instead of straight eq, we may need to call an equivalency 
       # function that ignores beginning & ending whitespace, internal 
-      # whitespace changes, and perhaps less important parts of the IR syntax.
-      if ( $$ir_prog_listref[$i_start] eq $opt_txt_list[$o_start] )  { last; }
+      # whitespace changes, "#nn" attribute group changes, and perhaps other 
+      # less important parts of the IR syntax.
+      # TODO2: may be needed.
+      if ( $$ir_prog_listref[$i_start] eq $opt_txt_list[$o_start] )  { 
+	  $match= $main::TRUE;
+	 last; 
+      }
       $i_start++;
+   }
+   if ( ! $match )  {
+      warn $main::scriptname . ": no matching start line found, proceeding \n" .
+	    "\t" . "as well as possible.  Note that this may lead to \n" . 
+	    "\t" . "invalid outputs. \n";
    }
 
    # . . . . . . . . . . . . . . . . . . . .
@@ -586,14 +598,22 @@ sub insert_opt_txt_into_ir_program
 	    $opt_txt_list[$o_stop] !~ m/^\s*$/ )  { last; }
       $o_stop--;
    }
-   #assert( $o_stop - $o_start > 2
 
    # . . . . . . . . . . . . . . . . . . . .
    # find a corresponding line in $ir_prog_listref
    my $i_stop= $i_start+ 1;
+   $match= $main::FALSE;
    while ( $i_stop < $#$ir_prog_listref )  {
-      if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { last; }
+      if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { 
+	 $match= $main::TRUE;
+	 last; 
+      }
       $i_stop++;
+   }
+   if ( ! $match )  {
+      warn $main::scriptname . ": no matching stop line found, proceeding \n" . 
+	    "\t" . "as well as possible.  Note that this may lead to \n" . 
+	    "\t" . "invalid outputs. \n";
    }
 
    # . . . . . . . . . . . . . . . . . . . .
