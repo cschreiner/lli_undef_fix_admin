@@ -825,11 +825,18 @@ sub are_lines_equal_enough
    # .  . . . . . . . . . . . . . . . . . .
    # do basic cleanup
    my $clean_aa= $aa;
+   chomp $clean_aa;
+   my $clean_bb= $bb;
+   chomp $clean_bb;
+
+   print "comparing these lines: \n" .
+         "\t" . "aa=\"$clean_aa\"\n" .
+         "\t" . "bb=\"$clean_bb\"\n";;
+
    $clean_aa=~ s/;.*$//; # eliminate comments at the end of the line
    $clean_aa=~ s/^\s+//;
    $clean_aa=~ s/\s+$//;
 
-   my $clean_bb= $bb;
    $clean_bb=~ s/;.*$//; # eliminate comments at the end of the line
    $clean_bb=~ s/^\s+//;
    $clean_bb=~ s/\s+$//;
