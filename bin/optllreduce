@@ -606,10 +606,7 @@ sub insert_opt_txt_into_ir_program
    print "looking for ir_prog_listref's i_stop. \n";;
    my $i_stop= $i_start+ 1;
    $match= $main::FALSE;
-   print "   " . "i_stop=$i_stop, limit=" . $#$ir_prog_listref . ". \n";;
-   print "   " . "i_stop line=\"" . $$ir_prog_listref[$i_stop] . "\"\n";;
    while ( $i_stop < $#$ir_prog_listref )  {
-      print "   " . "i_stop=$i_stop\n";;
       if ( are_lines_equal_enough( $$ir_prog_listref[$i_stop], 
 				   $opt_txt_list[$o_stop] ) )  { 
 	 $match= $main::TRUE;
@@ -622,7 +619,6 @@ sub insert_opt_txt_into_ir_program
 	    "\t" . "proceeding as well as possible.  Note that this may \n" . 
 	    "\t" . "lead to invalid outputs. \n";
    }
-   print "done looking for ir_prog_listref's i_stop. \n";;
 
    # . . . . . . . . . . . . . . . . . . . .
    # check that the number of lines is meaningful
