@@ -836,7 +836,7 @@ sub are_lines_equal_enough
 {{
    my( $aa, $bb )= @_;
 
-   if ( $main::FALSE )  {  // debugging only
+   if ( $main::FALSE )  {  # debugging only
       my $chomped_aa= $aa;
       chomp $chomped_aa;
       my $chomped_bb= $bb;
