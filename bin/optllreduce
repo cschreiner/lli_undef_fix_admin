@@ -665,7 +665,6 @@ sub insert_opt_txt_into_ir_program
 	 $problem.= "c";
       }
    }
-
    
    if ( $$ir_prog_listref[$i_stop] ne $opt_txt_list[$o_stop] or
 	 $$ir_prog_listref[$i_stop-1] ne $opt_txt_list[$o_stop-1] )  {
