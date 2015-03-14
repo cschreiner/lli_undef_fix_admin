@@ -549,34 +549,12 @@ sub insert_opt_txt_into_ir_program
    my @opt_txt_list= split( /^/m, $opt_txt );
 
    # . . . . . . . . . . . . . . . . . . . .
-   # handle special cases
+   # handle special cases that can be handled early
 
    # case where opt pass just produces "Printing <null> Function"
    if ( $opt_txt =~ m/^\s*Printing <null> Function\s*$/ )  {
       # return the original IR program verbatim
       return join ( "", @$ir_prog_listref );
-   }
-
-   # case where opt_pass consists of a single line function declaration
-   if ( scalar(@opt_txt_list)==1 )  {
-      # see if this is a single line function declaration
-      # e.g.: declare i32 @printf(i8* nocapture readonly, ...) #2
-      if ( @opt_txt_list[ $[ ] =~ 
-	    #m/^ \s* declare \s+ i[0-9]+ \s+ \@\w+ \s* \( .* \) / )  {
-	    m/^ \s* declare \s+ i[0-9]+ \s+ / )  {
-         # Do nothing, every case like this it appears that the declaration
-         # repeats something already in the program.
-	 return join( "", @$ir_prog_listref );
-      }
-      {
-	 my $opt_txt_no_newline= $opt_txt;
-         chomp $opt_txt_no_newline;
-	 warn $main::scriptname . 
-	       ": warning: can't understand one line opt pass result: \n" .
-	       "   " . "line=\"$opt_txt_no_newline\", \n" .
-	       "   " . "skipping. (message 2015mar13_183607) \n";
-	 return join( "", @$ir_prog_listref );
-      }
    }
 
    # . . . . . . . . . . . . . . . . . . . .
@@ -616,6 +594,40 @@ sub insert_opt_txt_into_ir_program
    while ( $i_stop < $#$ir_prog_listref )  {
       if ( $$ir_prog_listref[$i_stop] eq $opt_txt_list[$o_stop] ) { last; }
       $i_stop++;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # check that the number of lines is meaningful
+   my $return_wo_modification= $main::FALSE;
+   if ( ($o_stop - $o_start) == 0 )  {
+      # the pass just produced comments
+      print $main::scriptname . ": FYI: pass just produced comments. \n"; 
+      $return_wo_modification= $main::TRUE;
+   } elsif ( ($o_stop - $o_start) == 1 )  {
+      # case where opt_pass consists of a single line function declaration
+
+      # see if this is a single line function declaration
+      # e.g.: declare i32 @printf(i8* nocapture readonly, ...) #2
+      if ( @opt_txt_list[ $o_start ] =~ 
+            # TODO: fix this
+	    #m/^ \s* declare \s+ i[0-9]+ \s+ \@\w+ \s* \( .* \) / )  {
+	    m/^ \s* declare \s+ i[0-9]+ \s+ / )  {
+         # Do nothing, every case like this it appears that the declaration
+         # repeats something already in the program.
+	 $return_wo_modification= $main::TRUE;
+      }
+      
+      my $opt_txt_no_newline= $opt_txt;
+      chomp $opt_txt_no_newline;
+      warn $main::scriptname . 
+	    ": warning: can't understand one line opt pass result: \n" .
+	    "   " . "line=\"$opt_txt_no_newline\", \n" .
+	    "   " . "skipping. (message 2015mar13_183607) \n";
+      $return_wo_modification= $main::TRUE;
+      return join( "", @$ir_prog_listref );
+   }
+   if ( $return_wo_modification )  {
+      return join( "", @$ir_prog_listref );
    }
 
    # . . . . . . . . . . . . . . . . . . . .
