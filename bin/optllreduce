@@ -544,15 +544,33 @@ sub insert_opt_txt_into_ir_program
    my( $ir_prog_listref, $opt_txt )= @_;
 
    # . . . . . . . . . . . . . . . . . . . .
-   # handle special case where opt pass just produces "Printing <null> Function"
+   # set up
+   my @opt_txt_list= split( /^/m, $opt_txt );
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # handle special cases
+
+   # case where opt pass just produces "Printing <null> Function"
    if ( $opt_txt =~ m/^\s*Printing <null> Function\s*$/ )  {
       # return the original IR program verbatim
       return join ( "", @$ir_prog_listref );
    }
 
-   # . . . . . . . . . . . . . . . . . . . .
-   # set up
-   my @opt_txt_list= split( /^/m, $opt_txt );
+   # case where opt_pass consists of a single line function declaration
+   if ( scalar(@opt_txt_list)==1 )  {
+      # see if this is a single line function declaration
+      # e.g.: declare i32 @printf(i8* nocapture readonly, ...) #2
+      if ( @opt_txt_list[ $[ ] =~ 
+	    m/^ \s* declare \s+ i[0-9]+ \s+ \@\w+ \s* \( .* \) / )  {
+         # Do nothing, every case like this it appears that the declaration
+         # repeats something already in the program.
+	 return join( "", @$ir_prog_listref );
+      }
+      warn $main::scriptname . 
+	    ": warning: can't understand one line opt pass result: \n" .
+            "line=\"$opt_txt\", \n" .
+            "skipping. (message 2015mar13_183607) \n";
+   }
 
    # . . . . . . . . . . . . . . . . . . . .
    # find the first non-comment line of @opt_txt_list
