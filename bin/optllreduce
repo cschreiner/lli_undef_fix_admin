@@ -619,6 +619,7 @@ sub insert_opt_txt_into_ir_program
 	    "\t" . "proceeding as well as possible.  Note that this may \n" . 
 	    "\t" . "lead to invalid outputs. \n";
    }
+   print "done looking for ir_prog_listref's i_stop. \n";;
 
    # . . . . . . . . . . . . . . . . . . . .
    # check that the number of lines is meaningful
