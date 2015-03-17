@@ -1238,3 +1238,8 @@ build status=0 (should be 0)
 build time 0:34 (34 s)
    start time=Tue Mar 17 17:47:07 MDT 2015
    stop time=Tue Mar 17 17:47:41 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:02 (2 s)
+   start time=Tue Mar 17 17:48:51 MDT 2015
+   stop time=Tue Mar 17 17:48:53 MDT 2015
