@@ -20,6 +20,10 @@ distcc
 ------
 http://distcc.googlecode.com/svn/trunk/doc/web/index.html
 
+Concepts
+--------
+Basic Blocks:
+https://gcc.gnu.org/onlinedocs/gccint/Basic-Blocks.html#Basic-Blocks
 
 
 end of document
