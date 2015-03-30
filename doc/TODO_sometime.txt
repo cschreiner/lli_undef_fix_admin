@@ -1,0 +1,10 @@
+List of stuff to do sometime, as research requires:
+
+[ ] figure out how to handle poison and pointers.  In particular,
+indirecting or jumping off of a poisoned pointer should halt the
+interpreter.  Is it enough to halt when the pointer value is set in a way
+that depends on poison, or should we wait until the pointer value is
+actually used?
+
+(end of file)
+
