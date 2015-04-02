@@ -5,7 +5,7 @@ if [ -z "$PROJ_ROOT" ]; then
    exit 255
 fi
 if [ -x $PROJ_ROOT/live/bin/lli ]; then
-   $PROJ_ROOT/live/bin/lli -force-interpreter "$@"
+   stdbuf -o0 -e0 $PROJ_ROOT/live/bin/lli -force-interpreter "$@"
 else
    echo $PROJ_ROOT/live/bin/lli does not appear to exist.
    exit 255
