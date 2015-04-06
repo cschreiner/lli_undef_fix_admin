@@ -1,0 +1,19 @@
+Writeup of Poison Research in project lli_undef_fix
+----------------------------------------------------
+
+
+The current specification of poison handling has holes, which have been
+patched in the current LLVM implementation by human intuition and dilligent
+debugging efforts.  Unfortunately, different people have different intuitive
+understandings of how poison should work. \TODO{cite the discusssions of
+poison on LLVM mailing list} This situation makes a precise formal definition
+of poison handling impossible, allows occasional miscompilation in corner
+cases, and prevents the compiler from applying many next generation compiler
+optimizations.
+
+We, the authors, have been studying the effects of different poison handling
+rules on thousands of C programs, 
+
+have created an LLVM IR interpreter capable of applying
+different poison handling rules, and have 
+
