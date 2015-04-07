@@ -453,7 +453,7 @@ sub feed_pass_to_lli
    }
 
    # . . . . . . . . . . . . . . . . . . . .
-   # write out the IR program
+   # write out the optimized IR program
    my( $opt_ir_program )= insert_opt_txt_into_ir_program( 
 	 $ir_prog_listref, $pass_ref->{'txt'} );
    {
