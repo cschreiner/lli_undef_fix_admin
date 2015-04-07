@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: instruction.pm
 ##
-## Description: 
+## Description: code to generate an instruction.  This is a singleton package.
 ##
 ## ****************************************************************************
 
@@ -87,6 +87,85 @@ package instruction::private;
 
       # ----------------------------------------------------------------------
       # other stuff
+      our( %opcode_hash )=  (
+	    'add' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( nsw nuw ) ],
+	       },
+	    'sub' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( nsw nuw ) ],
+	       },
+	    'mul' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( nsw nuw ) ],
+	       },
+	    'sdiv' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( exact ) ],
+	       },
+	    'udiv' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( exact ) ],
+	       },
+	    'srem' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( ) ],
+	       },
+	    'urem' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( ) ],
+	       },
+	    'and' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( ) ],
+	       },
+	    'or' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( ) ],
+	       },
+	    'xor' => {
+	       'type'=> 'arith',
+	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( ) ],
+	       },
+	    'shl' => {
+	       'type'=> 'shift',
+	       'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( nsw nuw ) ],
+	       },
+	    'lshr' => {
+	       'type'=> 'shift',
+	       'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( exact ) ],
+	       },
+	    'ashr' => {
+	       'type'=> 'shift',
+	       'gen_ftn' => 'generate_shift_inst', # change this to a ftn ptr
+	       'flag_listref' => [ qw( exact ) ],
+	       },
+	    'storeload' => {
+	       'type'=> 'storeload',
+	       'gen_ftn' => 'generate_storeload_inst', # change this to a ftn ptr
+	       'flag_listref' => [ ],
+	       },
+	    # template: is 4 lines long:
+	    #'xxx' => {
+	    #	 'type'=> 'arith',
+	    #   'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+	    #   'flag_listref' => [ qw( ) ],
+	    #	 },
+	    );
+
 
    }}
 
