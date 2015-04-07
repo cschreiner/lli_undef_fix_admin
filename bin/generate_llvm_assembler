@@ -243,7 +243,7 @@ our ( $definitions, $instructions );
    my( $def, $inst );
 
    for ( my $ii= 0; $ii < 2; $ii++ )  {
-      ( $def, $inst )= generate_const_inst( $regWidth );
+      ( $def, $inst )= instruction::generate_const_inst( $regWidth );
       $definitions.= $def;
       $instructions.= $inst;
    }
@@ -255,7 +255,7 @@ our ( $definitions, $instructions );
   }
 
   for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
-     my( $def, $inst )= generate_one_inst( $regWidth );
+     my( $def, $inst )= instruction::generate_one_inst( $regWidth );
      $definitions.= $def;
      $instructions.= $inst;
   }
