@@ -63,10 +63,8 @@ package RegContext;
       # ----------------------------------------------------------------------
       # other stuff
 
+      # llvm requires the first register of a function to be %1
       use constant MIN_REG_NUM => 1;
-
-      use vars qw ( $reg_num );
-      $reg_num= MIN_REG_NUM; # llvm requires the first register to be %1
    }}
 
    # =========================================================================
@@ -81,11 +79,45 @@ package RegContext;
 ## start the package
 
 ## ===========================================================================
+## Subroutine new()
+## ===========================================================================
+# Description: creates a new instance
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $perl_class: class information (provided by PERL)
+#   $prefix: prefix all variables with this string.  Should not include the 
+#	sigil (%).  May be undefined if no prefix exists.
+# 
+# Outputs: none
+#   
+# Return Value: a new instance
+#   
+# ============================================================================
+sub new
+{{
+   my( $perl_class, $prefix )= @_;
+
+   my $this= {};
+   bless $this, $perl_class;
+
+   $this->{'prefix'}= $prefix.
+   $this->{'regNum'}= MIN_REG_NUM;
+}}
+
+
+## ===========================================================================
 ## Subroutine getName
 ## ===========================================================================
 # Description: returns the name of a new register
 #
-# Inputs: none
+# Inputs: 
+#   $this: the instance to work on (provided by PERL)
 # 
 # Outputs: none
 #
@@ -94,9 +126,10 @@ package RegContext;
 # ============================================================================
 sub getName
 {{
-   #my( )= @_;
-   my( $ret_val )= "%" . $reg_num;
-   $reg_num++;
+   my( $this )= @_;
+
+   my( $ret_val )= "%" . $this->{'reg_num'};
+   $this->{'regNum'}++;
    return $ret_val;
 }}
 
@@ -106,6 +139,7 @@ sub getName
 # Description: gets the name of the nth previously issued register
 #
 # Inputs: 
+#   $this: the instance to work on (provided by PERL)
 #   $steps: the number of steps back to go. 0 (the default) indicates the 
 #	absolute most recently issued register, 1 is the one before that, 
 #	and so forth.
@@ -117,16 +151,17 @@ sub getName
 # ============================================================================
 sub getPrevName
 {{
-   my( $steps )= @_;
+   my( $this, $steps )= @_;
+
    my( $steps2 )= $steps;
    if ( ! defined($steps) )  { $steps2= 0; }
 
-   if ( ($reg_num- 1 - $steps) < 0 )  {
+   if ( ($this->{'regNum'}- 1 - $steps) < 0 )  {
       die $main::scriptname . 
 	    ": internal error 2014nov24_154228, " . 
-	    "codes=\"$reg_num\", \"$steps\"\n";
+	    "codes=\"" . $this->{'regNum'} . "\", \"$steps\"\n";
    }
-   return "%" . ($reg_num- 1- $steps2);
+   return "%" . ($this->{'regNum'}- 1- $steps2);
 }}
 
 ## ===========================================================================
@@ -134,7 +169,8 @@ sub getPrevName
 ## ===========================================================================
 # Description: gets the name of a recently issued register
 #
-# Inputs: none
+# Inputs: 
+#   $this: the instance to work on (provided by PERL)
 # 
 # Outputs: none
 #
@@ -143,9 +179,10 @@ sub getPrevName
 # ============================================================================
 sub getRecentName
 {{
-   #my( )= @_;
+   my( $this )= @_;
+
    my( $limit )= 10;
-   my( $max_returnable_reg_num )= $reg_num- 3;
+   my( $max_returnable_reg_num )= $this->{'regNum'}- 3;
    if ( $max_returnable_reg_num < $limit )  { 
       $limit= $max_returnable_reg_num; 
    };
