@@ -98,6 +98,10 @@ package BasicBlockSeq;
 #   $parentBasicBlock: the basic block (or basic block sequence) invoking this
 #	one, or 
 #	undef if this is the first basic block of a function.
+#   $opt_hashref: reference to a hash of options.  This parameter must be 
+#	present, but may be empty.  Valid options are:
+#	startPoison (boolean): true if the block should set a variable to a 
+#		poison value early in the block.
 # 
 # Outputs: none
 #   
@@ -106,7 +110,7 @@ package BasicBlockSeq;
 # ============================================================================
 sub new
 {{
-   my( $perl_class, $parentBasicBlock )= @_;
+   my( $perl_class, $parentBasicBlock, $opt_hashref )= @_;
 
    my $this= {};
    bless $this, $perl_class;
@@ -137,7 +141,16 @@ sub new
    }
    $this->{'remainingSteps'}= $this->{'numSteps'};
    
+   # copy over the options, element by element
+   foreach my $opt ( qw( startPoison restoreBitwidth ) )  {
+      if ( exists($$opt_hashref{$opt}) )  {
+	 $this->{'opt_hashref'}->{$opt}= $opt_hashref->{$opt}; 
+      } else {
+	 $this->{'opt_hashref'}->{$opt}= undef;
+      }
+   }
 
+   # clean up and return
    return $this;
 }}
 
@@ -226,10 +239,21 @@ sub generate
       }
    }
 
+   if ( $this->{'opt_hashref'}->{'startPoison'} )  {
+     $instructions.= "  " . reg_context::getName() . 
+	   "= sub nuw " . $regWidth->getName() . " 0, 1 ; generates POISON \n";
+     # TODO2: replace the above operands with random numbers
+   }
+
    for ( ; $this->{'remainingSteps'} > 0; $this->{'remainingSteps'}-- )  {
       my( $def, $inst )= instruction::generate_one_inst( $this );
       $definitions.= $def;
       $instructions.= $inst;
+   }
+
+   if ( $this->{'opt_hashref'}->{'restoreBitwidth'} )  {
+      # TODO2: add code here to convert the last 1 or 2 registers to
+      # the original bitwidth.
    }
  
    # clean up and return
