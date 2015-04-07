@@ -1353,3 +1353,103 @@ build status=0 (should be 0)
 build time 0:30 (30 s)
    start time=Fri Mar 27 08:55:41 MDT 2015
    stop time=Fri Mar 27 08:56:11 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:36 (36 s)
+   start time=Tue Mar 31 11:46:54 MDT 2015
+   stop time=Tue Mar 31 11:47:30 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Wed Apr 1 16:33:48 MDT 2015
+   stop time=Wed Apr 1 16:33:58 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:10 (10 s)
+   start time=Wed Apr 1 16:36:42 MDT 2015
+   stop time=Wed Apr 1 16:36:52 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:11 (11 s)
+   start time=Wed Apr 1 19:28:50 MDT 2015
+   stop time=Wed Apr 1 19:29:01 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:02 (2 s)
+   start time=Thu Apr 2 18:06:42 MDT 2015
+   stop time=Thu Apr 2 18:06:44 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:14 (14 s)
+   start time=Thu Apr 2 18:10:48 MDT 2015
+   stop time=Thu Apr 2 18:11:02 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:03 (3 s)
+   start time=Thu Apr 2 18:14:46 MDT 2015
+   stop time=Thu Apr 2 18:14:49 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:03 (3 s)
+   start time=Thu Apr 2 18:17:31 MDT 2015
+   stop time=Thu Apr 2 18:17:34 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:03 (3 s)
+   start time=Thu Apr 2 18:21:10 MDT 2015
+   stop time=Thu Apr 2 18:21:13 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:02 (2 s)
+   start time=Thu Apr 2 18:23:42 MDT 2015
+   stop time=Thu Apr 2 18:23:44 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:02 (2 s)
+   start time=Fri Apr 3 12:43:43 MDT 2015
+   stop time=Fri Apr 3 12:43:45 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Fri Apr 3 12:47:48 MDT 2015
+   stop time=Fri Apr 3 12:47:49 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Fri Apr 3 12:49:15 MDT 2015
+   stop time=Fri Apr 3 12:49:16 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:01 (1 s)
+   start time=Fri Apr 3 12:49:40 MDT 2015
+   stop time=Fri Apr 3 12:49:41 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:14 (14 s)
+   start time=Fri Apr 3 12:50:39 MDT 2015
+   stop time=Fri Apr 3 12:50:53 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:16 (16 s)
+   start time=Fri Apr 3 12:51:50 MDT 2015
+   stop time=Fri Apr 3 12:52:06 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:03 (3 s)
+   start time=Fri Apr 3 13:06:02 MDT 2015
+   stop time=Fri Apr 3 13:06:05 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:04 (4 s)
+   start time=Fri Apr 3 13:06:48 MDT 2015
+   stop time=Fri Apr 3 13:06:52 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 0:12 (12 s)
+   start time=Fri Apr 3 13:10:30 MDT 2015
+   stop time=Fri Apr 3 13:10:42 MDT 2015
+====================================================================
+build status=0 (should be 0)
+build time 0:35 (35 s)
+   start time=Fri Apr 3 13:20:16 MDT 2015
+   stop time=Fri Apr 3 13:20:51 MDT 2015

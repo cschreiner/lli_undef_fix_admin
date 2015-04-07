@@ -5,7 +5,9 @@ if [ -z "$PROJ_ROOT" ]; then
    exit 255
 fi
 if [ -x $PROJ_ROOT/live/bin/lli ]; then
-   $PROJ_ROOT/live/bin/lli -force-interpreter "$@"
+   # Disable buffering on lli's output so that we don't mysteriously loose 
+   # some output every once in a while.
+   exec stdbuf -o0 -e0 $PROJ_ROOT/live/bin/lli -force-interpreter "$@"
 else
    echo $PROJ_ROOT/live/bin/lli does not appear to exist.
    exit 255
