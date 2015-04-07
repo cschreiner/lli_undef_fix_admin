@@ -109,7 +109,7 @@ sub new
    my $this= {};
    bless $this, $perl_class;
 
-   $this->{'regPrefix'}= $prefix.
+   $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
 }}
 
