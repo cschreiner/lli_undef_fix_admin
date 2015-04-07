@@ -184,6 +184,45 @@ sub incrementSubBlock
    return $main::TRUE;
 }}
 
+## ===========================================================================
+## Subroutine generate()
+## ===========================================================================
+# Description: generates the block
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work with
+# 
+# Outputs: none
+#   
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
+#
+# ============================================================================
+sub generate
+{{
+   my( $this )= @_;
+
+   our ( $definitions, $instructions );
+
+   for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
+      my( $def, $inst )= instruction::generate_one_inst( $regWidth );
+      $definitions.= $def;
+      $instructions.= $inst;
+   }
+ 
+   # clean up and return
+   return ( $definitions, $instructions );
+}}
+
+
 
 #template is 25 lines long
 ## ===========================================================================
