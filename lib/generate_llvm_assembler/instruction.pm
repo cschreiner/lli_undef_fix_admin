@@ -87,7 +87,8 @@ package instruction::private;
 
       # ----------------------------------------------------------------------
       # other stuff
-      our( %opcode_hash )=  (
+      use vars qw ( %opcode_hash );
+      %opcode_hash= (
 	    'add' => {
 	       'type'=> 'arith',
 	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
