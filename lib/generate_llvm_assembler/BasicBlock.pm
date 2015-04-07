@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: BasicBlock.pm
 ##
-## Description: 
+## Description: code to generate a basic block
 ##
 ## ****************************************************************************
 
@@ -37,31 +37,6 @@ package BasicBlock;
 
 ## ****************************************************************************
 ## public package BEGIN and END functions
-
-   # =========================================================================
-   # subroutine BEGIN
-   # =========================================================================
-   sub BEGIN
-   {{
-      # Note: we check for basic constants in BasicBlock::private::BEGIN
-
-      # ----------------------------------------------------------------------
-      # package prerequisites (use's and require's)
-
-      # ----------------------------------------------------------------------
-      # package-specific constants
-      use vars qw( $pkgname );
-      $pkgname= "BasicBlock";
-
-      # ----------------------------------------------------------------------
-      # other stuff
-
-   }}
-
-## ****************************************************************************
-## private package BEGIN and END functions
-
-package BasicBlock::private;
 
    # =========================================================================
    # subroutine BEGIN
@@ -103,9 +78,66 @@ package BasicBlock::private;
 
 
 ## ===========================================================================
-## Subroutine name()
+## Subroutine new()
 ## ===========================================================================
-# Description: 
+# Description: creates a new instance
+#
+# Method: 
+#
+# Notes: reads command line arguments
+#
+# Warnings: 
+#
+# Inputs: 
+#   $perl_class: class info (provided by PERL)
+#   $parentBasicBlock: the basic block invoking this one, or 
+#	undef if this is the first basic block of a function.
+# 
+# Outputs: none
+#   
+# Return Value: a reference to the new instance
+#   
+# ============================================================================
+sub new
+{{
+   my( $perl_class, $parentBasicBlock )= @_;
+
+   my $this= {};
+   bless $this, $perl_class;
+
+   if ( defined($parentBasicBlock) )  {
+      $parentBasicBlock->incrementSubBlock();
+      $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
+      $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
+      $this->{'beginRegWidth'}= $parentBasicBlock->{'currentRegWidth'};
+      $this->{'reg_prefix'}= $parentBasicBlock->{'reg_prefix'} . 
+	    $parentBasicBlock->{'subBlock'};
+      $this->{'label_prefix'}= $parentBasicBlock->{'label_prefix'} . 
+	    $parentBasicBlock->{'subBlock'};
+   } else {
+      $this->{'numSteps'}= $main::arg_num_steps;
+      $this->{'indent'}= "  ";
+      $this->{'beginRegWidth'}= new Bitwidth( $main::arg_bitwidth );
+      $this->{'reg_prefix'}= "r_";
+      $this->{'label_prefix'}= "l_";
+   }
+   $this->{'subBlockNum'}= 0;
+   $this->{'subBlock'}= "-";
+   $this->{'currentRegWidth'}= $this->{'beginRegWidth'};
+   $this->{'endRegWidth'}= $this->{'beginRegWidth'};
+   if ( $this->{'numSteps'} < 1 )  { 
+      $this->{'numSteps'}= 1; 
+   }
+   $this->{'remainingSteps'}= $this->{'numSteps'};
+   
+
+   return $this;
+}}
+
+## ===========================================================================
+## Subroutine incrementSubBlock()
+## ===========================================================================
+# Description: increments the subblock designation
 #
 # Method: 
 #
@@ -114,19 +146,37 @@ package BasicBlock::private;
 # Warnings: 
 #
 # Inputs: 
-#   
+#   $this: the instance to work with (provided by PERL)
 # 
-# Outputs: 
+# Outputs: none
 #   
-#
-# Return Value: 
+# Return Value: TRUE
 #   
-#
 # ============================================================================
-#sub name
-#{{
-#   my( )= @_;
-#}}
+sub incrementSubBlock
+{{
+   my( $this )= @_;
+
+   use constant DIGITS=> qw ( 
+	 a b c d e f g h i j k l m n o p q r s t u v w x y z );
+   use constant BASE=> scalar(DIGITS);
+   $this->{'subBlockNum'}++;
+
+   my $rest= $this->{'subBlockNum'};
+   my $st= "";
+
+   while ( $rest > 0 )  {
+      $st= DIGITS->[$rest % BASE] . $st;
+      $rest= $rest / BASE;
+   }
+
+   # a subblock always begins with a capital letter
+   substr($st, $[)= uc( substr($st, $[) );
+
+   # clean up and return
+   $this->{'subBlock'}= $st;
+   return $main::TRUE;
+}}
 
 
 #template is 25 lines long
