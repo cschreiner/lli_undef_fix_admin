@@ -127,6 +127,7 @@ sub new
       $this->{'reg_prefix'}= "r_";
       $this->{'label_prefix'}= "l_";
    }
+   $this->{'parentBasicBlock'}= $parentBasicBlock;
    $this->{'subBlockNum'}= 0;
    $this->{'subBlock'}= "-";
    $this->{'currentRegWidth'}= $this->{'beginRegWidth'};
@@ -212,8 +213,21 @@ sub generate
 
    our ( $definitions, $instructions );
 
-   for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
-      my( $def, $inst )= instruction::generate_one_inst( $regWidth );
+   if ( !defined($this->{'parentBasicBlock'}) )  {
+      # A basic block beginning a function must initially set at least
+      # 2 variables, so later opcodes requiring 2 operands will have
+      # them available.
+      # TODO: find a way to consider the function's parameters as initial 
+      # 	variables. 
+      for ( my $ii= 0; $ii < 2; $ii++ )  {
+	 my ( $def, $inst )= instruction::generate_const_inst( $this );
+	 $definitions.= $def;
+	 $instructions.= $inst;
+      }
+   }
+
+   for ( ; $this->{'remainingSteps'} > 0; $this->{'remainingSteps'}-- )  {
+      my( $def, $inst )= instruction::generate_one_inst( $this );
       $definitions.= $def;
       $instructions.= $inst;
    }
