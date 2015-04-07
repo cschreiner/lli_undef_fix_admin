@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: RegContext.pm
 ##
-## Description: 
+## Description: information for selecting register names
 ##
 ## ****************************************************************************
 
@@ -43,31 +43,6 @@ package RegContext;
    # =========================================================================
    sub BEGIN
    {{
-      # Note: we check for basic constants in RegContext::private::BEGIN
-
-      # ----------------------------------------------------------------------
-      # package prerequisites (use's and require's)
-
-      # ----------------------------------------------------------------------
-      # package-specific constants
-      use vars qw( $pkgname );
-      $pkgname= "RegContext";
-
-      # ----------------------------------------------------------------------
-      # other stuff
-
-   }}
-
-## ****************************************************************************
-## private package BEGIN and END functions
-
-package RegContext::private;
-
-   # =========================================================================
-   # subroutine BEGIN
-   # =========================================================================
-   sub BEGIN
-   {{
       # we don't set basic constants here, as we inherit them from package main
       # But we do need to make sure they're defined properly
       if ( !defined($main::TRUE) or !defined($main::FALSE) or 
@@ -88,6 +63,10 @@ package RegContext::private;
       # ----------------------------------------------------------------------
       # other stuff
 
+      use constant MIN_REG_NUM => 1;
+
+      use vars qw ( $reg_num );
+      $reg_num= MIN_REG_NUM; # llvm requires the first register to be %1
    }}
 
    # =========================================================================
@@ -100,6 +79,131 @@ package RegContext::private;
 
 ## ****************************************************************************
 ## start the package
+
+## ===========================================================================
+## Subroutine getName
+## ===========================================================================
+# Description: returns the name of a new register
+#
+# Inputs: none
+# 
+# Outputs: none
+#
+# Return Value: per description
+#
+# ============================================================================
+sub getName
+{{
+   #my( )= @_;
+   my( $ret_val )= "%" . $reg_num;
+   $reg_num++;
+   return $ret_val;
+}}
+
+## ===========================================================================
+## Subroutine getPrevName
+## ===========================================================================
+# Description: gets the name of the nth previously issued register
+#
+# Inputs: 
+#   $steps: the number of steps back to go. 0 (the default) indicates the 
+#	absolute most recently issued register, 1 is the one before that, 
+#	and so forth.
+# 
+# Outputs: none
+#
+# Return Value: per description
+#
+# ============================================================================
+sub getPrevName
+{{
+   my( $steps )= @_;
+   my( $steps2 )= $steps;
+   if ( ! defined($steps) )  { $steps2= 0; }
+
+   if ( ($reg_num- 1 - $steps) < 0 )  {
+      die $main::scriptname . 
+	    ": internal error 2014nov24_154228, " . 
+	    "codes=\"$reg_num\", \"$steps\"\n";
+   }
+   return "%" . ($reg_num- 1- $steps2);
+}}
+
+## ===========================================================================
+## Subroutine getRecentName
+## ===========================================================================
+# Description: gets the name of a recently issued register
+#
+# Inputs: none
+# 
+# Outputs: none
+#
+# Return Value: per description
+#
+# ============================================================================
+sub getRecentName
+{{
+   #my( )= @_;
+   my( $limit )= 10;
+   my( $max_returnable_reg_num )= $reg_num- 3;
+   if ( $max_returnable_reg_num < $limit )  { 
+      $limit= $max_returnable_reg_num; 
+   };
+   my( $rr )= $max_returnable_reg_num- int( rand()*$limit );
+   if ( $rr < MIN_REG_NUM )  {
+      die $main::scriptname . 
+	    ": internal error 2014nov24_210556, code=\"$rr\"\n";
+   }
+   return "%" . $rr;
+}}
+
+#template is 16 lines long
+## ===========================================================================
+## Subroutine sub_name
+## ===========================================================================
+# Description:
+#
+# Inputs:
+# 
+# Outputs:
+#
+# Return Value:
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   my( )= @_;
+#}}
+
+## ===========================================================================
+## Short get subroutines
+## ===========================================================================
+# Description: short subroutines that only get one field
+#
+# Inputs: none
+#
+# Return Value: the field's value
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   return ;
+#}}
+
+## ===========================================================================
+## Short set subroutines
+## ===========================================================================
+# Description: short subroutines that only set one field
+#
+# Inputs: the field's new value
+#
+# Return Value: none
+#
+# ============================================================================
+#sub sub_name
+#{{
+#   my ($ii)= @_;
+#}}
 
 
 ## ===========================================================================
@@ -155,10 +259,6 @@ package RegContext::private;
 #{{
 #   my( )= @_;
 #}}
-
-
-
-
 
 ## ****************************************************************************
 ## end this package 
