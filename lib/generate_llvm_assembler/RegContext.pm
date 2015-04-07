@@ -106,13 +106,13 @@ sub new
    my $this= {};
    bless $this, $perl_class;
 
-   $this->{'prefix'}= $prefix.
+   $this->{'regPrefix'}= $prefix.
    $this->{'regNum'}= MIN_REG_NUM;
 }}
 
 
 ## ===========================================================================
-## Subroutine getName
+## Subroutine getRegName
 ## ===========================================================================
 # Description: returns the name of a new register
 #
@@ -124,17 +124,17 @@ sub new
 # Return Value: per description
 #
 # ============================================================================
-sub getName
+sub getRegName
 {{
    my( $this )= @_;
 
-   my( $ret_val )= "%" . $this->{'reg_num'};
+   my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'reg_num'};
    $this->{'regNum'}++;
    return $ret_val;
 }}
 
 ## ===========================================================================
-## Subroutine getPrevName
+## Subroutine getPrevRegName
 ## ===========================================================================
 # Description: gets the name of the nth previously issued register
 #
@@ -149,7 +149,7 @@ sub getName
 # Return Value: per description
 #
 # ============================================================================
-sub getPrevName
+sub getPrevRegName
 {{
    my( $this, $steps )= @_;
 
@@ -161,11 +161,11 @@ sub getPrevName
 	    ": internal error 2014nov24_154228, " . 
 	    "codes=\"" . $this->{'regNum'} . "\", \"$steps\"\n";
    }
-   return "%" . ($this->{'regNum'}- 1- $steps2);
+   return "%" . $this->{'regPrefix'} . ($this->{'regNum'}- 1- $steps2);
 }}
 
 ## ===========================================================================
-## Subroutine getRecentName
+## Subroutine getRecentRegName
 ## ===========================================================================
 # Description: gets the name of a recently issued register
 #
@@ -177,7 +177,7 @@ sub getPrevName
 # Return Value: per description
 #
 # ============================================================================
-sub getRecentName
+sub getRecentRegName
 {{
    my( $this )= @_;
 
@@ -191,7 +191,7 @@ sub getRecentName
       die $main::scriptname . 
 	    ": internal error 2014nov24_210556, code=\"$rr\"\n";
    }
-   return "%" . $rr;
+   return "%" . $this->{'regPrefix'} . $rr;
 }}
 
 #template is 16 lines long
