@@ -4,7 +4,10 @@
 ## Project Name: lli_undef_fix
 ## Module Name: RegContext.pm
 ##
-## Description: information for selecting register names
+## Description: information for selecting and managing register names
+##
+## TODO: do we also need to add code to track what data type each
+## register contains, e.g. i24 vs i48 and such?
 ##
 ## ****************************************************************************
 
