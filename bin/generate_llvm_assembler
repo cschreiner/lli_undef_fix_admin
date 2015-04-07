@@ -109,8 +109,9 @@ use FileHandle;
    # =========================================================================
 
    use Bitwidth;
-   #;;use BasicBlockSeq;
+   use BasicBlockSeq; #;;
    use instruction;
+   use RegContext;
    
 
    # =========================================================================
