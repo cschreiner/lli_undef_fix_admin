@@ -219,11 +219,14 @@ sub instruction::generate_one_inst
 
    my( $pre_def, $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
-      ( $pre_def, $inst )= generate_arith_inst( $regWidth, $opcode );
+      ( $pre_def, $inst )= instruction::generate_arith_inst( 
+	    $regWidth, $opcode );
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'shift' )  {
-      ( $pre_def, $inst )= generate_shift_inst( $regWidth, $opcode );
+      ( $pre_def, $inst )= instruction::generate_shift_inst( 
+	    $regWidth, $opcode );
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'storeload' )  {
-      ( $pre_def, $inst )= generate_storeload_insts( $regWidth, $opcode );
+      ( $pre_def, $inst )= instruction::generate_storeload_insts( 
+	    $regWidth, $opcode );
    } else {
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
@@ -236,7 +239,7 @@ sub instruction::generate_one_inst
 
 ## ===========================================================================
 # Subroutine generate_storeload_insts()
-# ===========================================================================
+# ============================================================================
 # Description: generates a store instruction, immediately followed by a load
 #	instruction.  The idea is to make sure every value gets stored also
 #	gets loaded later in the program.
