@@ -2,16 +2,21 @@
 #
 ## ****************************************************************************
 ## Project Name: lli_undef_fix
-## Module Name: BasicBlock.pm
+## Module Name: BasicBlockSeq.pm
 ##
-## Description: code to generate a basic block
+## Description: code to generate a basic block.
+#	Recall that, in general, a basic block is a sequence of instructions
+#	such that if any of them are executed, all of them are executed.  A
+#	basic block sequence is a sequence of 1+ basic blocks, possibly
+#	interrupted by a control flow statement (e.g. branch, switch, or
+#	similar).
 ##
 ## ****************************************************************************
 
 ## ****************************************************************************
 ## Revision Control Information (customized for RCS)
 ##
-## BasicBlock.pm was written by Christian A. Schreiner at University of Utah.  
+## BasicBlockSeq.pm was written by Christian A. Schreiner at University of Utah.  
 ## Copyright (C) 2015-2015 University of Utah.  All rights reserved. You
 ## may use, examine, or modify this file only in accordance with the Lesser
 ## GNU Public License, or, alternately, by special written arrangement with
@@ -32,7 +37,7 @@ use strict;
 ## ****************************************************************************
 ## package identification
 
-package BasicBlock;
+package BasicBlockSeq;
 
 
 ## ****************************************************************************
@@ -58,7 +63,7 @@ package BasicBlock;
       # ----------------------------------------------------------------------
       # package-specific constants
       use vars qw( $pkgname );
-      $pkgname= "BasicBlock";
+      $pkgname= "BasicBlockSeq";
 
       # ----------------------------------------------------------------------
       # other stuff
@@ -90,7 +95,8 @@ package BasicBlock;
 #
 # Inputs: 
 #   $perl_class: class info (provided by PERL)
-#   $parentBasicBlock: the basic block invoking this one, or 
+#   $parentBasicBlock: the basic block (or basic block sequence) invoking this
+#	one, or 
 #	undef if this is the first basic block of a function.
 # 
 # Outputs: none
