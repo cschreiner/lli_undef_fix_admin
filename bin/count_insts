@@ -1,9 +1,10 @@
 #!/usr/bin/perl
-# counts the number of times an LLVM IR instruction is used in a set of files
+# counts the number of times each LLVM IR instruction is used in a set of files
 
 @terminator_insts=qw (ret );
+# count the 2 forms of `br` separately
 push @terminator_insts, "br\\s+i1.*,.*label";
-push @terminator_insts, "br\\s+label.*,.*label";
+push @terminator_insts, "br\\s+label";
 push @terminator_insts, qw( switch indirectbr invoke resume unreachable );
 @binary_insts=qw(add sub mul udiv sdiv urem srem);
       # excluding floating-point: fadd fsub fmul fdiv frem
