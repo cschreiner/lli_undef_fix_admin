@@ -163,7 +163,7 @@ sub getRegName
 {{
    my( $this )= @_;
 
-   my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'reg_num'};
+   my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
    $this->{'regNum'}++;
    return $ret_val;
 }}
@@ -217,11 +217,11 @@ sub getRecentRegName
    my( $this )= @_;
 
    my( $limit )= 10;
-   my( $max_returnable_reg_num )= $this->{'regNum'}- 3;
-   if ( $max_returnable_reg_num < $limit )  { 
-      $limit= $max_returnable_reg_num; 
+   my( $max_returnable_regNum )= $this->{'regNum'}- 3;
+   if ( $max_returnable_regNum < $limit )  { 
+      $limit= $max_returnable_regNum; 
    };
-   my( $rr )= $max_returnable_reg_num- int( rand()*$limit );
+   my( $rr )= $max_returnable_regNum- int( rand()*$limit );
    if ( $rr < MIN_REG_NUM )  {
       die $main::scriptname . 
 	    ": internal error 2014nov24_210556, code=\"$rr\"\n";
