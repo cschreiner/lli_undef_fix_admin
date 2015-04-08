@@ -193,7 +193,8 @@ package instruction::private;
 # Warnings: 
 #
 # Inputs: 
-#   $regWidth: a regWidth instance with info on the size of integers to use
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
 # 
 # Outputs: 
 #   
@@ -206,7 +207,7 @@ package instruction::private;
 # ============================================================================
 sub instruction::generate_one_inst
 {{
-   my( $regWidth )= @_;
+   my( $basicBlock )= @_;
 
    my( $opcode );
    {
@@ -220,13 +221,13 @@ sub instruction::generate_one_inst
    my( $pre_def, $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
       ( $pre_def, $inst )= instruction::generate_arith_inst( 
-	    $regWidth, $opcode );
+	    $basicBlock, $opcode );
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'shift' )  {
       ( $pre_def, $inst )= instruction::generate_shift_inst( 
-	    $regWidth, $opcode );
+	    $basicBlock, $opcode );
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'storeload' )  {
       ( $pre_def, $inst )= instruction::generate_storeload_insts( 
-	    $regWidth, $opcode );
+	    $basicBlock, $opcode );
    } else {
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
@@ -251,7 +252,8 @@ sub instruction::generate_one_inst
 # Warnings: 
 #
 # Inputs: 
-#   $regWidth: info on integer size to use, per generate_one_inst()
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
 #   $opcode: the opcode to generate
 # 
 # Outputs: none
@@ -264,7 +266,7 @@ sub instruction::generate_one_inst
 # ============================================================================
 sub instruction::generate_storeload_insts
 {{
-   my( $regWidth, $opcode )= @_;
+   my( $basicBlock, $opcode )= @_;
 
    # TODO2: have a package similar to reg_context that generates these names
    # and guarantees that the same name is not used twice.  Maybe make the
@@ -281,8 +283,9 @@ sub instruction::generate_storeload_insts
    my( $src_reg )= reg_context::getPrevName(1);
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   my( $pre_func )= $addr_name . " = global " . $regWidth->getName() . 
-	 " " . $regWidth->getRandVal() . "\n";
+   my( $pre_func )= $addr_name . " = global " . 
+	 $basicBlock->regWidth()->getName() . 
+	 " " . $basicBlock->regWidth()->getRandVal() . "\n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $store_flags )= " ";
@@ -293,9 +296,10 @@ sub instruction::generate_storeload_insts
 
    my( $inst );
    $inst.= "  " . "store " . 
-         $store_flags . $regWidth->getName() . ' ' . $src_reg . ', ' . 
-         $regWidth->getName() . '* ' . $addr_name . "\n";
-   $inst.= "  " . $dest_reg . "= load " . $regWidth->getName() . 
+         $store_flags . $basicBlock->regWidth()->getName() . ' ' . 
+	 $src_reg . ', ' . 
+         $basicBlock->regWidth()->getName() . '* ' . $addr_name . "\n";
+   $inst.= "  " . $dest_reg . "= load " . $basicBlock->regWidth()->getName() . 
 	 "* $addr_name \n";
    # TODO2: consider adding an 'align 4' or similar to the load and 
    # store instructions.
@@ -318,7 +322,8 @@ sub instruction::generate_storeload_insts
 # Warnings: 
 #
 # Inputs: 
-#   $regWidth: info on integer size to use, per generate_one_inst()
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
 #   $opcode: the opcode to generate
 # 
 # Outputs: none
@@ -331,7 +336,7 @@ sub instruction::generate_storeload_insts
 # ============================================================================
 sub instruction::generate_shift_inst
 {{
-   my( $regWidth, $opcode )= @_;
+   my( $basicBlock, $opcode )= @_;
 
    my( $dest_reg )= reg_context::getName();
 
@@ -348,10 +353,10 @@ sub instruction::generate_shift_inst
 
    my( $operand2 );
    # operand is a constant
-   $operand2= $regWidth->getRandShiftVal();
+   $operand2= $basicBlock->regWidth()->getRandShiftVal();
    
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $regWidth->getName() . ' ' .
+	 $flags . $basicBlock->regWidth()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
    return ("", $inst );
@@ -371,7 +376,8 @@ sub instruction::generate_shift_inst
 # Warnings: 
 #
 # Inputs: 
-#   $regWidth: info on integer size to use, per generate_one_inst()
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
 #   $opcode: the opcode to generate
 # 
 # Outputs: none
@@ -384,7 +390,7 @@ sub instruction::generate_shift_inst
 # ============================================================================
 sub instruction::generate_arith_inst
 {{
-   my( $regWidth, $opcode )= @_;
+   my( $basicBlock, $opcode )= @_;
 
    my( $dest_reg )= reg_context::getName();
 
@@ -402,7 +408,7 @@ sub instruction::generate_arith_inst
    my( $operand2 );
    if ( rand() < .5 )  {
       # operand is a constant
-      $operand2= $regWidth->getRandVal();
+      $operand2= $basicBlock->regWidth()->getRandVal();
    } else {
       $operand2= reg_context::getRecentName();
    }
@@ -415,7 +421,7 @@ sub instruction::generate_arith_inst
    }
 
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $regWidth->getName() . ' ' .
+	 $flags . $basicBlock->regWidth()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
    return ("", $inst );
@@ -434,7 +440,8 @@ sub instruction::generate_arith_inst
 # Warnings: 
 #
 # Inputs: 
-#   $regWidth: info on integer size to use, per generate_one_inst()
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
 #   
 # Outputs: none
 #   
@@ -446,11 +453,12 @@ sub instruction::generate_arith_inst
 # ============================================================================
 sub instruction::generate_const_inst
 {{
-   my( $regWidth )= @_;
+   my( $basicBlock )= @_;
 
    my( $inst )= "  " . 
-	 reg_context::getName(). "= add ". $regWidth->getName(). ' ' . 
-         $regWidth->getRandVal() . ", 0 \n";
+	 reg_context::getName(). "= add ". $basicBlock->regWidth()->getName(). 
+	 ' ' . 
+         $basicBlock->regWidth()->getRandVal() . ", 0 \n";
    return ("", $inst );
 }}
 
