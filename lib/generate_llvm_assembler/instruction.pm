@@ -410,7 +410,7 @@ sub instruction::generate_arith_inst
       # operand is a constant
       $operand2= $basicBlock->regWidth()->getRandVal();
    } else {
-      $operand2= basicBlock->getRecentRegName()();
+      $operand2= $basicBlock->getRecentRegName();
    }
    
    # maybe swap operands

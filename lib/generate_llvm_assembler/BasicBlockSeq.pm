@@ -247,7 +247,7 @@ sub generate
 
    if ( $this->{'opt_hashref'}->{'startPoison'} )  {
      $instructions.= "  " . reg_context::getName() . 
-	   "= sub nuw " . $regWidth->getName() . " 0, 1 ; generates POISON \n";
+	   "= sub nuw " . $this->regWidth()->getName() . " 0, 1 ; generates POISON \n";
      # TODO2: replace the above operands with random numbers
    }
 

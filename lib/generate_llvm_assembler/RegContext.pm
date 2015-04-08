@@ -138,7 +138,7 @@ sub new
 # ============================================================================
 sub initRegContext
 {{
-   my( $this )= @_;
+   my( $this, $prefix )= @_;
    $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
    return $main::TRUE;
