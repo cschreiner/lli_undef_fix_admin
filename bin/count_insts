@@ -1,0 +1,31 @@
+#!/bin/sh
+
+terminator_insts="ret br switch indirectbr invoke resume unreachable"
+binary_insts="add sub mul udiv sdiv urem srem"
+      # excluding floating-point: fadd fsub fmul fdiv frem
+bitwise_insts="shl lshr ashr and or xor"
+vector_insts="extractelement insertelement shufflevector"
+aggregate_insts="extractvalue insertvalue"
+mem_insts="alloca load store fence cmpxchg atomicrmw getelementptr"
+conversion_insts="trunc zext sext ptrtoint inttoptr bitcast addrspacecast"
+      # excluding floating point: fptrunc fpext fptoui fptosi uitofp sitofp
+other_insts="icmp phi select call va_arg landingpad"
+      # excluding floating point: fcmp
+bit_manip_insts="llvm.bswap llvm.ctpop llvm.ctlz llvm.cttz"
+arith_w_oflow_insts_1="llvm.sadd.with.overflow llvm.uadd.with.overflow" 
+arith_w_oflow_insts_2="llvm.ssub.with.overflow llvm.usub.with.overflow"
+arith_w_oflow_insts_3="llvm.smul.with.overflow llvm.umul.with.overflow"
+
+all_insts="$terminator_insts $binary_insts $bitwise_insts $vector_insts $aggregate_insts"
+all_insts="$all_insts $mem_insts $conversion_insts $other_insts"
+all_insts="$all_insts $bit_manip_insts $arith_w_oflow_insts_1"
+all_insts="$all_insts $arith_w_oflow_insts_2 $arith_w_oflow_insts_3" 
+
+for inst in $all_insts; do
+   cmd="grep -E \"\\\b$inst\\\b\"" 
+   echo cmd=\<$cmd\>
+   count=`$cmd "$@" | grep -c ^`
+   echo ${inst} $count
+done
+
+
