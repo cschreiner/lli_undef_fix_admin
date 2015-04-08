@@ -35,9 +35,6 @@ our( @file_group_list );
          $stop= scalar(@ARGV)- 1;
       }
       print "building file group starting at file $ii, stopping at $stop \n";;
-      for ( my $kk= $ii; $kk <= $stop; $kk++ )  {;;
-	 print "   filename $kk has " . length($ARGV[$kk]) . " characters \n";; 
-      }
       my $group=join( " ", @ARGV[$ii .. $stop] );
       push @file_group_list, $group;
       print "   group has " . length($group) . " characters \n";; 
@@ -70,7 +67,7 @@ foreach my $file_group ( @file_group_list )  {
 }
 
 foreach my $inst ( @all_insts )  {
-   print "$count $inst \n";
+   print $count_hash{$inst} . " " . $inst . "\n";
 }
 
 
