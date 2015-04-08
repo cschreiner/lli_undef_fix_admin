@@ -268,7 +268,7 @@ sub instruction::generate_storeload_insts
 {{
    my( $basicBlock, $opcode )= @_;
 
-   # TODO2: have a package similar to reg_context that generates these names
+   # TODO2: have a package similar to RegContext that generates these names
    # and guarantees that the same name is not used twice.  Maybe make the
    # names have form consonant-vowel-consonant_consonant-vowel-consonant to
    # make them pronouncible.
@@ -279,8 +279,8 @@ sub instruction::generate_storeload_insts
       $addr_name.= chr( ord('a')+ int(26*rand()) );
    }
 
-   my( $dest_reg )= reg_context::getName();
-   my( $src_reg )= reg_context::getPrevName(1);
+   my( $dest_reg )= $basicBlock->getRegName();
+   my( $src_reg )= $basicBlock->getPrevRegName(1);
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $pre_func )= $addr_name . " = global " . 
@@ -338,7 +338,7 @@ sub instruction::generate_shift_inst
 {{
    my( $basicBlock, $opcode )= @_;
 
-   my( $dest_reg )= reg_context::getName();
+   my( $dest_reg )= $basicBlock->getRegName();
 
    my( $flags )= "";
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
@@ -349,7 +349,7 @@ sub instruction::generate_shift_inst
       }
    } 
 
-   my( $operand1 )= reg_context::getPrevName(1);
+   my( $operand1 )= $basicBlock->getPrevRegName(1);
 
    my( $operand2 );
    # operand is a constant
@@ -392,7 +392,7 @@ sub instruction::generate_arith_inst
 {{
    my( $basicBlock, $opcode )= @_;
 
-   my( $dest_reg )= reg_context::getName();
+   my( $dest_reg )= $basicBlock->getRegName();
 
    my( $flags )= "";
    my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
@@ -403,14 +403,14 @@ sub instruction::generate_arith_inst
       }
    } 
 
-   my( $operand1 )= reg_context::getPrevName(1);
+   my( $operand1 )= $basicBlock->getPrevRegName(1);
 
    my( $operand2 );
    if ( rand() < .5 )  {
       # operand is a constant
       $operand2= $basicBlock->regWidth()->getRandVal();
    } else {
-      $operand2= reg_context::getRecentName();
+      $operand2= basicBlock->getRecentRegName()();
    }
    
    # maybe swap operands
@@ -456,8 +456,8 @@ sub instruction::generate_const_inst
    my( $basicBlock )= @_;
 
    my( $inst )= "  " . 
-	 reg_context::getName(). "= add ". $basicBlock->regWidth()->getName(). 
-	 ' ' . 
+	 $basicBlock->getRegName(). "= add ". 
+	 $basicBlock->regWidth()->getName(). ' ' . 
          $basicBlock->regWidth()->getRandVal() . ", 0 \n";
    return ("", $inst );
 }}
