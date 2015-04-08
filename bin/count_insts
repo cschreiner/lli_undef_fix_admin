@@ -29,7 +29,8 @@ foreach my $inst ( @all_insts )  {
 our( @file_group_list );
 {
    use constant FILES_PER_CHUNK => 100;
-   for ( my $ii= $[; ii < scalar(@ARGV); $ii+= FILES_PER_CHUNK )  {
+   for ( my $ii= $[; $ii < scalar(@ARGV); $ii+= FILES_PER_CHUNK )  {
+      print "building file group starting at file $ii \n";;
       my $stop= $ii+ FILES_PER_CHUNK- 1;
       if ( $stop > scalar(@ARGV) )  {
          $stop= scalar(@ARGV);
@@ -45,13 +46,18 @@ foreach my $file_group ( @file_group_list )  {
    print "processing file group $ii \n";
    foreach my $inst ( @all_insts )  {
 
-      my $cmd="grep -E \"\\b$inst\\b\"";
+      my $cmd_core="grep -E \"\\b$inst\\b\"";
       if ( 0 )  {
-	 print "cmd=<$cmd>\n";
+	 print "cmd_core=<$cmd>\n";
       }
       
-      $count=`$cmd $file_group | grep -c ^`;
+      my $cmd= "$cmd $file_group | grep -c ^";
+      $count=`$cmd`; 
       chomp $count;
+      if ( 1 ) { ;;
+         print "cmd=<$cmd>\n";
+         print "count=\"$count\" \n";
+      }
       $count_hash{$inst}+= $count;
    }
    $ii++;
