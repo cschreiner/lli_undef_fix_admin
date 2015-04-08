@@ -35,7 +35,9 @@ our( @file_group_list );
       if ( $stop > scalar(@ARGV) )  {
          $stop= scalar(@ARGV);
       }
-      push @file_group_list, join( " ", $ARGV[$ii..$stop] );
+      my $group=join( " ", $ARGV[$ii..$stop] );
+      push @file_group_list, $group;
+      print "group has " . length($group) . " characters \n";; 
    }
 }
 print "created " . scalar(@file_group_list) . " file groups \n";
@@ -51,7 +53,8 @@ foreach my $file_group ( @file_group_list )  {
 	 print "cmd_core=<$cmd>\n";
       }
       
-      my $cmd= "$cmd $file_group | grep -c ^";
+      my $cmd= "$cmd_core $file_group | grep -c ^";
+  
       $count=`$cmd`; 
       chomp $count;
       if ( 1 ) { ;;
