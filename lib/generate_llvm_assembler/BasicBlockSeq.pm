@@ -38,6 +38,7 @@ use strict;
 ## package identification
 
 package BasicBlockSeq;
+use parent qw ( RegContext );
 
 
 ## ****************************************************************************
@@ -120,16 +121,18 @@ sub new
       $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
       $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
       $this->{'beginRegWidth'}= $parentBasicBlock->{'currentRegWidth'};
-      $this->{'reg_prefix'}= $parentBasicBlock->{'reg_prefix'} . 
+      $this->{'regPrefix'}= $parentBasicBlock->{'regPrefix'} . 
 	    $parentBasicBlock->{'subBlock'};
-      $this->{'label_prefix'}= $parentBasicBlock->{'label_prefix'} . 
+      $this->{'labelPrefix'}= $parentBasicBlock->{'labelPrefix'} . 
 	    $parentBasicBlock->{'subBlock'};
    } else {
       $this->{'numSteps'}= $main::arg_num_steps;
       $this->{'indent'}= "  ";
       $this->{'beginRegWidth'}= new Bitwidth( $main::arg_bitwidth );
-      $this->{'reg_prefix'}= "r_";
-      $this->{'label_prefix'}= "l_";
+      $this->{'regPrefix'}= ""; 
+	    # LLVM IR rules require the first register to be named %1,
+	    # with no prefix.
+      $this->{'labelPrefix'}= "l_";
    }
    $this->{'parentBasicBlock'}= $parentBasicBlock;
    $this->{'subBlockNum'}= 0;
@@ -149,6 +152,9 @@ sub new
 	 $this->{'opt_hashref'}->{$opt}= undef;
       }
    }
+
+   # initialize superclass with stuff derived from the above
+   $this->initRegContext( $this->{'regPrefix'} );
 
    # clean up and return
    return $this;
@@ -259,6 +265,37 @@ sub generate
    # clean up and return
    return ( $definitions, $instructions );
 }}
+
+## ===========================================================================
+## short getter routines
+## ===========================================================================
+# Description: return the corresponding field
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance whose field will be returned
+# 
+# Return Value: the field value
+#   
+# ============================================================================
+# template is 5 lines long
+#sub name
+#{{
+#   my( $this )= @_;
+#   return $this->{'xx'};
+#}}
+
+sub regWidth
+{{
+   my( $this )= @_;
+   return $this->{'currentRegWidth'};
+}}
+
 
 
 
