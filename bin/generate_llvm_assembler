@@ -232,8 +232,6 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   set up for this run
 
-our( $regWidth )= new Bitwidth( $arg_bitwidth );
-
 
 ## ===========================================================================
 ##   generate instructions
@@ -275,7 +273,8 @@ $out_fh->print( "\n" );
 # ----------------------------------------------------------------------------
 # write out the main function
 
-$out_fh->print( "define " . $regWidth->getName() . ' @main()' . " { ; \n" );
+$out_fh->print( "define " . $basicBlock->regWidth()->getName() . ' @main()' . 
+      " { ; \n" );
 $out_fh->print( "  ; \%convert [? x i8]* to i8* \n" );
 $out_fh->print( "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
     "i64 0, i64 0\n" );
@@ -290,11 +289,12 @@ $out_fh->print( $instructions );
 
 $out_fh->print( "\n" );
 $out_fh->print( "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, " .
-      $regWidth->getName() . ' ' . $basicBlock->getPrevRegName() . ")\n" );
+      $basicBlock->regWidth()->getName() . ' ' . 
+      $basicBlock->getPrevRegName() . ")\n" );
 
 $out_fh->print( "\n" );
 $out_fh->print( "  ; clean up and return \n" );
-$out_fh->print( "  ret " . $regWidth->getName() . " 0 \n" );
+$out_fh->print( "  ret " . $basicBlock->regWidth()->getName() . " 0 \n" );
 $out_fh->print( "} \n" );
 
 ## ===========================================================================
