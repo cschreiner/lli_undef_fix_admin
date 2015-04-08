@@ -16,18 +16,20 @@
       llvm.ssub.with.overflow llvm.usub.with.overflow
       llvm.smul.with.overflow llvm.umul.with.overflow );
 
-@all_insts=(@terminator_insts @binary_insts @bitwise_insts @vector_insts 
-      @aggregate_insts @mem_insts @conversion_insts @other_insts
-      @bit_manip_insts @arith_w_oflow_insts_1 @arith_w_oflow_insts_2
-      @arith_w_oflow_insts_3 );
+@all_insts= ( @terminator_insts, @binary_insts, @bitwise_insts, @vector_insts, 
+      @aggregate_insts, @mem_insts, @conversion_insts, @other_insts,
+      @bit_manip_insts, @arith_w_oflow_insts, );
 
-args= join( " ", @ARGV );
+$args= join( " ", @ARGV );
 foreach my $inst ( @all_insts )  {
 
-   my $cmd="grep -E \"\\b$inst\\b\"" 
-   print "cmd=<$cmd>\n";
+   my $cmd="grep -E \"\\b$inst\\b\"";
+   if ( 0 )  {
+      print "cmd=<$cmd>\n";
+   }
    
-   count=`$cmd $args | grep -c ^`
-   print "$inst $count \n";
+   $count=`$cmd $args | grep -c ^`;
+   chomp $count;
+   print "$count $inst \n";
 }
 
