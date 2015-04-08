@@ -109,9 +109,41 @@ sub new
    my $this= {};
    bless $this, $perl_class;
 
+   $this->init( $prefix );
+}}
+
+## ===========================================================================
+## Subroutine initRegContext()
+## ===========================================================================
+# Description: initializes just as "new()" does, but acts on an
+#	existing instance instead of creating a new one.
+#
+# Method: 
+#
+# Notes: 
+#   * this is called "initRegContext()" instead of "init()" to
+#	avoid confusion with other classes' initialization methods.
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to act on
+#   $prefix: prefix all variables with this string.  Should not include the 
+#	sigil (%).  May be undefined if no prefix exists.
+# 
+# Outputs: none
+#   
+# Return Value: TRUE
+#   
+# ============================================================================
+sub initRegContext
+{{
+   my( $this )= @_;
    $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
+   return $main::TRUE;
 }}
+
 
 
 ## ===========================================================================
