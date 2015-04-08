@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# counts the number of times an LLVM IR instruction is used in a set of files
 
 @terminator_insts=qw (ret br switch indirectbr invoke resume unreachable);
 @binary_insts=qw(add sub mul udiv sdiv urem srem);
@@ -20,16 +21,28 @@
       @aggregate_insts, @mem_insts, @conversion_insts, @other_insts,
       @bit_manip_insts, @arith_w_oflow_insts, );
 
-$args= join( " ", @ARGV );
+our( %count_hash );
 foreach my $inst ( @all_insts )  {
+   $count_hash{$inst}= 0;
+}
 
-   my $cmd="grep -E \"\\b$inst\\b\"";
-   if ( 0 )  {
-      print "cmd=<$cmd>\n";
+our( @arg_files )= @ARGV;
+foreach my $file ( @arg_files )  {
+   foreach my $inst ( @all_insts )  {
+
+      my $cmd="grep -E \"\\b$inst\\b\"";
+      if ( 0 )  {
+	 print "cmd=<$cmd>\n";
+      }
+      
+      $count=`$cmd $args | grep -c ^`;
+      chomp $count;
+      $count_hash{$inst}+= $count;
    }
-   
-   $count=`$cmd $args | grep -c ^`;
-   chomp $count;
+}
+
+foreach my $inst ( @all_insts )  {
    print "$count $inst \n";
 }
+
 
