@@ -240,12 +240,10 @@ our( $regWidth )= new Bitwidth( $arg_bitwidth );
 
 our ( $definitions, $instructions );
 
-{
-   my( $block )= new BasicBlockSeq( undef, 
-	 { 'startPoison'=> $arg_start_poison } );
+our( $basicBlock )= new BasicBlockSeq( undef, 
+      { 'startPoison'=> $arg_start_poison } );
 
-   ($definitions, $instructions )= $block->generate();
-}
+($definitions, $instructions )= $basicBlock->generate();
 
 ## ===========================================================================
 ##   set up output file
@@ -292,7 +290,7 @@ $out_fh->print( $instructions );
 
 $out_fh->print( "\n" );
 $out_fh->print( "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, " .
-      $regWidth->getName() . ' ' . reg_context::getPrevName() . ")\n" );
+      $regWidth->getName() . ' ' . $basicBlock->getPrevRegName() . ")\n" );
 
 $out_fh->print( "\n" );
 $out_fh->print( "  ; clean up and return \n" );
