@@ -241,25 +241,10 @@ our( $regWidth )= new Bitwidth( $arg_bitwidth );
 our ( $definitions, $instructions );
 
 {
-   my( $def, $inst );
+   my( $block )= new BasicBlockSeq( undef, 
+	 { 'startPoison'=> $arg_start_poison } );
 
-   for ( my $ii= 0; $ii < 2; $ii++ )  {
-      ( $def, $inst )= instruction::generate_const_inst( $regWidth );
-      $definitions.= $def;
-      $instructions.= $inst;
-   }
-
-  if ( $arg_start_poison )  {
-     $instructions.= "  " . reg_context::getName() . 
-	   "= sub nuw " . $regWidth->getName() . " 0, 1 ; generates POISON \n";
-     # TODO2: replace the above operands with random numbers
-  }
-
-  for ( my $step_num= 0; $step_num < $arg_num_steps; $step_num++ )  {
-     my( $def, $inst )= instruction::generate_one_inst( $regWidth );
-     $definitions.= $def;
-     $instructions.= $inst;
-  }
+   ($definitions, $instructions )= $block->generate();
 }
 
 ## ===========================================================================
