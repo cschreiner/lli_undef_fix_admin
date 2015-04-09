@@ -34,6 +34,9 @@
 ## compiler directives (use's)
 use strict;
 
+use TypeInteger;
+use instruction;
+
 ## ****************************************************************************
 ## package identification
 
