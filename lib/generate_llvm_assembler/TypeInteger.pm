@@ -195,23 +195,38 @@ sub getRandShiftVal
    return $val;
 }}
 
-#template is 16 lines long
 ## ===========================================================================
-## Subroutine sub_name
+## Subroutine compareTo()
 ## ===========================================================================
-# Description:
+# Description: compares this instance to another one
 #
-# Inputs:
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the primary instance to act on (provided by PERL)
+#   $that: the other instance to compare
 # 
-# Outputs:
-#
-# Return Value:
+# Outputs: 
+#   
+# Return Value: 
+#   -1 if this < that
+#   0 if this == that
+#   1 if this > that
 #
 # ============================================================================
-#sub sub_name
-#{{
-#   my( )= @_;
-#}}
+sub compareTo
+{{
+   my( $this, $that )= @_;
+
+   # if we add non-integer types in the future, add something somewhere to
+   # insure both instances being compared are integers.
+
+   return $this->getBitwidth() <=> $that->getBitwidth();
+}}
 
 ## ===========================================================================
 ## Short get subroutines
