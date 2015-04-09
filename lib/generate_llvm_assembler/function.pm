@@ -113,9 +113,9 @@ package function::private;
 # Warnings: 
 #
 # Inputs: 
-#   ret_type: the function's return type (expressed as a Bitwidth instance)
+#   ret_type: the function's return type (expressed as a TypeInteger instance)
 #   name: the function's name (expressed as a string)
-#   arg_listref: a reference to a list of Bitwidth instances giving the 
+#   arg_listref: a reference to a list of TypeInteger instances giving the 
 #	function's argument types
 
 #   opt_hashref: a reference to a hash giving various options.  Valid options 
