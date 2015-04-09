@@ -32,6 +32,8 @@
 ## compiler directives (use's)
 use strict;
 
+use cas_listutil;
+
 ## ****************************************************************************
 ## package identification
 
@@ -259,9 +261,16 @@ sub getRecentRegName
 
    # choose one at random and return
    my $numRegs= scalar( @regList );
+   if ( $numRegs < 1 )  {
+      # There should be at least _some_ registers, because we forcibly create
+      # 2 registers if there aren't any arguments.
+      die $main::scriptname . ": internal error 2015apr09_135003. \n";
+   }
    my $retVal= $regList[ int(rand()*$numRegs) ]; 
    if ( $retVal =~ m/^\s*$/ )  {
       # why is the register name a null string?
+      print "reg list= < " . cas_listutil::quote2( \@regList ) . "> \n";;
+      print "   num regs= $numRegs. \n";;
       die $main::scriptname . ": internal error 2015apr09_133530. \n";
    }
    return $retVal;
