@@ -166,14 +166,17 @@ sub getRegName
 {{
    my( $this )= @_;
 
-   my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
+   my( $retVal )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
    $this->{'regNum'}++;
-   $this->{'regTypeHashref'}->{$ret_val}= undef;
+
+   # note that the register exists, but we don't know its type yet.
+   $this->{'regTypeHashref'}->{$retVal}= undef;
+
    if ( $retVal =~ m/^\s*$/ )  {
       # why is the register name a null string?
       die $main::scriptname . ": internal error 2015apr09_139631. \n";
    }
-   return $ret_val;
+   return $retVal;
 }}
 
 ## ===========================================================================
