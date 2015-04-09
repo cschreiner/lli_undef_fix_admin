@@ -180,7 +180,7 @@ sub function::generate
       my $argName= "%arg$ii";
       $instructions.= $$arg_listref[$ii] . " " . $argName;
       $basicBlock->registerArg( $argName, $$arg_listref[$ii] );
-      if ( $ii < $#arg_listref )  {
+      if ( $ii < $#$arg_listref )  {
 	 $instructions.= ", ";
       }
    }
