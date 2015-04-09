@@ -345,7 +345,7 @@ sub generate
 #   return $this->{'xx'};
 #}}
 
-sub regWidth
+sub currentType
 {{
    my( $this )= @_;
    return $this->{'currentType'};
