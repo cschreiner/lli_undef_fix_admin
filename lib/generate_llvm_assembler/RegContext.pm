@@ -141,9 +141,9 @@ sub initRegContext
    my( $this, $prefix )= @_;
    $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
+   $this->{'regTypeHashref'}= {}; # keys= reg names, values=TypeInteger instance
    return $main::TRUE;
 }}
-
 
 
 ## ===========================================================================
@@ -165,6 +165,7 @@ sub getRegName
 
    my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
    $this->{'regNum'}++;
+   $this->{'regTypeHashref'}->{$ret_val}= undef;
    return $ret_val;
 }}
 
@@ -202,7 +203,8 @@ sub getPrevRegName
 ## ===========================================================================
 ## Subroutine getRecentRegName
 ## ===========================================================================
-# Description: gets the name of a recently issued register
+# Description: gets the name of a recently issued register or argument.  The 
+#	register/argument's type is guaranteed to be known.
 #
 # Inputs: 
 #   $this: the instance to work on (provided by PERL)
@@ -216,17 +218,111 @@ sub getRecentRegName
 {{
    my( $this )= @_;
 
-   my( $limit )= 10;
-   my( $max_returnable_regNum )= $this->{'regNum'}- 3;
-   if ( $max_returnable_regNum < $limit )  { 
-      $limit= $max_returnable_regNum; 
-   };
-   my( $rr )= $max_returnable_regNum- int( rand()*$limit );
-   if ( $rr < MIN_REG_NUM )  {
+   if ( $main::FALSE )  {
+      # An old way of implementing this function that might still be useful.
+      my( $limit )= 10;
+      my( $max_returnable_regNum )= $this->{'regNum'}- 3;
+      if ( $max_returnable_regNum < $limit )  { 
+	 $limit= $max_returnable_regNum; 
+      };
+      my( $rr )= $max_returnable_regNum- int( rand()*$limit );
+      if ( $rr < MIN_REG_NUM )  {
       die $main::scriptname . 
-	    ": internal error 2014nov24_210556, code=\"$rr\"\n";
+	       ": internal error 2014nov24_210556, code=\"$rr\"\n";
+      }
+      return "%" . $this->{'regPrefix'} . $rr;
    }
-   return "%" . $this->{'regPrefix'} . $rr;
+
+   # find all of the registers/arguments with known types
+   my @regList= keys( %{$this->{'regTypeHashref'}} );
+   my @regList;
+   foreach my $reg ( keys( %{$this->{'regTypeHashref'}} ) )  {
+      if ( defined($this->{'regTypeHashref'}->{$reg} ) )  {
+	 push @regList, $reg;
+      }
+   }
+
+   # choose one at random and return
+   my $numRegs= scalar( @regList );
+   my $retVal= $regList[ int(rand()*$numRegs) ]; 
+   return $retVal;
+}}
+
+## ===========================================================================
+## Subroutine registerArg()
+## ===========================================================================
+
+# Description: registers a function argument and its type, so future
+#	instructions can use it.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work on
+#   $name: name of the argument, which must not already be registered
+#   $type: type of the argument (formatted as an TypeInteger instance)
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub registerArg
+{{
+   my( $this, $name, $type )= @_;
+
+   if ( exists( $this->{'regTypeHashref'}->{$name} ) )  {
+      # the argument was already registered
+      die $main::scriptname . 
+	    ": internal error 2015apr09_111444, code=\"$name\". \n";
+   }
+   $this->{'regTypeHashref'}->{$name}= $type;
+   return $main::PERL_SUCCESS;
+}}
+
+## ===========================================================================
+## Subroutine reportType()
+## ===========================================================================
+# Description: reports the type of a register, so it can be used by future 
+#	instructions
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work on
+#   $name: name of the register, which must already have been created via 
+#	getName(), and not have a type reported.
+#   $type: type of the register (formatted as an TypeInteger instance)
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub reportType
+{{
+   my( $this, $name, $type )= @_;
+
+   if ( !exists( $this->{'regTypeHashref'}->{$name} ) )  {
+      # the register hasn't been created yet 
+      die $main::scriptname . 
+	    ": internal error 2015apr09_112208, code=\"$name\". \n";
+   }
+   if ( defined( $this->{'regTypeHashref'}->{$name} ) )  {
+      # the register already had its type reported 
+      die $main::scriptname . 
+	    ": internal error 2015apr09_112337, code=\"$name\". \n";
+   }
+   $this->{'regTypeHashref'}->{$name}= $type;
+   return $main::PERL_SUCCESS;
 }}
 
 #template is 16 lines long
