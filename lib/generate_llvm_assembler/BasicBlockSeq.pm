@@ -40,7 +40,6 @@ use strict;
 package BasicBlockSeq;
 use parent qw ( RegContext );
 
-
 ## ****************************************************************************
 ## public package BEGIN and END functions
 
@@ -103,6 +102,16 @@ use parent qw ( RegContext );
 #	present, but may be empty.  Valid options are:
 #	startPoison (boolean): true if the block should set a variable to a 
 #		poison value early in the block.
+#       numSteps (unsigned): the number of steps (instructions) the block 
+#		should contain.  The actual number may be slightly higher 
+#		in order to do data conversions and other semantic 
+#		housekeeping.
+#	startBitwidth (Bitwidth instance): initial integer type for the 
+#		block.  This is required if the block has no parent.  If the
+#		block has a parent, this defaults to the current Bitwidth of
+#		the parent.
+#	stopBitwidth (Bitwidth instance): final integer type for the block. 
+#		If omitted, defaults to startBitwidth.
 # 
 # Outputs: none
 #   
@@ -116,6 +125,26 @@ sub new
    my $this= {};
    bless $this, $perl_class;
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # copy over the options, element by element
+
+   # set the default values
+   $this->{'opt_hashref'}= {
+			    'startPoison' => $main::FALSE,
+			    'numSteps' => 10,
+			    'startBitwidth' => undef,
+			    'stopBitwidth' => undef, 
+			   };
+
+   # replace defaults with 
+   foreach my $opt ( keys( %{$this->{'opt_hashref'}} ) )  {
+      if ( exists($$opt_hashref{$opt}) )  {
+	 $this->{'opt_hashref'}->{$opt}= $opt_hashref->{$opt}; 
+      }
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # main initialization 
    if ( defined($parentBasicBlock) )  {
       $parentBasicBlock->incrementSubBlock();
       $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
@@ -144,18 +173,11 @@ sub new
    }
    $this->{'remainingSteps'}= $this->{'numSteps'};
    
-   # copy over the options, element by element
-   foreach my $opt ( qw( startPoison restoreBitwidth ) )  {
-      if ( exists($$opt_hashref{$opt}) )  {
-	 $this->{'opt_hashref'}->{$opt}= $opt_hashref->{$opt}; 
-      } else {
-	 $this->{'opt_hashref'}->{$opt}= undef;
-      }
-   }
-
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # initialize superclass with stuff derived from the above
    $this->initRegContext( $this->{'regPrefix'} );
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
    return $this;
 }}

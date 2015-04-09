@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: function.pm
 ##
-## Description: 
+## Description: code to generate functions
 ##
 ## ****************************************************************************
 
@@ -101,11 +101,72 @@ package function::private;
 ## ****************************************************************************
 ## start the package
 
+## ===========================================================================
+## Subroutine generate()
+## ===========================================================================
+# Description: generates a generic function.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   ret_type: the function's return type (expressed as a Bitwidth instance)
+#   name: the function's name (expressed as a string)
+#   arg_listref: a reference to a list of Bitwidth instances giving the 
+#	function's argument types
+
+#   opt_hashref: a reference to a hash giving various options.  Valid options 
+#	are:
+#	num_steps (unsigned): the number of steps (instructions) the function
+#		should have
+#	print_ret_val (boolean): add code to print the return value
+#	start_poison (boolean): the function should generate a poison value
+#		as one of its first instructions
+# 
+# Outputs: none
+#   
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the new function generated
+#   
+# ============================================================================
+sub generate
+{{
+   my( $ret_type, $name, $arg_listref, $opt_hashref )= @_;
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set default values for options as needed
+   if ( !exists($$opt_hashref{'num_steps'}) )  {
+      $$opt_hashref{'num_steps'}= 10;
+   }
+   if ( !exists($$opt_hashref{'print_ret_val'}) )  {
+      $$opt_hashref{'print_ret_val'}= $main::FALSE;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set default values for options as needed
+   my ( $definitions, $instructions );
+
+   my( $basicBlock )= new BasicBlockSeq( undef, 
+	 { 'startPoison'=> $$opt_hashref->{'start_poison'},
+	    'num_steps' => $$opt_hashref->{'num_steps'},
+	 } );
+
+   ($definitions, $instructions )= $basicBlock->generate();
+
+
+   
+}}
+
 
 ## ===========================================================================
-## Subroutine name()
+## Subroutine generate_main()
 ## ===========================================================================
-# Description: 
+# Description: generates a main function
 #
 # Method: 
 #
@@ -123,10 +184,10 @@ package function::private;
 #   
 #
 # ============================================================================
-#sub name
-#{{
-#   my( )= @_;
-#}}
+sub generate_main
+{{
+   my( )= @_;
+}}
 
 
 #template is 25 lines long
