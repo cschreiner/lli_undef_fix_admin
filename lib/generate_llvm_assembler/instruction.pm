@@ -284,8 +284,8 @@ sub instruction::generate_storeload_insts
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $pre_func )= $addr_name . " = global " . 
-	 $basicBlock->regWidth()->getName() . 
-	 " " . $basicBlock->regWidth()->getRandVal() . "\n";
+	 $basicBlock->currentType()->getName() . 
+	 " " . $basicBlock->currentType()->getRandVal() . "\n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $store_flags )= " ";
@@ -296,10 +296,11 @@ sub instruction::generate_storeload_insts
 
    my( $inst );
    $inst.= "  " . "store " . 
-         $store_flags . $basicBlock->regWidth()->getName() . ' ' . 
+         $store_flags . $basicBlock->currentType()->getName() . ' ' . 
 	 $src_reg . ', ' . 
-         $basicBlock->regWidth()->getName() . '* ' . $addr_name . "\n";
-   $inst.= "  " . $dest_reg . "= load " . $basicBlock->regWidth()->getName() . 
+         $basicBlock->currentType()->getName() . '* ' . $addr_name . "\n";
+   $inst.= "  " . $dest_reg . "= load " . 
+	 $basicBlock->currentType()->getName() . 
 	 "* $addr_name \n";
    # TODO2: consider adding an 'align 4' or similar to the load and 
    # store instructions.
@@ -353,10 +354,10 @@ sub instruction::generate_shift_inst
 
    my( $operand2 );
    # operand is a constant
-   $operand2= $basicBlock->regWidth()->getRandShiftVal();
+   $operand2= $basicBlock->currentType()->getRandShiftVal();
    
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $basicBlock->regWidth()->getName() . ' ' .
+	 $flags . $basicBlock->currentType()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
    return ("", $inst );
@@ -408,7 +409,7 @@ sub instruction::generate_arith_inst
    my( $operand2 );
    if ( rand() < .5 )  {
       # operand is a constant
-      $operand2= $basicBlock->regWidth()->getRandVal();
+      $operand2= $basicBlock->currentType()->getRandVal();
    } else {
       $operand2= $basicBlock->getRecentRegName();
    }
@@ -421,7 +422,7 @@ sub instruction::generate_arith_inst
    }
 
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $basicBlock->regWidth()->getName() . ' ' .
+	 $flags . $basicBlock->currentType()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
    return ("", $inst );
@@ -457,8 +458,8 @@ sub instruction::generate_const_inst
 
    my( $inst )= "  " . 
 	 $basicBlock->getRegName(). "= add ". 
-	 $basicBlock->regWidth()->getName(). ' ' . 
-         $basicBlock->regWidth()->getRandVal() . ", 0 \n";
+	 $basicBlock->currentType()->getName(). ' ' . 
+         $basicBlock->currentType()->getRandVal() . ", 0 \n";
    return ("", $inst );
 }}
 
