@@ -348,6 +348,24 @@ sub generate
 #   return $this->{'xx'};
 #}}
 
+sub indent
+{{
+   my( $this )= @_;
+   return $this->{'indent'};
+}}
+
+sub getStartPoison
+{{
+   my( $this )= @_;
+   return $this->{'optHashref'}->{'startPoison'};
+}}
+
+sub numRemainingSteps
+{{
+   my( $this )= @_;
+   return $this->{'remainingSteps'};
+}}
+
 sub currentType
 {{
    my( $this )= @_;
