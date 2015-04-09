@@ -305,6 +305,7 @@ sub instruction::generate_storeload_insts
    # TODO2: consider adding an 'align 4' or similar to the load and 
    # store instructions.
 
+   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    return ( $pre_func, $inst );
 }}
 
@@ -360,6 +361,7 @@ sub instruction::generate_shift_inst
 	 $flags . $basicBlock->currentType()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
+   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    return ("", $inst );
 }}
 
@@ -425,6 +427,7 @@ sub instruction::generate_arith_inst
 	 $flags . $basicBlock->currentType()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
+   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    return ("", $inst );
 }}
 
@@ -456,10 +459,12 @@ sub instruction::generate_const_inst
 {{
    my( $basicBlock )= @_;
 
-   my( $inst )= "  " . 
-	 $basicBlock->getRegName(). "= add ". 
+   my $regName= $basicBlock->getRegName();
+   my $inst= "  " . 
+	 $regName. "= add ". 
 	 $basicBlock->currentType()->getName(). ' ' . 
          $basicBlock->currentType()->getRandVal() . ", 0 \n";
+   $basicBlock->reportType( $regName, $basicBlock->currentType() );
    return ("", $inst );
 }}
 
