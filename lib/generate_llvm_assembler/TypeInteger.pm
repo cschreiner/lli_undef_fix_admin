@@ -85,7 +85,7 @@ package TypeInteger;
 #
 # Inputs:
 #   $class: information about the class (provided by perl)
-#   $target_width: an integer indicating the preferred with to work with.
+#   $target_width: an integer indicating the preferred width to work with.
 #	If undefined, a random value will be chosen.
 # 
 # Outputs: none
