@@ -173,8 +173,19 @@ sub function::generate
    # generate function heading
    my ( $definitions, $instructions );
 
-   $instructions.= "define " . $basicBlock->currentType()->getName() . 
-	 ' @main()' . " { ; \n"; 
+   $instructions.= "define " . $ret_type . 
+	 ' @' . $name . '( '; 
+
+   for ( my $ii= 1; $ii <= $#$arg_listref; $ii++ )  {
+      my $argName= "%arg$ii";
+      $instructions.= $$arg_listref[$ii] . " " . $argName;
+      $basicBlock->registerArg( $argName, $$arg_listref[$ii] );
+      if ( $ii < $#arg_listref )  {
+	 $instructions.= ", ";
+      }
+   }
+
+   $instructions.= " ) { ; \n"; 
    $instructions.= "  ; \%convert [? x i8]* to i8* \n";
    $instructions.= 
 	 "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
