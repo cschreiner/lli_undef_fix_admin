@@ -298,7 +298,7 @@ sub generate
 
    if ( $this->{'optHashref'}->{'startPoison'} )  {
      $instructions.= "  " . $this->getRegName() . 
-	   "= sub nuw " . $this->regWidth()->getName() . 
+	   "= sub nuw " . $this->currentType()->getName() . 
 	    " 0, 1 ; generates POISON \n";
      # TODO2: replace the above operands with random numbers
    }
