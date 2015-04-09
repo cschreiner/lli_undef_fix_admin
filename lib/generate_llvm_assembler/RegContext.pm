@@ -169,6 +169,10 @@ sub getRegName
    my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
    $this->{'regNum'}++;
    $this->{'regTypeHashref'}->{$ret_val}= undef;
+   if ( $retVal =~ m/^\s*$/ )  {
+      # why is the register name a null string?
+      die $main::scriptname . ": internal error 2015apr09_139631. \n";
+   }
    return $ret_val;
 }}
 
@@ -200,7 +204,12 @@ sub getPrevRegName
 	    ": internal error 2014nov24_154228, " . 
 	    "codes=\"" . $this->{'regNum'} . "\", \"$steps\"\n";
    }
-   return "%" . $this->{'regPrefix'} . ($this->{'regNum'}- 1- $steps2);
+   my $retVal="%" . $this->{'regPrefix'} . ($this->{'regNum'}- 1- $steps2);
+   if ( $retVal =~ m/^\s*$/ )  {
+      # why is the register name a null string?
+      die $main::scriptname . ": internal error 2015apr09_133615. \n";
+   }
+   return $retVal;
 }}
 
 ## ===========================================================================
@@ -248,6 +257,10 @@ sub getRecentRegName
    # choose one at random and return
    my $numRegs= scalar( @regList );
    my $retVal= $regList[ int(rand()*$numRegs) ]; 
+   if ( $retVal =~ m/^\s*$/ )  {
+      # why is the register name a null string?
+      die $main::scriptname . ": internal error 2015apr09_133530. \n";
+   }
    return $retVal;
 }}
 
@@ -334,11 +347,13 @@ sub reportType
 ## ===========================================================================
 # Description: short subroutines that only get one field
 #
-# Inputs: none
+# Inputs: 
+#   $this: the instance whose field to get
 #
 # Return Value: the field's value
 #
 # ============================================================================
+# template is 5 lines long
 #sub name
 #{{
 #   my($this)= @_;
@@ -357,14 +372,16 @@ sub numArgs
 ## ===========================================================================
 # Description: short subroutines that only set one field
 #
-# Inputs: the field's new value
+# Inputs: 
+#   $this: the instance whose field to get
+#   $xx: the field's new value
 #
 # Return Value: none
 #
 # ============================================================================
 #sub name
 #{{
-#   my ($ii)= @_;
+#   my ($this, $xx)= @_;
 #}}
 
 
