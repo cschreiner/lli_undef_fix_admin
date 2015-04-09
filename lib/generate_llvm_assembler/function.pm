@@ -155,17 +155,19 @@ sub function::generate
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # check arguments
-   if ( scalar(@$arg_listref) < 1 )  {
-      # for now, a function must take at least one argument
-      die $main::scriptname . ": internal error 2015apr09_122813.\n";
-   }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set up and report arguments
+
+   my $start_type= $ret_type;
+   if ( scalar(@$arg_listref) >= 1 )  {
+      # if there are arguments, start with their type
+      $start_type= $$arg_listref[ $[ ];
+   }
    my( $basicBlock )= new BasicBlockSeq( undef, 
 	 { 'startPoison'=> $opt_hashref->{'startPoison'},
 	   'numSteps' => $opt_hashref->{'numSteps'},
-           'startType' => $$arg_listref[ $[ ],
+           'startType' => $start_type,
            'stopType' => $ret_type,
 	 } );
 
@@ -173,19 +175,19 @@ sub function::generate
    # generate function heading
    my ( $definitions, $instructions );
 
-   $instructions.= "define " . $ret_type . 
+   $instructions.= "define " . $ret_type->getName() . 
 	 ' @' . $name . '( '; 
 
-   for ( my $ii= 1; $ii <= $#$arg_listref; $ii++ )  {
-      my $argName= "%arg$ii";
-      $instructions.= $$arg_listref[$ii] . " " . $argName;
+   for ( my $ii= $[; $ii < scalar(@$arg_listref); $ii++ )  {
+      my $argName= "%arg" . ($ii+1);
+      $instructions.= $$arg_listref[$ii]->getName() . " " . $argName;
       $basicBlock->registerArg( $argName, $$arg_listref[$ii] );
       if ( $ii < $#$arg_listref )  {
 	 $instructions.= ", ";
       }
    }
 
-   $instructions.= " ) { ; \n"; 
+   $instructions.= " ) { \n"; 
    $instructions.= "  ; \%convert [? x i8]* to i8* \n";
    $instructions.= 
 	 "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
