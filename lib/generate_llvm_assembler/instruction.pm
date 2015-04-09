@@ -559,6 +559,11 @@ sub instruction::generate_call_inst
             $ftnName,
 	    \@argTypeList,
 	    { 'numSteps' => $numSteps,
+              # TODO: find some way of ensuring a basic block uses ALL of its
+              # args to compute its result, and delete this.  Until then, we
+              # need this to guarantee that poison is not lost when calling a
+              # function whenever the poisoned argument does not happen to be
+              # called.
 	      'startPoison' => $basicBlock->getStartPoison(),
 	    } );
       $definitions.= $defs;
@@ -570,9 +575,12 @@ sub instruction::generate_call_inst
    #
    # we're trying to generate something like this:
    # %call = call i32* @func_2(i32 %13, i32 %12)
-   $instructions= $basicBlock->indent() . "call $retType $ftnName( ";
+   my $dest= $basicBlock->getRegName();
+   $basicBlock->getRegType( $dest, $retType );
+   $instructions= $basicBlock->indent() . "$dest= " .
+	 "call " . $retType->getName() . " $ftnName( ";
    for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
-      $instructions.= $allAboutArgList[$ii]->{'type'} . ' ' . 
+      $instructions.= $allAboutArgList[$ii]->{'type'}->getName() . ' ' . 
 	    $allAboutArgList[$ii]->{'register'};
       if ( $ii < ($numArgs-1) )  {
 	 $instructions.= ", ";
