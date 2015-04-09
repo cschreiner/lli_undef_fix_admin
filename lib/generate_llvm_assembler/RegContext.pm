@@ -5,9 +5,7 @@
 ## Module Name: RegContext.pm
 ##
 ## Description: information for selecting and managing register names
-##
-## TODO: do we also need to add code to track what data type each
-## register contains, e.g. i24 vs i48 and such?
+##	and what type of data is in each of them.
 ##
 ## ****************************************************************************
 
@@ -251,7 +249,6 @@ sub getRecentRegName
    }
 
    # find all of the registers/arguments with known types
-   my @regList= keys( %{$this->{'regTypeHashref'}} );
    my @regList;
    foreach my $reg ( keys( %{$this->{'regTypeHashref'}} ) )  {
       if ( defined($this->{'regTypeHashref'}->{$reg} ) )  {
@@ -352,6 +349,35 @@ sub reportType
    }
    $this->{'regTypeHashref'}->{$name}= $type;
    return $main::PERL_SUCCESS;
+}}
+
+## ===========================================================================
+## Subroutine getRegType()
+## ===========================================================================
+# Description: returns the data type stored in a register
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to act on
+#   $regName: the name of the register whose type should be returned
+# 
+# Outputs: none
+#   
+# Return Value: a TypeInteger instance, 
+#   or undef if the register name is not recognized
+#
+# ============================================================================
+sub getRegType
+{{
+   my( $this, $regName )= @_;
+
+   my $retVal= $this->{'regTypeHashref'}->{$regName};
+   return $retVal;
 }}
 
 ## ===========================================================================
