@@ -98,7 +98,7 @@ use parent qw ( RegContext );
 #   $parentBasicBlock: the basic block (or basic block sequence) invoking this
 #	one, or 
 #	undef if this is the first basic block of a function.
-#   $opt_hashref: reference to a hash of options.  This parameter must be 
+#   $optHashref: reference to a hash of options.  This parameter must be 
 #	present, but may be empty.  Valid options are:
 #	startPoison (boolean): true if the block should set a variable to a 
 #		poison value early in the block.
@@ -120,7 +120,7 @@ use parent qw ( RegContext );
 # ============================================================================
 sub new
 {{
-   my( $perl_class, $parentBasicBlock, $opt_hashref )= @_;
+   my( $perl_class, $parentBasicBlock, $optHashref )= @_;
 
    my $this= {};
    bless $this, $perl_class;
