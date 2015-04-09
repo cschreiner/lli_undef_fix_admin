@@ -233,6 +233,9 @@ sub instruction::generate_one_inst
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'storeload' )  {
       ( $pre_def, $inst )= instruction::generate_storeload_insts( 
 	    $basicBlock, $opcode );
+   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'call' )  {
+      ( $pre_def, $inst )= instruction::generate_call_inst( 
+	    $basicBlock, $opcode );
    } else {
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
@@ -487,6 +490,7 @@ sub instruction::generate_const_inst
 # Inputs: 
 #   $basicBlock: a BasicBlockSeq instance with context information
 #	for the instruction.
+#   $opcode: the opcode to generate
 #   
 # Outputs: none
 #   
@@ -498,11 +502,16 @@ sub instruction::generate_const_inst
 # ============================================================================
 sub instruction::generate_call_inst
 {{
-   my( $basicBlock )= @_;
+   my( $basicBlock, $opcode )= @_;
+
+   if ( $opcode ne 'call' )  {
+      die $main::scriptname . 
+	    ": internal error 2015apr9_162208, code=\"$opcode\". \n";
+   }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set up everything but the arguments
-   my $ftnName= "@xxx"; # TODO: fix this
+   my $ftnName= '@xxx'; # TODO: fix this
    my $retType= $basicBlock->currentType();
 
    my $numSteps= $basicBlock->numRemainingSteps()/ 3;
