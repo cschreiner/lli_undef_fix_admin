@@ -29,6 +29,8 @@
 ## compiler directives (use's)
 use strict;
 
+use cas_listutil;
+
 use BasicBlockSeq;
 use TypeInteger;
 
@@ -176,10 +178,13 @@ sub function::generate
    my ( $definitions, $instructions );
 
    $instructions.= "define " . $ret_type->getName() . 
-	 ' @' . $name . '( '; 
+	 ' ' . $name . '( '; 
 
+   print "arg_listref=>[" . cas_listutil::quote2($arg_listref) . "] \n" .
+	 "\t" . "length=" . scalar(@$arg_listref) . "\n";;
    for ( my $ii= $[; $ii < scalar(@$arg_listref); $ii++ )  {
       my $argName= "%arg" . ($ii+1);
+      print "   $ii\n";;
       $instructions.= $$arg_listref[$ii]->getName() . " " . $argName;
       $basicBlock->registerArg( $argName, $$arg_listref[$ii] );
       if ( $ii < $#$arg_listref )  {
