@@ -101,14 +101,14 @@ sub new
    bless $perl_this, $class;
 
    # TODO3: adjust this to exactly handle 64+-bit integers
-   my( $max_width )= 32;
+   use constant MAX_WIDTH => 32;
    my( $abs_min_width )= 1;
    my( $pref_min_width )= 6;
    my( $width );
    if ( $target_width eq "" )  {
-      $width= int( rand()*($max_width-$pref_min_width) + $pref_min_width );
+      $width= int( rand()*(MAX_WIDTH-$pref_min_width) + $pref_min_width );
    } else {
-      if ( $target_width < $abs_min_width or $target_width > $max_width )  {
+      if ( $target_width < $abs_min_width or $target_width > MAX_WIDTH )  {
 	 die $main::scriptname . ": bitwidth out of range. \n";
       }
       $width= $target_width;
