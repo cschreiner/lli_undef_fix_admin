@@ -300,11 +300,14 @@ sub generate
      # TODO2: replace the above operands with random numbers
    }
 
-   for ( ; $this->{'remainingSteps'} > 0; $this->{'remainingSteps'}-- )  {
+   while ( $this->{'remainingSteps'} > 0 )  {
       my( $def, $inst )= instruction::generate_one_inst( $this );
       $definitions.= $def;
-      $instructions.= $this->{'indent'} . "; step \n";
-	    # TODO: may need to move this to the instruction generator
+      {
+	 # TODO: may need to move this to the instruction generator
+	 $this->{'remainingSteps'}--;
+	 $instructions.= $this->{'indent'} . "; step \n";
+      }
       $instructions.= $inst;
    }
 
