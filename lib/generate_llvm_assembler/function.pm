@@ -30,6 +30,7 @@
 use strict;
 
 use BasicBlockSeq;
+use TypeInteger;
 
 ## ****************************************************************************
 ## package identification
@@ -136,7 +137,7 @@ package function::private;
 #   string containing the new function generated
 #   
 # ============================================================================
-sub generate
+sub function::generate
 {{
    my( $ret_type, $name, $arg_listref, $opt_hashref )= @_;
 
@@ -183,7 +184,7 @@ sub generate
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # generate instructions
    {
-      ($defs, $insts )= $basicBlock->generate();
+      my ($defs, $insts )= $basicBlock->generate();
       $definitions.= $defs;
       $instructions.= $insts;
    }
@@ -201,7 +202,7 @@ sub generate
 
    $instructions.= "\n";
    $instructions.= "  ; clean up and return \n";
-   $instructions.= "  ret " . $basicBlock->regWidth()->getName() . " 0 \n";
+   $instructions.= "  ret " . $basicBlock->currentType()->getName() . " 0 \n";
    $instructions.= "} \n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
