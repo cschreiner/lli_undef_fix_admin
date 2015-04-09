@@ -120,10 +120,10 @@ package function::private;
 
 #   opt_hashref: a reference to a hash giving various options.  Valid options 
 #	are:
-#	num_steps (unsigned): the number of steps (instructions) the function
-#		should have
-#	print_ret_val (boolean): add code to print the return value
-#	start_poison (boolean): the function should generate a poison value
+#	numSteps (unsigned): the number of steps (instructions) the function
+#		should have.  This is required.
+#	printRetVal (boolean): add code to print the return value
+#	startPoison (boolean): the function should generate a poison value
 #		as one of its first instructions
 # 
 # Outputs: none
@@ -140,26 +140,71 @@ sub generate
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set default values for options as needed
-   if ( !exists($$opt_hashref{'num_steps'}) )  {
-      $$opt_hashref{'num_steps'}= 10;
+   if ( !exists($opt_hashref->{'numSteps'}) )  {
+      die $main::scriptname . ": internal error 2015apr09_122418. \n";
    }
-   if ( !exists($$opt_hashref{'print_ret_val'}) )  {
-      $$opt_hashref{'print_ret_val'}= $main::FALSE;
+   if ( !exists($opt_hashref->{'printRetVal'}) )  {
+      $$opt_hashref{'printRetVal'}= $main::FALSE;
+   }
+   if ( !exists($opt_hashref->{'startPoison'}) )  {
+      $$opt_hashref{'startPoison'}= $main::FALSE;
    }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # set default values for options as needed
-   my ( $definitions, $instructions );
+   # check arguments
+   if ( scalar(@$arg_listref) < 1 )  {
+      # for now, a function must take at least one argument
+      die $main::scriptname . ": internal error 2015apr09_122813.\n";
+   }
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set up and report arguments
    my( $basicBlock )= new BasicBlockSeq( undef, 
-	 { 'startPoison'=> $$opt_hashref->{'start_poison'},
-	    'num_steps' => $$opt_hashref->{'num_steps'},
+	 { 'startPoison'=> $opt_hashref->{'startPoison'},
+	   'numSteps' => $opt_hashref->{'numSteps'},
+           'startType' => $$arg_listref[ $[ ],
+           'stopType' => $ret_type,
 	 } );
 
-   ($definitions, $instructions )= $basicBlock->generate();
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate function heading
+   my ( $definitions, $instructions );
 
+   $instructions.= "define " . $basicBlock->currentType()->getName() . 
+	 ' @main()' . " { ; \n"; 
+   $instructions.= "  ; \%convert [? x i8]* to i8* \n";
+   $instructions.= 
+	 "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
+	 "i64 0, i64 0\n";
+   $instructions.= "\n";
 
-   
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate instructions
+   {
+      ($defs, $insts )= $basicBlock->generate();
+      $definitions.= $defs;
+      $instructions.= $insts;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate function ending
+
+   $instructions.= "\n";
+
+   if ( $opt_hashref->{'printRetVal'} )  {
+      $instructions.= "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, " .
+	    $basicBlock->currentType()->getName() . ' ' . 
+	    $basicBlock->getPrevRegName() . ")\n";
+   }
+
+   $instructions.= "\n";
+   $instructions.= "  ; clean up and return \n";
+   $instructions.= "  ret " . $basicBlock->regWidth()->getName() . " 0 \n";
+   $instructions.= "} \n";
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # clean up and return
+   return ( $definitions, $instructions );
 }}
 
 
