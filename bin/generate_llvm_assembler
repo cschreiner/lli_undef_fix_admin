@@ -239,7 +239,7 @@ our ( $type )= new TypeInteger( $arg_bitwidth );
 ($definitions, $instructions )= function::generate( 
       $type,
       "main",
-      [ $type ],
+      [ ],
       { 'numSteps' => $arg_num_steps,
 	'printRetVal' => $main::TRUE,
         'startPoison' => $main::arg_start_poison,
