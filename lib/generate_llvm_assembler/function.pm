@@ -29,6 +29,8 @@
 ## compiler directives (use's)
 use strict;
 
+use BasicBlockSeq;
+
 ## ****************************************************************************
 ## package identification
 
