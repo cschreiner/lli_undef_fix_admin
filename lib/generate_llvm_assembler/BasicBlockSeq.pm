@@ -106,12 +106,12 @@ use parent qw ( RegContext );
 #		should contain.  The actual number may be slightly higher 
 #		in order to do data conversions and other semantic 
 #		housekeeping.
-#	startBitwidth (Bitwidth instance): initial integer type for the 
+#	startType (TypeInteger instance): initial integer type for the 
 #		block.  This is required if the block has no parent.  If the
-#		block has a parent, this defaults to the current Bitwidth of
+#		block has a parent, this defaults to the current type of
 #		the parent.
-#	stopBitwidth (Bitwidth instance): final integer type for the block. 
-#		If omitted, defaults to startBitwidth.
+#	stopType (TypeInteger instance): final integer type for the block. 
+#		If omitted, defaults to startType.
 # 
 # Outputs: none
 #   
@@ -132,8 +132,8 @@ sub new
    $this->{'opt_hashref'}= {
 			    'startPoison' => $main::FALSE,
 			    'numSteps' => 10,
-			    'startBitwidth' => undef,
-			    'stopBitwidth' => undef, 
+			    'startType' => undef,
+			    'stopType' => undef, 
 			   };
 
    # replace defaults with 
@@ -149,7 +149,7 @@ sub new
       $parentBasicBlock->incrementSubBlock();
       $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
       $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
-      $this->{'beginRegWidth'}= $parentBasicBlock->{'currentRegWidth'};
+      $this->{'beginType'}= $parentBasicBlock->{'currentType'};
       $this->{'regPrefix'}= $parentBasicBlock->{'regPrefix'} . 
 	    $parentBasicBlock->{'subBlock'};
       $this->{'labelPrefix'}= $parentBasicBlock->{'labelPrefix'} . 
@@ -157,7 +157,7 @@ sub new
    } else {
       $this->{'numSteps'}= $main::arg_num_steps;
       $this->{'indent'}= "  ";
-      $this->{'beginRegWidth'}= new Bitwidth( $main::arg_bitwidth );
+      $this->{'beginType'}= new Type( $main::arg_bitwidth );
       $this->{'regPrefix'}= ""; 
 	    # LLVM IR rules require the first register to be named %1,
 	    # with no prefix.
@@ -166,8 +166,8 @@ sub new
    $this->{'parentBasicBlock'}= $parentBasicBlock;
    $this->{'subBlockNum'}= 0;
    $this->{'subBlock'}= "-";
-   $this->{'currentRegWidth'}= $this->{'beginRegWidth'};
-   $this->{'endRegWidth'}= $this->{'beginRegWidth'};
+   $this->{'currentType'}= $this->{'beginType'};
+   $this->{'endType'}= $this->{'beginType'};
    if ( $this->{'numSteps'} < 1 )  { 
       $this->{'numSteps'}= 1; 
    }
@@ -280,6 +280,7 @@ sub generate
    }
 
    if ( $this->{'opt_hashref'}->{'restoreBitwidth'} )  {
+asdf
       # TODO2: add code here to convert the last 1 or 2 registers to
       # the original bitwidth.
    }
@@ -315,7 +316,7 @@ sub generate
 sub regWidth
 {{
    my( $this )= @_;
-   return $this->{'currentRegWidth'};
+   return $this->{'currentType'};
 }}
 
 

@@ -108,7 +108,6 @@ use FileHandle;
    # require's and use's needed by the rest of the program
    # =========================================================================
 
-   use Bitwidth;
    use BasicBlockSeq; #;;
    use instruction;
    use RegContext;
