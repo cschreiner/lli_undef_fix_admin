@@ -159,6 +159,11 @@ package instruction::private;
 	       'gen_ftn' => 'generate_storeload_inst', # change this to a ftn ptr
 	       'flag_listref' => [ ],
 	       },
+	    'call' => {
+	       'type'=> 'call',
+	       'gen_ftn' => 'generate_call_inst', # change this to a ftn ptr
+	       'flag_listref' => [ ],
+	       },
 	    # template: is 4 lines long:
 	    #'xxx' => {
 	    #	 'type'=> 'arith',
