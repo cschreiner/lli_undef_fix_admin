@@ -468,11 +468,10 @@ sub instruction::generate_const_inst
    return ("", $inst );
 }}
 
-
 ## ===========================================================================
-## Subroutine name()
+## Subroutine instruction::generate_call_inst()
 ## ===========================================================================
-# Description: 
+# Description: generates a call instruction, and a function for it to call
 #
 # Method: 
 #
@@ -481,19 +480,96 @@ sub instruction::generate_const_inst
 # Warnings: 
 #
 # Inputs: 
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
 #   
-# 
-# Outputs: 
+# Outputs: none
 #   
-#
-# Return Value: 
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
 #   
-#
 # ============================================================================
-#sub name
-#{{
-#   my( )= @_;
-#}}
+sub instruction::generate_call_inst
+{{
+   my( $basicBlock )= @_;
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set up everything but the arguments
+   my $ftnName= "@xxx"; # TODO: fix this
+   my $retType= $basicBlock->currentType();
+
+   my $numSteps= $basicBlock->numRemainingSteps()/ 3;
+   if ( $numSteps < 2 )  {
+      $numSteps= 2;
+      # TODO: consider returning a NO_OP in this case, and make the caller
+      # then choose a different instruction.
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set up arguments
+   use constant MAX_NUM_ARGS => 3;
+
+   # should yield something in range 0...MAX_NUM_ARGS.
+   my $numArgs= int( rand()* (MAX_NUM_ARGS+1) );  
+
+   my @allAboutArgList= (); 
+   my @argTypeList= (); 
+   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
+      my $allAboutArgHashref= { 'register'=> undef, 'type'=>undef };
+      my $name= $basicBlock->getPrevRegName( $ii+1 );
+      $allAboutArgHashref->{'register'}= $name;
+      $allAboutArgHashref->{'type'}= $basicBlock->getRegType( $name );
+      push @allAboutArgList, $allAboutArgHashref;
+   }
+   # permute the order of the arguments
+   for ( my $ii= 0; $ii < (2*$numArgs); $ii++ )  {
+      my $aa= int( rand()* $numArgs );
+      my $bb= int( rand()* $numArgs );
+      if ( $aa == $bb ) { next; }
+      my $tmp= $allAboutArgList[$aa];
+      $allAboutArgList[$aa]= $allAboutArgList[$bb];
+      $allAboutArgList[$bb]= $tmp;
+   }
+   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
+      push @argTypeList, $allAboutArgList[$ii]->{'type'};
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate the target function
+   my( $definitions, $instructions );
+   {
+      my( $defs, $insts )= function::generate(
+	    $retType,
+            $ftnName,
+	    \@argTypeList,
+	    { 'numSteps' => $numSteps,
+	      'startPoison' => $basicBlock->getStartPoison(),
+	    } );
+      $definitions.= $defs;
+      $definitions.= $insts;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate the function call
+   #
+   # we're trying to generate something like this:
+   # %call = call i32* @func_2(i32 %13, i32 %12)
+   $instructions= $basicBlock->indent() . "call $retType $ftnName( ";
+   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
+      $instructions.= $allAboutArgList[$ii]->{'type'} . ' ' . 
+	    $allAboutArgList[$ii]->{'register'};
+      if ( $ii < ($numArgs-1) )  {
+	 $instructions.= ", ";
+      }
+   }
+   $instructions.= " ) \n";
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # clean up and return
+   return ( $definitions, $instructions );
+}}
 
 
 #template is 25 lines long
