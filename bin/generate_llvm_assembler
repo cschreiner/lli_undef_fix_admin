@@ -108,9 +108,8 @@ use FileHandle;
    # require's and use's needed by the rest of the program
    # =========================================================================
 
-   use instruction;
-   use RegContext;
    use function;
+   use TypeInteger;
 
    # =========================================================================
    # subroutine END
