@@ -2,7 +2,7 @@
 #
 ## ****************************************************************************
 ## Project Name: lli_undef_fix
-## Module Name: Bitwidth.pm
+## Module Name: TypeInteger.pm
 ##
 ## Description: 
 #	Holds information on a bitwidth, such as its maximum and minimum
@@ -13,7 +13,7 @@
 ## ****************************************************************************
 ## Revision Control Information (customized for RCS)
 ##
-## Bitwidth.pm was written by Christian A. Schreiner at University of Utah.  
+## TypeInteger.pm was written by Christian A. Schreiner at University of Utah. 
 ## Copyright (C) 2014-2014 University of Utah.  All rights reserved. You
 ## may use, examine, or modify this file only in accordance with the Lesser
 ## GNU Public License, or, alternately, by special written arrangement with
@@ -34,7 +34,7 @@ use strict;
 ## ****************************************************************************
 ## package identification
 
-package Bitwidth;
+package TypeInteger;
 
 
 ## ****************************************************************************
@@ -60,7 +60,7 @@ package Bitwidth;
       # ----------------------------------------------------------------------
       # package-specific constants
       use vars qw( $pkgname );
-      $pkgname= "Bitwidth";
+      $pkgname= "TypeInteger";
 
       # ----------------------------------------------------------------------
       # other stuff
