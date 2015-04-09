@@ -110,6 +110,7 @@ sub new
    bless $this, $perl_class;
 
    $this->init( $prefix );
+   return $this;
 }}
 
 ## ===========================================================================
@@ -141,7 +142,9 @@ sub initRegContext
    my( $this, $prefix )= @_;
    $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
-   $this->{'regTypeHashref'}= {}; # keys= reg names, values=TypeInteger instance
+   $this->{'regTypeHashref'}= {}; 
+	 # keys= reg names, values=TypeInteger instance
+   $this->{'regNumArgs'}= 0; # the number of known arguments
    return $main::TRUE;
 }}
 
@@ -281,6 +284,7 @@ sub registerArg
 	    ": internal error 2015apr09_111444, code=\"$name\". \n";
    }
    $this->{'regTypeHashref'}->{$name}= $type;
+   $this->{'regNumArgs'}++;
    return $main::PERL_SUCCESS;
 }}
 
@@ -325,24 +329,6 @@ sub reportType
    return $main::PERL_SUCCESS;
 }}
 
-#template is 16 lines long
-## ===========================================================================
-## Subroutine sub_name
-## ===========================================================================
-# Description:
-#
-# Inputs:
-# 
-# Outputs:
-#
-# Return Value:
-#
-# ============================================================================
-#sub sub_name
-#{{
-#   my( )= @_;
-#}}
-
 ## ===========================================================================
 ## Short get subroutines
 ## ===========================================================================
@@ -353,10 +339,18 @@ sub reportType
 # Return Value: the field's value
 #
 # ============================================================================
-#sub sub_name
+#sub name
 #{{
+#   my($this)= @_;
 #   return ;
 #}}
+
+# returns the number of arguments registered
+sub numArgs
+{{
+   my($this)= @_;
+   return $this->{'regNumArgs'};
+}}
 
 ## ===========================================================================
 ## Short set subroutines
@@ -368,7 +362,7 @@ sub reportType
 # Return Value: none
 #
 # ============================================================================
-#sub sub_name
+#sub name
 #{{
 #   my ($ii)= @_;
 #}}
