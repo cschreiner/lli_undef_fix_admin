@@ -281,14 +281,7 @@ sub instruction::generate_storeload_insts
    # and guarantees that the same name is not used twice.  Maybe make the
    # names have form consonant-vowel-consonant_consonant-vowel-consonant to
    # make them pronouncible.
-   my( $addr_name )= '@addr_';
-   for ( my $ii= 0; $ii < 4; $ii++ )  {
-      # This assumes that the character encoding has the lower-case codepoints
-      # be consecutive.
-      $addr_name.= chr( ord('a')+ int(26*rand()) );
-   }
-   # asdf
-   # TODO: change this to use addr_name.pm.
+   my( $addr_name )= addr_name::get('var');
 
    my( $dest_reg )= $basicBlock->getRegName();
    my( $src_reg )= $basicBlock->getPrevRegName(1);
