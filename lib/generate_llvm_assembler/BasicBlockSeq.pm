@@ -151,11 +151,11 @@ sub new
    # main initialization based on the parent block
    if ( defined($parentBasicBlock) )  {
       $parentBasicBlock->incrementSubBlock();
-      $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
+      $this->{'numSteps'}= int($parentBasicBlock->{'remainingSteps'}/ 3);
       if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
 	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
       } else {
-	 $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
+	 $this->{'numSteps'}= int($parentBasicBlock->{'remainingSteps'}/ 3);
       }
       $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
       if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
@@ -304,19 +304,41 @@ sub generate
      # TODO2: replace the above operands with random numbers
    }
 
+   print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
    while ( $this->{'remainingSteps'} > 0 )  {
       if ( $this->{'regNum'}== 1 )  {;;
          print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1\n" );;
+	 Carp::confess ( "   regNum=1, remaining steps= " . 
+	       $this->{'remainingSteps'} . ".\n" );;
       }
       my( $def, $inst )= instruction::generate_one_inst( $this );
+      if ( $this->{'regNum'}== 1 )  {;;
+         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
+	 Carp::confess ( "   regNum=1, remaining steps= " . 
+	       $this->{'remainingSteps'} . ".\n" );;
+      }
       $definitions.= $def;
+      if ( $this->{'regNum'}== 1 )  {;;
+         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
+	 Carp::confess ( "   regNum=1, remaining steps= " . 
+	       $this->{'remainingSteps'} . ".\n" );;
+      }
       {
-	 # TODO: may need to move this to the instruction generator
+	 # TODO: maybe move this to a method called by the instr. generator
 	 $this->{'remainingSteps'}--;
 	 $instructions.= $this->{'indent'} . "; step \n";
       }
+      if ( $this->{'regNum'}== 1 )  {;;
+         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
+	 Carp::confess ( "   regNum=1, remaining steps= " . 
+	       $this->{'remainingSteps'} . ".\n" );;
+      }
       $instructions.= $inst;
+      if ( $this->{'regNum'}== 1 )  {;;
+         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
+	 Carp::confess ( "   regNum=1, remaining steps= " . 
+	       $this->{'remainingSteps'} . ".\n" );;
+      }
       if ( $inst =~ m/%1\D.*%1\D/ )  {
 	 Carp::confess( $main::scriptname . 
 	    ": internal error 2015apr10_102650 " .
