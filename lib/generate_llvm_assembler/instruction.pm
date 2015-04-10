@@ -29,11 +29,12 @@
 ## compiler directives (use's)
 use strict;
 
+use addr_name;
+
 ## ****************************************************************************
 ## package identification
 
 package instruction;
-
 
 ## ****************************************************************************
 ## public package BEGIN and END functions
@@ -286,6 +287,8 @@ sub instruction::generate_storeload_insts
       # be consecutive.
       $addr_name.= chr( ord('a')+ int(26*rand()) );
    }
+   # asdf
+   # TODO: change this to use addr_name.pm.
 
    my( $dest_reg )= $basicBlock->getRegName();
    my( $src_reg )= $basicBlock->getPrevRegName(1);
@@ -552,7 +555,7 @@ sub instruction::generate_call_inst
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set up everything but the arguments
-   my $ftnName= '@xxx'; # TODO: fix this
+   my $ftnName= addr_name::get("ftn"); # TODO: finish fixing this
    my $retType= $basicBlock->currentType();
 
    my $numSteps= $basicBlock->numRemainingSteps()/ 3;
