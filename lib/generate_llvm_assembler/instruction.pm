@@ -477,6 +477,47 @@ sub instruction::generate_const_inst
 }}
 
 ## ===========================================================================
+## Subroutine RegWithType_init()
+## ===========================================================================
+# Description: initializes a "RegWithType" record
+#
+# Method: 
+#   A "RegWithType" is a simple hash with two fields:
+#	register: the name of the register
+#	type: a TypeInteger giving the register's data type
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $name: a string holding the register's name
+#   $type: a TypeInteger instance giving the register's type
+# 
+# Outputs: none
+#   
+# Return Value: a reference to the hash
+#   
+# ============================================================================
+sub RegWithType_init
+{{
+   my( $name, $type )= @_;
+
+   my $ret_val= { 'register'=> $name, 'type'=>$type };
+   if ( $ret_val->{'register'} eq "" )  {;;
+      warn $main::scriptname . ": found a null register at 2015apr9_194003.\n";;
+   }
+   if ( $ret_val->{'type'} eq "" )  {;;
+      warn $main::scriptname . ": found a null type at 2015apr9_190554.\n";;
+   }
+   if ( !defined($ret_val->{'type'}) )  {
+      warn $main::scriptname . ": internal warning 2015apr09_170526\n";
+   }
+   return $ret_val;
+}}
+
+
+## ===========================================================================
 ## Subroutine instruction::generate_call_inst()
 ## ===========================================================================
 # Description: generates a call instruction, and a function for it to call
@@ -530,11 +571,17 @@ sub instruction::generate_call_inst
 
    my @allAboutArgList= (); 
    my @argTypeList= (); 
-   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
-      my $allAboutArgHashref= { 'register'=> undef, 'type'=>undef };
-      my $name= $basicBlock->getPrevRegName( $ii+1 );
-      $allAboutArgHashref->{'register'}= $name;
-      $allAboutArgHashref->{'type'}= $basicBlock->getRegType( $name );
+   if ( $numArgs >= 1 )  {
+      my $name= $basicBlock->getPrevRegName(1);
+      my $allAboutArgHashref= RegWithType_init( 
+            $name,
+            $basicBlock->getRegType($name) );
+   }
+   for ( my $ii= ($[+1); $ii < $numArgs; $ii++ )  {
+      my $name= $basicBlock->getRecentRegName();
+      my $allAboutArgHashref= RegWithType_init( 
+            $name,
+            $basicBlock->getRegType($name) );
       push @allAboutArgList, $allAboutArgHashref;
    }
    # permute the order of the arguments
