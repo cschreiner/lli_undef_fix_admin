@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: function.pm
 ##
-## Description: code to generate functions(s)
+## Description: code to generate function(s)
 ##
 ## ****************************************************************************
 
@@ -137,8 +137,6 @@ package function::private;
 #   string containing pre-function definitions related to the generated 
 #	instructions
 #   string containing the new function generated
-#   
-# ============================================================================
 sub function::generate
 {{
    my( $ret_type, $name, $arg_listref, $opt_hashref )= @_;

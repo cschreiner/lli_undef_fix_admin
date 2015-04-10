@@ -1,7 +1,11 @@
 #!/usr/bin/perl
-# counts the number of times an LLVM IR instruction is used in a set of files
+# counts the number of times each LLVM IR instruction is used in a set of files
 
-@terminator_insts=qw (ret br switch indirectbr invoke resume unreachable);
+@terminator_insts=qw (ret );
+# count the 2 forms of `br` separately
+push @terminator_insts, "br\\s+i1.*,.*label";
+push @terminator_insts, "br\\s+label";
+push @terminator_insts, qw( switch indirectbr invoke resume unreachable );
 @binary_insts=qw(add sub mul udiv sdiv urem srem);
       # excluding floating-point: fadd fsub fmul fdiv frem
 @bitwise_insts=qw(shl lshr ashr and or xor);
@@ -30,22 +34,27 @@ our( @file_group_list );
 {
    use constant FILES_PER_CHUNK => 100;
    for ( my $ii= $[; $ii < scalar(@ARGV); $ii+= FILES_PER_CHUNK )  {
-      print "building file group starting at file $ii \n";;
       my $stop= $ii+ FILES_PER_CHUNK- 1;
-      if ( $stop > scalar(@ARGV) )  {
-         $stop= scalar(@ARGV);
+      if ( $stop >= scalar(@ARGV) )  {
+         $stop= scalar(@ARGV)- 1;
       }
-      my $group=join( " ", $ARGV[$ii..$stop] );
+      if ( 0 )  {
+	 print "building file group starting at file $ii, stopping at $stop \n";
+      }
+      my $group=join( " ", @ARGV[$ii .. $stop] );
       push @file_group_list, $group;
-      print "group has " . length($group) . " characters \n";; 
    }
 }
-print "created " . scalar(@file_group_list) . " file groups \n";
+if ( 0 )  {
+   print "created " . scalar(@file_group_list) . " file groups \n";
+}
 
 
 my $ii= 0;
 foreach my $file_group ( @file_group_list )  {
-   print "processing file group $ii \n";
+   if ( 0 )  {
+      print "processing file group $ii \n";
+   }
    foreach my $inst ( @all_insts )  {
 
       my $cmd_core="grep -E \"\\b$inst\\b\"";
@@ -57,7 +66,7 @@ foreach my $file_group ( @file_group_list )  {
   
       $count=`$cmd`; 
       chomp $count;
-      if ( 1 ) { ;;
+      if ( 0 ) { 
          print "cmd=<$cmd>\n";
          print "count=\"$count\" \n";
       }
@@ -67,7 +76,7 @@ foreach my $file_group ( @file_group_list )  {
 }
 
 foreach my $inst ( @all_insts )  {
-   print "$count $inst \n";
+   print $count_hash{$inst} . " " . $inst . "\n";
 }
 
 
