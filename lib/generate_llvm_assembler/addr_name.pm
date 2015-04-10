@@ -130,30 +130,37 @@ sub addr_name::get
 {{
    my( $prefix )= @_;
 
-   use constant CONSONANT_LIST=> qw( b c d f g h j k l m n p q r s t v w x z );
-   use constant VOWEL_LIST=> qw( a e i o u );
+   my @CONSONANT_LIST= qw( b c d f g h j k l m n p q r s t v w x z );
+   my @VOWEL_LIST= qw( a e i o u );
+
+   print "scalar(CONSONANT_LIST)= \"" . scalar(@CONSONANT_LIST) . "\"\n";;
 
    for ( my $safety_counter= 0; $safety_counter < 1000; $safety_counter++ )  {
       my( $addr_core )= "";
       for ( my $ii= 0; $ii < 2; $ii++ )  {
          # Each of these iterations multiplies the number of permutations 
 	 # by 2000.
-	 my $aa= ;
-	 $aa= int( scalar(CONSONANT_LIST)* rand() );
-	 $addr_name.= CONSONANT_LIST[ $aa ];
-	 $aa= int( scalar(VOWEL_LIST)* rand() );
-	 $addr_name.= VOWEL_LIST[ $aa ];
-	 $aa= int( scalar(CONSONANT_LIST)* rand() );
-	 $addr_name.= CONSONANT_LIST[ $aa ];
+	 my $aa= "";
+	 $aa= int( scalar(@CONSONANT_LIST)* rand() );
+         print "   aa=\"$aa\"\n";;
+	 $addr_core.= $CONSONANT_LIST[ $aa ];
+	 $aa= int( scalar(@VOWEL_LIST)* rand() );
+         print "   aa=\"$aa\"\n";;
+	 $addr_core.= $VOWEL_LIST[ $aa ];
+	 $aa= int( scalar(@CONSONANT_LIST)* rand() );
+         print "   aa=\"$aa\"\n";;
+	 $addr_core.= $CONSONANT_LIST[ $aa ];
       }
+      print "   addr_core=\"$addr_core\"\n";;
       if ( exists($addr_used_hash{$addr_core}) )  { next; }
       my( $addr)= '@' . $prefix . '_' . $addr_core;
+      print "   returning address \"$addr\"\n";;
       return $addr;
    }
 
    # we couldn't generate a unique sequence in a reasonable number of tries
    die $main::scriptname . ": internal error 2015apr09_220001. \n";
-}
+}}
 
 
 #template is 25 lines long
