@@ -133,8 +133,6 @@ sub addr_name::get
    my @CONSONANT_LIST= qw( b c d f g h j k l m n p q r s t v w x z );
    my @VOWEL_LIST= qw( a e i o u );
 
-   print "scalar(CONSONANT_LIST)= \"" . scalar(@CONSONANT_LIST) . "\"\n";;
-
    for ( my $safety_counter= 0; $safety_counter < 1000; $safety_counter++ )  {
       my( $addr_core )= "";
       for ( my $ii= 0; $ii < 2; $ii++ )  {
@@ -142,19 +140,17 @@ sub addr_name::get
 	 # by 2000.
 	 my $aa= "";
 	 $aa= int( scalar(@CONSONANT_LIST)* rand() );
-         print "   aa=\"$aa\"\n";;
 	 $addr_core.= $CONSONANT_LIST[ $aa ];
 	 $aa= int( scalar(@VOWEL_LIST)* rand() );
-         print "   aa=\"$aa\"\n";;
 	 $addr_core.= $VOWEL_LIST[ $aa ];
 	 $aa= int( scalar(@CONSONANT_LIST)* rand() );
-         print "   aa=\"$aa\"\n";;
 	 $addr_core.= $CONSONANT_LIST[ $aa ];
       }
-      print "   addr_core=\"$addr_core\"\n";;
       if ( exists($addr_used_hash{$addr_core}) )  { next; }
       my( $addr)= '@' . $prefix . '_' . $addr_core;
-      print "   returning address \"$addr\"\n";;
+      if ( 0 )  {
+	 print "   returning address \"$addr\"\n";
+      }
       return $addr;
    }
 
