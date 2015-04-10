@@ -100,31 +100,31 @@ package instruction::private;
 	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
 	       'flag_listref' => [ qw( nsw nuw ) ],
 	       },
-	    'mul' => {
-	       'type'=> 'arith',
-	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-	       'flag_listref' => [ qw( nsw nuw ) ],
-	       },
-	    'sdiv' => {
-	       'type'=> 'arith',
-	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-	       'flag_listref' => [ qw( exact ) ],
-	       },
-	    'udiv' => {
-	       'type'=> 'arith',
-	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-	       'flag_listref' => [ qw( exact ) ],
-	       },
-	    'srem' => {
-	       'type'=> 'arith',
-	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-	       'flag_listref' => [ qw( ) ],
-	       },
-	    'urem' => {
-	       'type'=> 'arith',
-	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
-	       'flag_listref' => [ qw( ) ],
-	       },
+#;;	    'mul' => {
+#;;	       'type'=> 'arith',
+#;;	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+#;;	       'flag_listref' => [ qw( nsw nuw ) ],
+#;;	       },
+#;;	    'sdiv' => {
+#;;	       'type'=> 'arith',
+#;;	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+#;;	       'flag_listref' => [ qw( exact ) ],
+#;;	       },
+#;;	    'udiv' => {
+#;;	       'type'=> 'arith',
+#;;	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+#;;	       'flag_listref' => [ qw( exact ) ],
+#;;	       },
+#;;	    'srem' => {
+#;;	       'type'=> 'arith',
+#;;	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+#;;	       'flag_listref' => [ qw( ) ],
+#;;	       },
+#;;	    'urem' => {
+#;;	       'type'=> 'arith',
+#;;	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
+#;;	       'flag_listref' => [ qw( ) ],
+#;;	       },
 	    'and' => {
 	       'type'=> 'arith',
 	       'gen_ftn' => 'generate_arith_inst', # change this to a ftn ptr
