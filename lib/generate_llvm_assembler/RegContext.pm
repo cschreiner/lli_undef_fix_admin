@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+b#!/usr/bin/perl
 #
 ## ****************************************************************************
 ## Project Name: lli_undef_fix
@@ -202,7 +202,7 @@ sub getPrevRegName
    my( $steps2 )= $steps;
    if ( ! defined($steps) )  { $steps2= 0; }
 
-   if ( ($this->{'regNum'}- 1 - $steps) < 0 )  {
+   if ( ($this->{'regNum'}- 1 - $steps2) < 0 )  {
       die $main::scriptname . 
 	    ": internal error 2014nov24_154228, " . 
 	    "codes=\"" . $this->{'regNum'} . "\", \"$steps\"\n";
