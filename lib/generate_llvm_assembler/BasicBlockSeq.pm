@@ -33,6 +33,7 @@
 ## ****************************************************************************
 ## compiler directives (use's)
 use strict;
+use Carp qw( cluck confess croak );
 
 use TypeInteger;
 use instruction;
@@ -304,6 +305,10 @@ sub generate
    }
 
    while ( $this->{'remainingSteps'} > 0 )  {
+      if ( $this->{'regNum'}== 1 )  {;;
+         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
+	 Carp::confess ( "   regNum=1\n" );;
+      }
       my( $def, $inst )= instruction::generate_one_inst( $this );
       $definitions.= $def;
       {
@@ -312,6 +317,16 @@ sub generate
 	 $instructions.= $this->{'indent'} . "; step \n";
       }
       $instructions.= $inst;
+      if ( $inst =~ m/%1\D.*%1\D/ )  {
+	 Carp::confess( $main::scriptname . 
+	    ": internal error 2015apr10_102650 " .
+	    "(two %1s in inst)" );;
+      }
+      if ( $instructions =~ m/%1\D.*%1\D/ )  {
+	 Carp::confess( $main::scriptname . 
+	    ": internal error 2015apr10_102820 " .
+	    "(two %1s in instructions)" );;
+      }
    }
 
    if ( $this->{'currentType'}->compareTo( $this->{'stopType'} ) != 0 )  {
@@ -378,8 +393,6 @@ sub currentType
    my( $this )= @_;
    return $this->{'currentType'};
 }}
-
-
 
 
 #template is 25 lines long
