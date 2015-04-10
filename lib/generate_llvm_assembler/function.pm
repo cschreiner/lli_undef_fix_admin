@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: function.pm
 ##
-## Description: 
+## Description: code to generate function(s)
 ##
 ## ****************************************************************************
 
@@ -103,9 +103,9 @@ package function::private;
 
 
 ## ===========================================================================
-## Subroutine name()
+## Subroutine generate_main_ftn()
 ## ===========================================================================
-# Description: 
+# Description: creates a main function
 #
 # Method: 
 #
@@ -113,17 +113,15 @@ package function::private;
 #
 # Warnings: 
 #
-# Inputs: 
+# Inputs: none
 #   
-# 
-# Outputs: 
+# Outputs: none
 #   
-#
 # Return Value: 
 #   
 #
 # ============================================================================
-#sub name
+#sub generate_main_ftn
 #{{
 #   my( )= @_;
 #}}
