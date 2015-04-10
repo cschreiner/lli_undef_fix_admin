@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: function.pm
 ##
-## Description: code to generate functions
+## Description: code to generate functions(s)
 ##
 ## ****************************************************************************
 
