@@ -4,7 +4,7 @@
 ## Project Name: lli_undef_fix
 ## Module Name: addr_name.pm
 ##
-## Description: 
+## Description: package to create and manage address names
 ##
 ## ****************************************************************************
 
@@ -88,6 +88,9 @@ package addr_name::private;
       # ----------------------------------------------------------------------
       # other stuff
 
+      use vars qw( %addr_used_hash );
+      %addr_used_hash= ();
+
    }}
 
    # =========================================================================
@@ -103,9 +106,9 @@ package addr_name::private;
 
 
 ## ===========================================================================
-## Subroutine name()
+## Subroutine get()
 ## ===========================================================================
-# Description: 
+# Description: generates a unique address name.
 #
 # Method: 
 #
@@ -114,19 +117,43 @@ package addr_name::private;
 # Warnings: 
 #
 # Inputs: 
-#   
+#   $prefix: the prefix to put on the address name
 # 
-# Outputs: 
+# Outputs: none
 #   
-#
-# Return Value: 
-#   
+# Return Value: an string containing an address of form "@prefix_xxxxxx", 
+#   where prefix is the specified prefix, and xxxxxx is randomly generated. 
+#   The xxxxxx may have more characters than shown.
 #
 # ============================================================================
-#sub name
-#{{
-#   my( )= @_;
-#}}
+sub addr_name::get
+{{
+   my( $prefix )= @_;
+
+   use constant CONSONANT_LIST=> qw( b c d f g h j k l m n p q r s t v w x z );
+   use constant VOWEL_LIST=> qw( a e i o u );
+
+   for ( my $safety_counter= 0; $safety_counter < 1000; $safety_counter++ )  {
+      my( $addr_core )= "";
+      for ( my $ii= 0; $ii < 2; $ii++ )  {
+         # Each of these iterations multiplies the number of permutations 
+	 # by 2000.
+	 my $aa= ;
+	 $aa= int( scalar(CONSONANT_LIST)* rand() );
+	 $addr_name.= CONSONANT_LIST[ $aa ];
+	 $aa= int( scalar(VOWEL_LIST)* rand() );
+	 $addr_name.= VOWEL_LIST[ $aa ];
+	 $aa= int( scalar(CONSONANT_LIST)* rand() );
+	 $addr_name.= CONSONANT_LIST[ $aa ];
+      }
+      if ( exists($addr_used_hash{$addr_core}) )  { next; }
+      my( $addr)= '@' . $prefix . '_' . $addr_core;
+      return $addr;
+   }
+
+   # we couldn't generate a unique sequence in a reasonable number of tries
+   die $main::scriptname . ": internal error 2015apr09_220001. \n";
+}
 
 
 #template is 25 lines long
