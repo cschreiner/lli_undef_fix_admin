@@ -576,6 +576,7 @@ sub instruction::generate_call_inst
       my $allAboutArgHashref= RegWithType_init( 
             $name,
             $basicBlock->getRegType($name) );
+      push @allAboutArgList, $allAboutArgHashref;
    }
    for ( my $ii= ($[+1); $ii < $numArgs; $ii++ )  {
       my $name= $basicBlock->getRecentRegName();
@@ -583,6 +584,8 @@ sub instruction::generate_call_inst
             $name,
             $basicBlock->getRegType($name) );
       push @allAboutArgList, $allAboutArgHashref;
+      print "pushing to allAboutArgList[$ii], type=\"" . 
+	    $allAboutArgHashref->{'type'} . "\"\n";;
    }
    # permute the order of the arguments
    for ( my $ii= 0; $ii < (2*$numArgs); $ii++ )  {
@@ -595,6 +598,8 @@ sub instruction::generate_call_inst
    }
    for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
       push @argTypeList, $allAboutArgList[$ii]->{'type'};
+      print "allAboutArgList[$ii]->type=\"" . 
+	    $allAboutArgList[$ii]->{'type'} . "\"\n";;
    }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
