@@ -218,7 +218,12 @@ sub function::generate
 
    $instructions.= "\n";
    $instructions.= "  ; clean up and return \n";
-   $instructions.= "  ret " . $basicBlock->currentType()->getName() . " 0 \n";
+   $ret_register= $basicBlock->getPrevRegName(1);
+   # TODO2: change this to make sure the return register is of the function's
+   # return type.
+
+   $instructions.= "  ret " . $basicBlock->getRegType($ret_register) . ' ' . 
+	 $ret_register . " \n";
    $instructions.= "} \n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
