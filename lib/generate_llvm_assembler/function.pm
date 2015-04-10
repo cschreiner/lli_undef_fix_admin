@@ -28,6 +28,7 @@
 ## ****************************************************************************
 ## compiler directives (use's)
 use strict;
+use Carp qw( cluck confess croak );
 
 use cas_listutil;
 
@@ -201,8 +202,20 @@ sub function::generate
    # generate instructions
    {
       my ($defs, $insts )= $basicBlock->generate();
+      if ( $insts =~ m/%1\D.*%1\D/ )  {
+	 confess( $main::scriptname . ": internal error 2015apr10_101817 " .
+	       "(two %1s in insts)" );;
+      }
       $definitions.= $defs;
       $instructions.= $insts;
+   }
+   if ( $definitions =~ m/%1\D.*%1\D/ )  {
+      confess( $main::scriptname . ": internal error 2015apr10_101506 " .
+	    "(two %1s in definitions)" );;
+   }
+   if ( $instructions =~ m/%1\D.*%1\D/ )  {
+      confess( $main::scriptname . ": internal error 2015apr10_100654 " .
+	    "(two %1s in instructions)" );;
    }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
