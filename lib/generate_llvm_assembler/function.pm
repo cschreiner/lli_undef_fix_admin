@@ -218,12 +218,14 @@ sub function::generate
 
    $instructions.= "\n";
    $instructions.= "  ; clean up and return \n";
-   $ret_register= $basicBlock->getPrevRegName(1);
-   # TODO2: change this to make sure the return register is of the function's
-   # return type.
+   my $retRegister= $basicBlock->getPrevRegName(1);
+   my $retRegisterType= $basicBlock->getRegType($retRegister);
+   if ( $basic_block->getStopType().compareTo($retRegisterType) != 0 )  {
+      # The return value should be of the intended return type.
+      die $main::scriptname . ": internal error 2015apr09_235615.\n";
+   }
 
-   $instructions.= "  ret " . $basicBlock->getRegType($ret_register) . ' ' . 
-	 $ret_register . " \n";
+   $instructions.= "  ret " . $retRegisterType . ' ' . $retRegister . " \n";
    $instructions.= "} \n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
