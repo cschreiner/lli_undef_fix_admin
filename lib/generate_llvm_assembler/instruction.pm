@@ -225,6 +225,10 @@ sub instruction::generate_one_inst
       }
    }
 
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      Carp::confess ( "   regNum=1\n" );;
+   }
+
    my( $pre_def, $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
       ( $pre_def, $inst )= instruction::generate_arith_inst( 
@@ -242,6 +246,11 @@ sub instruction::generate_one_inst
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
 	    $opcode_hash{$opcode}->{'type'} . "\"\n";
+   }
+
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      print "last instruction=\"$opcode\"\n";;
+      Carp::confess ( "   regNum=1\n" );;
    }
 
    return ( $pre_def, $inst );
@@ -311,6 +320,9 @@ sub instruction::generate_storeload_insts
    # store instructions.
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      Carp::confess ( "   regNum=1\n" );;
+   }
    return ( $pre_func, $inst );
 }}
 
@@ -367,6 +379,9 @@ sub instruction::generate_shift_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      Carp::confess ( "   regNum=1\n" );;
+   }
    return ("", $inst );
 }}
 
@@ -433,6 +448,9 @@ sub instruction::generate_arith_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      Carp::confess ( "   regNum=1\n" );;
+   }
    return ("", $inst );
 }}
 
@@ -470,6 +488,9 @@ sub instruction::generate_const_inst
 	 $basicBlock->currentType()->getName(). ' ' . 
          $basicBlock->currentType()->getRandVal() . ", 0 \n";
    $basicBlock->reportType( $regName, $basicBlock->currentType() );
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      Carp::confess ( "   regNum=1\n" );;
+   }
    return ("", $inst );
 }}
 
@@ -653,6 +674,9 @@ sub instruction::generate_call_inst
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
+   if ( $basicBlock->{'regNum'}== 1 )  {;;
+      Carp::confess ( "   regNum=1\n" );;
+   }
    return ( $definitions, $instructions );
 }}
 
