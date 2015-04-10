@@ -2,7 +2,7 @@
 #
 ## ****************************************************************************
 ## Project Name: lli_undef_fix
-## Module Name: Bitwidth.pm
+## Module Name: TypeInteger.pm
 ##
 ## Description: 
 #	Holds information on a bitwidth, such as its maximum and minimum
@@ -13,7 +13,7 @@
 ## ****************************************************************************
 ## Revision Control Information (customized for RCS)
 ##
-## Bitwidth.pm was written by Christian A. Schreiner at University of Utah.  
+## TypeInteger.pm was written by Christian A. Schreiner at University of Utah. 
 ## Copyright (C) 2014-2014 University of Utah.  All rights reserved. You
 ## may use, examine, or modify this file only in accordance with the Lesser
 ## GNU Public License, or, alternately, by special written arrangement with
@@ -34,7 +34,7 @@ use strict;
 ## ****************************************************************************
 ## package identification
 
-package Bitwidth;
+package TypeInteger;
 
 
 ## ****************************************************************************
@@ -60,7 +60,7 @@ package Bitwidth;
       # ----------------------------------------------------------------------
       # package-specific constants
       use vars qw( $pkgname );
-      $pkgname= "Bitwidth";
+      $pkgname= "TypeInteger";
 
       # ----------------------------------------------------------------------
       # other stuff
@@ -85,7 +85,7 @@ package Bitwidth;
 #
 # Inputs:
 #   $class: information about the class (provided by perl)
-#   $target_width: an integer indicating the preferred with to work with.
+#   $target_width: an integer indicating the preferred width to work with.
 #	If undefined, a random value will be chosen.
 # 
 # Outputs: none
@@ -101,14 +101,14 @@ sub new
    bless $perl_this, $class;
 
    # TODO3: adjust this to exactly handle 64+-bit integers
-   my( $max_width )= 32;
+   use constant MAX_WIDTH => 32;
    my( $abs_min_width )= 1;
    my( $pref_min_width )= 6;
    my( $width );
    if ( $target_width eq "" )  {
-      $width= int( rand()*($max_width-$pref_min_width) + $pref_min_width );
+      $width= int( rand()*(MAX_WIDTH-$pref_min_width) + $pref_min_width );
    } else {
-      if ( $target_width < $abs_min_width or $target_width > $max_width )  {
+      if ( $target_width < $abs_min_width or $target_width > MAX_WIDTH )  {
 	 die $main::scriptname . ": bitwidth out of range. \n";
       }
       $width= $target_width;
@@ -195,23 +195,38 @@ sub getRandShiftVal
    return $val;
 }}
 
-#template is 16 lines long
 ## ===========================================================================
-## Subroutine sub_name
+## Subroutine compareTo()
 ## ===========================================================================
-# Description:
+# Description: compares this instance to another one
 #
-# Inputs:
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the primary instance to act on (provided by PERL)
+#   $that: the other instance to compare
 # 
-# Outputs:
-#
-# Return Value:
+# Outputs: 
+#   
+# Return Value: 
+#   -1 if this < that
+#   0 if this == that
+#   1 if this > that
 #
 # ============================================================================
-#sub sub_name
-#{{
-#   my( )= @_;
-#}}
+sub compareTo
+{{
+   my( $this, $that )= @_;
+
+   # if we add non-integer types in the future, add something somewhere to
+   # insure both instances being compared are integers.
+
+   return $this->getBitwidth() <=> $that->getBitwidth();
+}}
 
 ## ===========================================================================
 ## Short get subroutines

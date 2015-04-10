@@ -5,9 +5,7 @@
 ## Module Name: RegContext.pm
 ##
 ## Description: information for selecting and managing register names
-##
-## TODO: do we also need to add code to track what data type each
-## register contains, e.g. i24 vs i48 and such?
+##	and what type of data is in each of them.
 ##
 ## ****************************************************************************
 
@@ -31,6 +29,8 @@
 ## ****************************************************************************
 ## compiler directives (use's)
 use strict;
+
+use cas_listutil;
 
 ## ****************************************************************************
 ## package identification
@@ -110,6 +110,7 @@ sub new
    bless $this, $perl_class;
 
    $this->init( $prefix );
+   return $this;
 }}
 
 ## ===========================================================================
@@ -141,9 +142,11 @@ sub initRegContext
    my( $this, $prefix )= @_;
    $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
+   $this->{'regTypeHashref'}= {}; 
+	 # keys= reg names, values=TypeInteger instance
+   $this->{'regNumArgs'}= 0; # the number of known arguments
    return $main::TRUE;
 }}
-
 
 
 ## ===========================================================================
@@ -163,9 +166,17 @@ sub getRegName
 {{
    my( $this )= @_;
 
-   my( $ret_val )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
+   my( $retVal )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
    $this->{'regNum'}++;
-   return $ret_val;
+
+   # note that the register exists, but we don't know its type yet.
+   $this->{'regTypeHashref'}->{$retVal}= undef;
+
+   if ( $retVal =~ m/^\s*$/ )  {
+      # why is the register name a null string?
+      die $main::scriptname . ": internal error 2015apr09_139631. \n";
+   }
+   return $retVal;
 }}
 
 ## ===========================================================================
@@ -196,13 +207,19 @@ sub getPrevRegName
 	    ": internal error 2014nov24_154228, " . 
 	    "codes=\"" . $this->{'regNum'} . "\", \"$steps\"\n";
    }
-   return "%" . $this->{'regPrefix'} . ($this->{'regNum'}- 1- $steps2);
+   my $retVal="%" . $this->{'regPrefix'} . ($this->{'regNum'}- 1- $steps2);
+   if ( $retVal =~ m/^\s*$/ )  {
+      # why is the register name a null string?
+      die $main::scriptname . ": internal error 2015apr09_133615. \n";
+   }
+   return $retVal;
 }}
 
 ## ===========================================================================
 ## Subroutine getRecentRegName
 ## ===========================================================================
-# Description: gets the name of a recently issued register
+# Description: gets the name of a recently issued register or argument.  The 
+#	register/argument's type is guaranteed to be known.
 #
 # Inputs: 
 #   $this: the instance to work on (provided by PERL)
@@ -216,65 +233,193 @@ sub getRecentRegName
 {{
    my( $this )= @_;
 
-   my( $limit )= 10;
-   my( $max_returnable_regNum )= $this->{'regNum'}- 3;
-   if ( $max_returnable_regNum < $limit )  { 
-      $limit= $max_returnable_regNum; 
-   };
-   my( $rr )= $max_returnable_regNum- int( rand()*$limit );
-   if ( $rr < MIN_REG_NUM )  {
+   if ( $main::FALSE )  {
+      # An old way of implementing this function that might still be useful.
+      my( $limit )= 10;
+      my( $max_returnable_regNum )= $this->{'regNum'}- 3;
+      if ( $max_returnable_regNum < $limit )  { 
+	 $limit= $max_returnable_regNum; 
+      };
+      my( $rr )= $max_returnable_regNum- int( rand()*$limit );
+      if ( $rr < MIN_REG_NUM )  {
       die $main::scriptname . 
-	    ": internal error 2014nov24_210556, code=\"$rr\"\n";
+	       ": internal error 2014nov24_210556, code=\"$rr\"\n";
+      }
+      return "%" . $this->{'regPrefix'} . $rr;
    }
-   return "%" . $this->{'regPrefix'} . $rr;
+
+   # find all of the registers/arguments with known types
+   my @regList;
+   foreach my $reg ( keys( %{$this->{'regTypeHashref'}} ) )  {
+      if ( defined($this->{'regTypeHashref'}->{$reg} ) )  {
+	 push @regList, $reg;
+      }
+   }
+
+   # choose one at random and return
+   my $numRegs= scalar( @regList );
+   if ( $numRegs < 1 )  {
+      # There should be at least _some_ registers, because we forcibly create
+      # 2 registers if there aren't any arguments.
+      die $main::scriptname . ": internal error 2015apr09_135003. \n";
+   }
+   my $retVal= $regList[ int(rand()*$numRegs) ]; 
+   if ( $retVal =~ m/^\s*$/ )  {
+      # why is the register name a null string?
+      print "reg list= < " . cas_listutil::quote2( \@regList ) . "> \n";;
+      print "   num regs= $numRegs. \n";;
+      die $main::scriptname . ": internal error 2015apr09_133530. \n";
+   }
+   return $retVal;
 }}
 
-#template is 16 lines long
 ## ===========================================================================
-## Subroutine sub_name
+## Subroutine registerArg()
 ## ===========================================================================
-# Description:
+
+# Description: registers a function argument and its type, so future
+#	instructions can use it.
 #
-# Inputs:
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work on
+#   $name: name of the argument, which must not already be registered
+#   $type: type of the argument (formatted as an TypeInteger instance)
 # 
-# Outputs:
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub registerArg
+{{
+   my( $this, $name, $type )= @_;
+
+   if ( exists( $this->{'regTypeHashref'}->{$name} ) )  {
+      # the argument was already registered
+      die $main::scriptname . 
+	    ": internal error 2015apr09_111444, code=\"$name\". \n";
+   }
+   $this->{'regTypeHashref'}->{$name}= $type;
+   $this->{'regNumArgs'}++;
+   return $main::PERL_SUCCESS;
+}}
+
+## ===========================================================================
+## Subroutine reportType()
+## ===========================================================================
+# Description: reports the type of a register, so it can be used by future 
+#	instructions
 #
-# Return Value:
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work on
+#   $name: name of the register, which must already have been created via 
+#	getName(), and not have a type reported.
+#   $type: type of the register (formatted as an TypeInteger instance)
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub reportType
+{{
+   my( $this, $name, $type )= @_;
+
+   if ( !exists( $this->{'regTypeHashref'}->{$name} ) )  {
+      # the register hasn't been created yet 
+      die $main::scriptname . 
+	    ": internal error 2015apr09_112208, code=\"$name\". \n";
+   }
+   if ( defined( $this->{'regTypeHashref'}->{$name} ) )  {
+      # the register already had its type reported 
+      die $main::scriptname . 
+	    ": internal error 2015apr09_112337, code=\"$name\". \n";
+   }
+   $this->{'regTypeHashref'}->{$name}= $type;
+   return $main::PERL_SUCCESS;
+}}
+
+## ===========================================================================
+## Subroutine getRegType()
+## ===========================================================================
+# Description: returns the data type stored in a register
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to act on
+#   $regName: the name of the register whose type should be returned
+# 
+# Outputs: none
+#   
+# Return Value: a TypeInteger instance, 
+#   or undef if the register name is not recognized
 #
 # ============================================================================
-#sub sub_name
-#{{
-#   my( )= @_;
-#}}
+sub getRegType
+{{
+   my( $this, $regName )= @_;
+
+   my $retVal= $this->{'regTypeHashref'}->{$regName};
+   return $retVal;
+}}
 
 ## ===========================================================================
 ## Short get subroutines
 ## ===========================================================================
 # Description: short subroutines that only get one field
 #
-# Inputs: none
+# Inputs: 
+#   $this: the instance whose field to get
 #
 # Return Value: the field's value
 #
 # ============================================================================
-#sub sub_name
+# template is 5 lines long
+#sub name
 #{{
+#   my($this)= @_;
 #   return ;
 #}}
+
+# returns the number of arguments registered
+sub numArgs
+{{
+   my($this)= @_;
+   return $this->{'regNumArgs'};
+}}
 
 ## ===========================================================================
 ## Short set subroutines
 ## ===========================================================================
 # Description: short subroutines that only set one field
 #
-# Inputs: the field's new value
+# Inputs: 
+#   $this: the instance whose field to get
+#   $xx: the field's new value
 #
 # Return Value: none
 #
 # ============================================================================
-#sub sub_name
+#sub name
 #{{
-#   my ($ii)= @_;
+#   my ($this, $xx)= @_;
 #}}
 
 

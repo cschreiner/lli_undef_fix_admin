@@ -29,11 +29,12 @@
 ## compiler directives (use's)
 use strict;
 
+use addr_name;
+
 ## ****************************************************************************
 ## package identification
 
 package instruction;
-
 
 ## ****************************************************************************
 ## public package BEGIN and END functions
@@ -159,6 +160,11 @@ package instruction::private;
 	       'gen_ftn' => 'generate_storeload_inst', # change this to a ftn ptr
 	       'flag_listref' => [ ],
 	       },
+	    'call' => {
+	       'type'=> 'call',
+	       'gen_ftn' => 'generate_call_inst', # change this to a ftn ptr
+	       'flag_listref' => [ ],
+	       },
 	    # template: is 4 lines long:
 	    #'xxx' => {
 	    #	 'type'=> 'arith',
@@ -228,6 +234,9 @@ sub instruction::generate_one_inst
    } elsif ( $opcode_hash{$opcode}->{'type'} eq 'storeload' )  {
       ( $pre_def, $inst )= instruction::generate_storeload_insts( 
 	    $basicBlock, $opcode );
+   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'call' )  {
+      ( $pre_def, $inst )= instruction::generate_call_inst( 
+	    $basicBlock, $opcode );
    } else {
       die $main::scriptname . 
 	    ": don't recognize opcode type for \"$opcode\", \"" . 
@@ -278,14 +287,16 @@ sub instruction::generate_storeload_insts
       # be consecutive.
       $addr_name.= chr( ord('a')+ int(26*rand()) );
    }
+   # asdf
+   # TODO: change this to use addr_name.pm.
 
    my( $dest_reg )= $basicBlock->getRegName();
    my( $src_reg )= $basicBlock->getPrevRegName(1);
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $pre_func )= $addr_name . " = global " . 
-	 $basicBlock->regWidth()->getName() . 
-	 " " . $basicBlock->regWidth()->getRandVal() . "\n";
+	 $basicBlock->currentType()->getName() . 
+	 " " . $basicBlock->currentType()->getRandVal() . "\n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    my( $store_flags )= " ";
@@ -296,14 +307,16 @@ sub instruction::generate_storeload_insts
 
    my( $inst );
    $inst.= "  " . "store " . 
-         $store_flags . $basicBlock->regWidth()->getName() . ' ' . 
+         $store_flags . $basicBlock->currentType()->getName() . ' ' . 
 	 $src_reg . ', ' . 
-         $basicBlock->regWidth()->getName() . '* ' . $addr_name . "\n";
-   $inst.= "  " . $dest_reg . "= load " . $basicBlock->regWidth()->getName() . 
+         $basicBlock->currentType()->getName() . '* ' . $addr_name . "\n";
+   $inst.= "  " . $dest_reg . "= load " . 
+	 $basicBlock->currentType()->getName() . 
 	 "* $addr_name \n";
    # TODO2: consider adding an 'align 4' or similar to the load and 
    # store instructions.
 
+   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    return ( $pre_func, $inst );
 }}
 
@@ -353,12 +366,13 @@ sub instruction::generate_shift_inst
 
    my( $operand2 );
    # operand is a constant
-   $operand2= $basicBlock->regWidth()->getRandShiftVal();
+   $operand2= $basicBlock->currentType()->getRandShiftVal();
    
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $basicBlock->regWidth()->getName() . ' ' .
+	 $flags . $basicBlock->currentType()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
+   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    return ("", $inst );
 }}
 
@@ -408,7 +422,7 @@ sub instruction::generate_arith_inst
    my( $operand2 );
    if ( rand() < .5 )  {
       # operand is a constant
-      $operand2= $basicBlock->regWidth()->getRandVal();
+      $operand2= $basicBlock->currentType()->getRandVal();
    } else {
       $operand2= $basicBlock->getRecentRegName();
    }
@@ -421,9 +435,10 @@ sub instruction::generate_arith_inst
    }
 
    my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $basicBlock->regWidth()->getName() . ' ' .
+	 $flags . $basicBlock->currentType()->getName() . ' ' .
 	 $operand1 . ', ' . $operand2 . "\n";
 
+   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    return ("", $inst );
 }}
 
@@ -455,18 +470,60 @@ sub instruction::generate_const_inst
 {{
    my( $basicBlock )= @_;
 
-   my( $inst )= "  " . 
-	 $basicBlock->getRegName(). "= add ". 
-	 $basicBlock->regWidth()->getName(). ' ' . 
-         $basicBlock->regWidth()->getRandVal() . ", 0 \n";
+   my $regName= $basicBlock->getRegName();
+   my $inst= "  " . 
+	 $regName. "= add ". 
+	 $basicBlock->currentType()->getName(). ' ' . 
+         $basicBlock->currentType()->getRandVal() . ", 0 \n";
+   $basicBlock->reportType( $regName, $basicBlock->currentType() );
    return ("", $inst );
+}}
+
+## ===========================================================================
+## Subroutine RegWithType_init()
+## ===========================================================================
+# Description: initializes a "RegWithType" record
+#
+# Method: 
+#   A "RegWithType" is a simple hash with two fields:
+#	register: the name of the register
+#	type: a TypeInteger giving the register's data type
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $name: a string holding the register's name
+#   $type: a TypeInteger instance giving the register's type
+# 
+# Outputs: none
+#   
+# Return Value: a reference to the hash
+#   
+# ============================================================================
+sub RegWithType_init
+{{
+   my( $name, $type )= @_;
+
+   my $ret_val= { 'register'=> $name, 'type'=>$type };
+   if ( $ret_val->{'register'} eq "" )  {;;
+      warn $main::scriptname . ": found a null register at 2015apr9_194003.\n";;
+   }
+   if ( $ret_val->{'type'} eq "" )  {;;
+      warn $main::scriptname . ": found a null type at 2015apr9_190554.\n";;
+   }
+   if ( !defined($ret_val->{'type'}) )  {
+      warn $main::scriptname . ": internal warning 2015apr09_170526\n";
+   }
+   return $ret_val;
 }}
 
 
 ## ===========================================================================
-## Subroutine name()
+## Subroutine instruction::generate_call_inst()
 ## ===========================================================================
-# Description: 
+# Description: generates a call instruction, and a function for it to call
 #
 # Method: 
 #
@@ -475,19 +532,121 @@ sub instruction::generate_const_inst
 # Warnings: 
 #
 # Inputs: 
+#   $basicBlock: a BasicBlockSeq instance with context information
+#	for the instruction.
+#   $opcode: the opcode to generate
 #   
-# 
-# Outputs: 
+# Outputs: none
 #   
-#
-# Return Value: 
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
 #   
-#
 # ============================================================================
-#sub name
-#{{
-#   my( )= @_;
-#}}
+sub instruction::generate_call_inst
+{{
+   my( $basicBlock, $opcode )= @_;
+
+   if ( $opcode ne 'call' )  {
+      die $main::scriptname . 
+	    ": internal error 2015apr9_162208, code=\"$opcode\". \n";
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set up everything but the arguments
+   my $ftnName= addr_name::get("ftn"); # TODO: finish fixing this
+   my $retType= $basicBlock->currentType();
+
+   my $numSteps= $basicBlock->numRemainingSteps()/ 3;
+   if ( $numSteps < 2 )  {
+      $numSteps= 2;
+      # TODO: consider returning a NO_OP in this case, and make the caller
+      # then choose a different instruction.
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # set up arguments
+   use constant MAX_NUM_ARGS => 3;
+
+   # should yield something in range 0...MAX_NUM_ARGS.
+   my $numArgs= int( rand()* (MAX_NUM_ARGS+1) );  
+
+   my @allAboutArgList= (); 
+   my @argTypeList= (); 
+   if ( $numArgs >= 1 )  {
+      my $name= $basicBlock->getPrevRegName(1);
+      my $allAboutArgHashref= RegWithType_init( 
+            $name,
+            $basicBlock->getRegType($name) );
+      push @allAboutArgList, $allAboutArgHashref;
+   }
+   for ( my $ii= ($[+1); $ii < $numArgs; $ii++ )  {
+      my $name= $basicBlock->getRecentRegName();
+      my $allAboutArgHashref= RegWithType_init( 
+            $name,
+            $basicBlock->getRegType($name) );
+      push @allAboutArgList, $allAboutArgHashref;
+      print "pushing to allAboutArgList[$ii], type=\"" . 
+	    $allAboutArgHashref->{'type'} . "\"\n";;
+   }
+   # permute the order of the arguments
+   for ( my $ii= 0; $ii < (2*$numArgs); $ii++ )  {
+      my $aa= int( rand()* $numArgs );
+      my $bb= int( rand()* $numArgs );
+      if ( $aa == $bb ) { next; }
+      my $tmp= $allAboutArgList[$aa];
+      $allAboutArgList[$aa]= $allAboutArgList[$bb];
+      $allAboutArgList[$bb]= $tmp;
+   }
+   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
+      push @argTypeList, $allAboutArgList[$ii]->{'type'};
+      print "allAboutArgList[$ii]->type=\"" . 
+	    $allAboutArgList[$ii]->{'type'} . "\"\n";;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate the target function
+   my( $definitions, $instructions );
+   {
+      my( $defs, $insts )= function::generate(
+	    $retType,
+            $ftnName,
+	    \@argTypeList,
+	    { 'numSteps' => $numSteps,
+              # TODO: find some way of ensuring a basic block uses ALL of its
+              # args to compute its result, and delete this.  Until then, we
+              # need this to guarantee that poison is not lost when calling a
+              # function whenever the poisoned argument does not happen to be
+              # called.
+	      'startPoison' => $basicBlock->getStartPoison(),
+	    } );
+      $definitions.= $defs;
+      $definitions.= $insts;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # generate the function call
+   #
+   # we're trying to generate something like this:
+   # %call = call i32* @func_2(i32 %13, i32 %12)
+   my $dest= $basicBlock->getRegName();
+   $basicBlock->getRegType( $dest, $retType );
+   $instructions= $basicBlock->indent() . "$dest= " .
+	 "call " . $retType->getName() . " $ftnName( ";
+   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
+      $instructions.= $allAboutArgList[$ii]->{'type'}->getName() . ' ' . 
+	    $allAboutArgList[$ii]->{'register'};
+      if ( $ii < ($numArgs-1) )  {
+	 $instructions.= ", ";
+      }
+   }
+   $instructions.= " ) \n";
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # clean up and return
+   return ( $definitions, $instructions );
+}}
 
 
 #template is 25 lines long

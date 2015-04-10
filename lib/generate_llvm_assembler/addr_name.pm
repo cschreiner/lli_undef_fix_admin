@@ -2,16 +2,16 @@
 #
 ## ****************************************************************************
 ## Project Name: lli_undef_fix
-## Module Name: function.pm
+## Module Name: addr_name.pm
 ##
-## Description: code to generate function(s)
+## Description: package to create and manage address names
 ##
 ## ****************************************************************************
 
 ## ****************************************************************************
 ## Revision Control Information (customized for RCS)
 ##
-## function.pm was written by Christian A. Schreiner at University of Utah.  
+## addr_name.pm was written by Christian A. Schreiner at University of Utah.  
 ## Copyright (C) 2015-2015 University of Utah.  All rights reserved. You
 ## may use, examine, or modify this file only in accordance with the Lesser
 ## GNU Public License, or, alternately, by special written arrangement with
@@ -29,15 +29,10 @@
 ## compiler directives (use's)
 use strict;
 
-use cas_listutil;
-
-use BasicBlockSeq;
-use TypeInteger;
-
 ## ****************************************************************************
 ## package identification
 
-package function;
+package addr_name;
 
 
 ## ****************************************************************************
@@ -48,7 +43,7 @@ package function;
    # =========================================================================
    sub BEGIN
    {{
-      # Note: we check for basic constants in function::private::BEGIN
+      # Note: we check for basic constants in addr_name::private::BEGIN
 
       # ----------------------------------------------------------------------
       # package prerequisites (use's and require's)
@@ -56,7 +51,7 @@ package function;
       # ----------------------------------------------------------------------
       # package-specific constants
       use vars qw( $pkgname );
-      $pkgname= "function";
+      $pkgname= "addr_name";
 
       # ----------------------------------------------------------------------
       # other stuff
@@ -66,7 +61,7 @@ package function;
 ## ****************************************************************************
 ## private package BEGIN and END functions
 
-package function::private;
+package addr_name::private;
 
    # =========================================================================
    # subroutine BEGIN
@@ -88,10 +83,13 @@ package function::private;
       # ----------------------------------------------------------------------
       # package-specific constants
       use vars qw( $pkgname );
-      $pkgname= "function";
+      $pkgname= "addr_name";
 
       # ----------------------------------------------------------------------
       # other stuff
+
+      use vars qw( %addr_used_hash );
+      %addr_used_hash= ();
 
    }}
 
@@ -106,10 +104,11 @@ package function::private;
 ## ****************************************************************************
 ## start the package
 
+
 ## ===========================================================================
-## Subroutine generate()
+## Subroutine get()
 ## ===========================================================================
-# Description: generates a generic function.
+# Description: generates a unique address name.
 #
 # Method: 
 #
@@ -118,112 +117,49 @@ package function::private;
 # Warnings: 
 #
 # Inputs: 
-#   ret_type: the function's return type (expressed as a TypeInteger instance)
-#   name: the function's name (expressed as a string)
-#   arg_listref: a reference to a list of TypeInteger instances giving the 
-#	function's argument types
-
-#   opt_hashref: a reference to a hash giving various options.  Valid options 
-#	are:
-#	numSteps (unsigned): the number of steps (instructions) the function
-#		should have.  This is required.
-#	printRetVal (boolean): add code to print the return value
-#	startPoison (boolean): the function should generate a poison value
-#		as one of its first instructions
+#   $prefix: the prefix to put on the address name
 # 
 # Outputs: none
 #   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the new function generated
-sub function::generate
+# Return Value: an string containing an address of form "@prefix_xxxxxx", 
+#   where prefix is the specified prefix, and xxxxxx is randomly generated. 
+#   The xxxxxx may have more characters than shown.
+#
+# ============================================================================
+sub addr_name::get
 {{
-   my( $ret_type, $name, $arg_listref, $opt_hashref )= @_;
+   my( $prefix )= @_;
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # set default values for options as needed
-   if ( !exists($opt_hashref->{'numSteps'}) )  {
-      die $main::scriptname . ": internal error 2015apr09_122418. \n";
-   }
-   if ( !exists($opt_hashref->{'printRetVal'}) )  {
-      $$opt_hashref{'printRetVal'}= $main::FALSE;
-   }
-   if ( !exists($opt_hashref->{'startPoison'}) )  {
-      $$opt_hashref{'startPoison'}= $main::FALSE;
-   }
+   my @CONSONANT_LIST= qw( b c d f g h j k l m n p q r s t v w x z );
+   my @VOWEL_LIST= qw( a e i o u );
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # check arguments
+   print "scalar(CONSONANT_LIST)= \"" . scalar(@CONSONANT_LIST) . "\"\n";;
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # set up and report arguments
-
-   my $start_type= $ret_type;
-   if ( scalar(@$arg_listref) >= 1 )  {
-      # if there are arguments, start with their type
-      $start_type= $$arg_listref[ $[ ];
-   }
-   my( $basicBlock )= new BasicBlockSeq( undef, 
-	 { 'startPoison'=> $opt_hashref->{'startPoison'},
-	   'numSteps' => $opt_hashref->{'numSteps'},
-           'startType' => $start_type,
-           'stopType' => $ret_type,
-	 } );
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # generate function heading
-   my ( $definitions, $instructions );
-
-   $instructions.= "define " . $ret_type->getName() . 
-	 ' ' . $name . '( '; 
-
-   print "arg_listref=>[" . cas_listutil::quote2($arg_listref) . "] \n" .
-	 "\t" . "length=" . scalar(@$arg_listref) . "\n";;
-   for ( my $ii= $[; $ii < scalar(@$arg_listref); $ii++ )  {
-      my $argName= "%arg" . ($ii+1);
-      print "   $ii\n";;
-      $instructions.= $$arg_listref[$ii]->getName() . " " . $argName;
-      $basicBlock->registerArg( $argName, $$arg_listref[$ii] );
-      if ( $ii < $#$arg_listref )  {
-	 $instructions.= ", ";
+   for ( my $safety_counter= 0; $safety_counter < 1000; $safety_counter++ )  {
+      my( $addr_core )= "";
+      for ( my $ii= 0; $ii < 2; $ii++ )  {
+         # Each of these iterations multiplies the number of permutations 
+	 # by 2000.
+	 my $aa= "";
+	 $aa= int( scalar(@CONSONANT_LIST)* rand() );
+         print "   aa=\"$aa\"\n";;
+	 $addr_core.= $CONSONANT_LIST[ $aa ];
+	 $aa= int( scalar(@VOWEL_LIST)* rand() );
+         print "   aa=\"$aa\"\n";;
+	 $addr_core.= $VOWEL_LIST[ $aa ];
+	 $aa= int( scalar(@CONSONANT_LIST)* rand() );
+         print "   aa=\"$aa\"\n";;
+	 $addr_core.= $CONSONANT_LIST[ $aa ];
       }
+      print "   addr_core=\"$addr_core\"\n";;
+      if ( exists($addr_used_hash{$addr_core}) )  { next; }
+      my( $addr)= '@' . $prefix . '_' . $addr_core;
+      print "   returning address \"$addr\"\n";;
+      return $addr;
    }
 
-   $instructions.= " ) { \n"; 
-   $instructions.= "  ; \%convert [? x i8]* to i8* \n";
-   $instructions.= 
-	 "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
-	 "i64 0, i64 0\n";
-   $instructions.= "\n";
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # generate instructions
-   {
-      my ($defs, $insts )= $basicBlock->generate();
-      $definitions.= $defs;
-      $instructions.= $insts;
-   }
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # generate function ending
-
-   $instructions.= "\n";
-
-   if ( $opt_hashref->{'printRetVal'} )  {
-      $instructions.= "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, " .
-	    $basicBlock->currentType()->getName() . ' ' . 
-	    $basicBlock->getPrevRegName() . ")\n";
-   }
-
-   $instructions.= "\n";
-   $instructions.= "  ; clean up and return \n";
-   $instructions.= "  ret " . $basicBlock->currentType()->getName() . " 0 \n";
-   $instructions.= "} \n";
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # clean up and return
-   return ( $definitions, $instructions );
+   # we couldn't generate a unique sequence in a reasonable number of tries
+   die $main::scriptname . ": internal error 2015apr09_220001. \n";
 }}
 
 

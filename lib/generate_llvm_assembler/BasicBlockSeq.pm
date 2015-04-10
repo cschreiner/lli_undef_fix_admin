@@ -34,12 +34,14 @@
 ## compiler directives (use's)
 use strict;
 
+use TypeInteger;
+use instruction;
+
 ## ****************************************************************************
 ## package identification
 
 package BasicBlockSeq;
 use parent qw ( RegContext );
-
 
 ## ****************************************************************************
 ## public package BEGIN and END functions
@@ -99,10 +101,20 @@ use parent qw ( RegContext );
 #   $parentBasicBlock: the basic block (or basic block sequence) invoking this
 #	one, or 
 #	undef if this is the first basic block of a function.
-#   $opt_hashref: reference to a hash of options.  This parameter must be 
+#   $optHashref: reference to a hash of options.  This parameter must be 
 #	present, but may be empty.  Valid options are:
 #	startPoison (boolean): true if the block should set a variable to a 
 #		poison value early in the block.
+#       numSteps (unsigned): the number of steps (instructions) the block 
+#		should contain.  The actual number may be slightly higher 
+#		in order to do data conversions and other semantic 
+#		housekeeping.
+#	startType (TypeInteger instance): initial integer type for the 
+#		block.  This is required if the block has no parent.  If the
+#		block has a parent, this defaults to the current type of
+#		the parent.
+#	stopType (TypeInteger instance): final integer type for the block. 
+#		If omitted, defaults to startType.
 # 
 # Outputs: none
 #   
@@ -111,51 +123,91 @@ use parent qw ( RegContext );
 # ============================================================================
 sub new
 {{
-   my( $perl_class, $parentBasicBlock, $opt_hashref )= @_;
+   my( $perl_class, $parentBasicBlock, $optHashref )= @_;
 
    my $this= {};
    bless $this, $perl_class;
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # copy over the options, element by element
+
+   # set the default values
+   $this->{'optHashref'}= {
+			    'startPoison' => $main::FALSE,
+			    'numSteps' => 10,
+			    'startType' => undef,
+			    'stopType' => undef, 
+			   };
+
+   # replace defaults with whatever options were handed in
+   foreach my $opt ( keys( %{$this->{'optHashref'}} ) )  {
+      if ( exists($$optHashref{$opt}) )  {
+	 $this->{'optHashref'}->{$opt}= $optHashref->{$opt}; 
+      }
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # main initialization based on the parent block
    if ( defined($parentBasicBlock) )  {
       $parentBasicBlock->incrementSubBlock();
       $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
+      if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
+	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
+      } else {
+	 $this->{'numSteps'}= $parentBasicBlock->{'remainingSteps'}/ 3;
+      }
       $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
-      $this->{'beginRegWidth'}= $parentBasicBlock->{'currentRegWidth'};
+      if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
+	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
+      } else {
+	 $this->{'startType'}= $parentBasicBlock->{'currentType'};
+      }
       $this->{'regPrefix'}= $parentBasicBlock->{'regPrefix'} . 
 	    $parentBasicBlock->{'subBlock'};
       $this->{'labelPrefix'}= $parentBasicBlock->{'labelPrefix'} . 
 	    $parentBasicBlock->{'subBlock'};
    } else {
-      $this->{'numSteps'}= $main::arg_num_steps;
+      if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
+	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
+      } else {
+	 # we need a number of steps
+	 die $main::scriptname . ": internal error 2015apr09_115148. \n";
+      }
       $this->{'indent'}= "  ";
-      $this->{'beginRegWidth'}= new Bitwidth( $main::arg_bitwidth );
+      if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
+	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
+      } else {
+	 # no known starting type
+	 die $main::scriptname . ": internal error 2015apr09_114443.\n";
+      }
       $this->{'regPrefix'}= ""; 
-	    # LLVM IR rules require the first register to be named %1,
-	    # with no prefix.
+	    # LLVM IR rules require the first register to be named %1, with no
+	    # prefix.  For consistency, other registers in this block don't
+	    # have a prefix, either.
       $this->{'labelPrefix'}= "l_";
    }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # other main initialization 
    $this->{'parentBasicBlock'}= $parentBasicBlock;
    $this->{'subBlockNum'}= 0;
    $this->{'subBlock'}= "-";
-   $this->{'currentRegWidth'}= $this->{'beginRegWidth'};
-   $this->{'endRegWidth'}= $this->{'beginRegWidth'};
+   $this->{'currentType'}= $this->{'startType'};
+   if ( defined( $this->{'optHashref'}->{'stopType'} ) )  {
+      $this->{'stopType'}= $this->{'optHashref'}->{'stopType'}; 
+   } else {
+      $this->{'stopType'}= $this->{'startType'};
+   }
    if ( $this->{'numSteps'} < 1 )  { 
       $this->{'numSteps'}= 1; 
    }
    $this->{'remainingSteps'}= $this->{'numSteps'};
    
-   # copy over the options, element by element
-   foreach my $opt ( qw( startPoison restoreBitwidth ) )  {
-      if ( exists($$opt_hashref{$opt}) )  {
-	 $this->{'opt_hashref'}->{$opt}= $opt_hashref->{$opt}; 
-      } else {
-	 $this->{'opt_hashref'}->{$opt}= undef;
-      }
-   }
-
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # initialize superclass with stuff derived from the above
    $this->initRegContext( $this->{'regPrefix'} );
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
    return $this;
 }}
@@ -234,32 +286,38 @@ sub generate
 
    if ( !defined($this->{'parentBasicBlock'}) )  {
       # A basic block beginning a function must initially set at least
-      # 2 variables, so later opcodes requiring 2 operands will have
-      # them available.
-      # TODO: find a way to consider the function's parameters as initial 
-      # 	variables. 
-      for ( my $ii= 0; $ii < 2; $ii++ )  {
+      # 2 registers, so later opcodes requiring 2 operands will have
+      # them available.  If there aren't enough arguments provided, create
+      # enough registers to compensate.
+      for ( my $ii= $this->numArgs(); $ii < 2; $ii++ )  {
 	 my ( $def, $inst )= instruction::generate_const_inst( $this );
 	 $definitions.= $def;
 	 $instructions.= $inst;
       }
    }
 
-   if ( $this->{'opt_hashref'}->{'startPoison'} )  {
+   if ( $this->{'optHashref'}->{'startPoison'} )  {
      $instructions.= "  " . $this->getRegName() . 
-	   "= sub nuw " . $this->regWidth()->getName() . " 0, 1 ; generates POISON \n";
+	   "= sub nuw " . $this->currentType()->getName() . 
+	    " 0, 1 ; generates POISON \n";
      # TODO2: replace the above operands with random numbers
    }
 
-   for ( ; $this->{'remainingSteps'} > 0; $this->{'remainingSteps'}-- )  {
+   while ( $this->{'remainingSteps'} > 0 )  {
       my( $def, $inst )= instruction::generate_one_inst( $this );
       $definitions.= $def;
+      {
+	 # TODO: may need to move this to the instruction generator
+	 $this->{'remainingSteps'}--;
+	 $instructions.= $this->{'indent'} . "; step \n";
+      }
       $instructions.= $inst;
    }
 
-   if ( $this->{'opt_hashref'}->{'restoreBitwidth'} )  {
+   if ( $this->{'currentType'}->compareTo( $this->{'stopType'} ) != 0 )  {
       # TODO2: add code here to convert the last 1 or 2 registers to
-      # the original bitwidth.
+      # the stop type.
+      die $main::scriptname . ": internal error 2015apr09_114820.\n";
    }
  
    # clean up and return
@@ -290,10 +348,28 @@ sub generate
 #   return $this->{'xx'};
 #}}
 
-sub regWidth
+sub indent
 {{
    my( $this )= @_;
-   return $this->{'currentRegWidth'};
+   return $this->{'indent'};
+}}
+
+sub getStartPoison
+{{
+   my( $this )= @_;
+   return $this->{'optHashref'}->{'startPoison'};
+}}
+
+sub numRemainingSteps
+{{
+   my( $this )= @_;
+   return $this->{'remainingSteps'};
+}}
+
+sub currentType
+{{
+   my( $this )= @_;
+   return $this->{'currentType'};
 }}
 
 
