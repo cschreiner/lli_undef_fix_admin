@@ -30,6 +30,7 @@
 ## ****************************************************************************
 ## compiler directives (use's)
 use strict;
+use Carp;
 
 ## ****************************************************************************
 ## package identification
@@ -222,8 +223,13 @@ sub compareTo
 {{
    my( $this, $that )= @_;
 
-   # if we add non-integer types in the future, add something somewhere to
-   # insure both instances being compared are integers.
+   # TODO3: if we add non-integer types in the future, add something somewhere
+   # to insure both instances being compared are integers.
+
+   if ( ref($that) ne "TypeInteger" )  {
+      confess ( $main::scriptname . ": internal error 2015apr10_095356, " . 
+	    "code=\"" . ref($that) . "\"\n" );
+   }
 
    return $this->getBitwidth() <=> $that->getBitwidth();
 }}
