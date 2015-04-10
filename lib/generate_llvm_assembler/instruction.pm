@@ -28,6 +28,7 @@
 ## ****************************************************************************
 ## compiler directives (use's)
 use strict;
+use Carp qw( cluck confess croak );
 
 use addr_name;
 
@@ -614,8 +615,22 @@ sub instruction::generate_call_inst
               # called.
 	      'startPoison' => $basicBlock->getStartPoison(),
 	    } );
+
+      if ( $defs =~ m/%1\D.*%1\D/ )  {
+	 confess( $main::scriptname . ": internal error 2015apr10_100654 " .
+	       "(two %1s in defs)" );;
+      }
+      if ( $insts =~ m/%1\D.*%1\D/ )  {
+	 confess( $main::scriptname . ": internal error 2015apr10_101421 " .
+	       "(two %1s in defs)" );;
+      }
+
       $definitions.= $defs;
       $definitions.= $insts;
+      if ( $definitions =~ m/%1\D.*%1\D/ )  {
+	 confess( $main::scriptname . ": internal error 2015apr10_100943 " .
+	       "(two %1s in definitions)" );;
+      }
    }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
