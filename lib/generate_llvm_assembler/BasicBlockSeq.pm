@@ -348,6 +348,13 @@ sub generate
 #   return $this->{'xx'};
 #}}
 
+# returns the TypeInteger instance defining the stop type
+sub getStopType
+{{
+   my( $this )= @_;
+   return $this->{'stopType'};
+}}
+
 sub indent
 {{
    my( $this )= @_;
