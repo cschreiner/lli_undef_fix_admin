@@ -226,7 +226,7 @@ sub instruction::generate_one_inst
       }
    }
 
-   $basicBlock->carpIfRegNumReset( 
+   $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "(from beginning of instruction::generate_one_inst)\n" );;
 
    my( $pre_def, $inst );
@@ -248,7 +248,8 @@ sub instruction::generate_one_inst
 	    $opcode_hash{$opcode}->{'type'} . "\"\n";
    }
 
-   $basicBlock->carpIfRegNumReset( "last instruction=\"$opcode\"\n" );;
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "last instruction=\"$opcode\"\n" );;
    return ( $pre_def, $inst );
 }}
 
@@ -317,7 +318,7 @@ sub instruction::generate_storeload_insts
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
    
-   $basicBlock->carpIfRegNumReset( 
+   $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "at end of instruction::generate_storeload_insts($opcode)\n" );;
    return ( $pre_func, $inst );
 }}
@@ -375,7 +376,7 @@ sub instruction::generate_shift_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   $basicBlock->carpIfRegNumReset( 
+   $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "at end of instruction::generate_shift_insts($opcode)\n" );;
    return ("", $inst );
 }}
@@ -443,7 +444,7 @@ sub instruction::generate_arith_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   $basicBlock->carpIfRegNumReset( 
+   $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "at end of instruction::generate_arith_insts($opcode)\n" );;
    return ("", $inst );
 }}
@@ -482,7 +483,7 @@ sub instruction::generate_const_inst
 	 $basicBlock->currentType()->getName(). ' ' . 
          $basicBlock->currentType()->getRandVal() . ", 0 \n";
    $basicBlock->reportType( $regName, $basicBlock->currentType() );
-   $basicBlock->carpIfRegNumReset( 
+   $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "at end of instruction::generate_const_insts()\n" );;
    return ("", $inst );
 }}
@@ -667,7 +668,7 @@ sub instruction::generate_call_inst
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
-   $basicBlock->carpIfRegNumReset( 
+   $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "at end of instruction::generate_call_insts($opcode)\n" );;
    return ( $definitions, $instructions );
 }}
