@@ -412,12 +412,18 @@ sub getRegType
 sub carpIfRegNumReset
 {{;;
    my( $this, $basicBlock, $msg )= @_;
-   if ( "$basicBlock" ne "$last_basic_block" )  {;;
-      if ( !defined($last_basic_block) )  {
-	 $last_basic_block= $basicBlock;
-      } else {
-	 print "got a new basic block: \"$basicBlock\", \n" . 
-	       "\t" . "last was \"$last_basic_block\". \n";
+   if ( !defined($last_basic_block) )  {
+      $last_basic_block= $basicBlock;
+   } else {
+      if ( "$basicBlock" ne "$last_basic_block" )  {;;
+	  my ( $mm )= "";
+	 $mm.= "got a new basic block: \"$basicBlock\", \n"; 
+	 $mm.= "\t" . "for ftn \"" ;
+	 $mm.= $basicBlock->{'optHashref'}->{'ftnName'} . "\", \n";
+	 $mm.= "\t" . "last was \"$last_basic_block\". \n";
+	 $mm.= "\t" . "for ftn \"";
+	 $mm.= $last_basic_block->{'optHashref'}->{'ftnName'} . "\", \n"; 
+	 Carp::confess( $mm . $msg );
       }
    }
    if ( $this->{'regNum'} == 1 and !$this->{'regNumMayBeOne'} )  {
