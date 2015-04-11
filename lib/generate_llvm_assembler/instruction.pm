@@ -216,6 +216,7 @@ package instruction::private;
 sub instruction::generate_one_inst
 {{
    my( $basicBlock )= @_;
+   print "starting instruction::generate_one_inst(~) \n";;
 
    my( $opcode );
    {
@@ -250,6 +251,7 @@ sub instruction::generate_one_inst
 
    $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "last instruction=\"$opcode\"\n" );;
+   print "stopping instruction::generate_one_inst(~) \n";;
    return ( $pre_def, $inst );
 }}
 
@@ -556,6 +558,7 @@ sub RegWithType_init
 sub instruction::generate_call_inst
 {{
    my( $basicBlock, $opcode )= @_;
+   print "starting instruction::generate_call_inst(~)\n";;
 
    if ( $opcode ne 'call' )  {
       die $main::scriptname . 
@@ -565,6 +568,7 @@ sub instruction::generate_call_inst
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set up everything but the arguments
    my $ftnName= addr_name::get("ftn"); # TODO: finish fixing this
+   print "instruction::generate(~) generating ftn \"$ftnName\"\n";;
    my $retType= $basicBlock->currentType();
 
    my $numSteps= int( $basicBlock->numRemainingSteps()/ 3 );
@@ -670,6 +674,7 @@ sub instruction::generate_call_inst
    # clean up and return
    $basicBlock->carpIfRegNumReset( $basicBlock,
 	 "at end of instruction::generate_call_insts($opcode)\n" );;
+   print "stopping instruction::generate_call_inst(~)\n";;
    return ( $definitions, $instructions );
 }}
 

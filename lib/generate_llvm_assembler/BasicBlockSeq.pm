@@ -127,6 +127,7 @@ use parent qw ( RegContext );
 sub new
 {{
    my( $perl_class, $parentBasicBlock, $optHashref )= @_;
+   print "starting BasicBlockSeq::new(~)\n";;
 
    my $this= {};
    bless $this, $perl_class;
@@ -220,6 +221,7 @@ sub new
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
+   print "stopping BasicBlockSeq::new(~)\n";;
    return $this;
 }}
 
@@ -292,6 +294,7 @@ sub incrementSubBlock
 sub generate
 {{
    my( $this )= @_;
+   print "starting BasicBlockSeq::generate(~)\n";;
 
    our ( $definitions, $instructions );
 
@@ -353,6 +356,7 @@ sub generate
    }
  
    # clean up and return
+   print "stopping BasicBlockSeq::generate(~)\n";;
    return ( $definitions, $instructions );
 }}
 

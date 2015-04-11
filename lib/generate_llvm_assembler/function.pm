@@ -141,6 +141,7 @@ package function::private;
 sub function::generate
 {{
    my( $ret_type, $name, $arg_listref, $opt_hashref )= @_;
+   print "starting function::generate(~)\n";;
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set default values for options as needed
@@ -245,6 +246,7 @@ sub function::generate
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
+   print "stopping function::generate(~)\n";;
    return ( $definitions, $instructions );
 }}
 

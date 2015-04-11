@@ -423,7 +423,7 @@ sub carpIfRegNumReset
 	 $mm.= "\t" . "last was \"$last_basic_block\". \n";
 	 $mm.= "\t" . "for ftn \"";
 	 $mm.= $last_basic_block->{'optHashref'}->{'ftnName'} . "\", \n"; 
-	 Carp::confess( $mm . $msg );
+	 Carp::cluck( $mm . $msg );
       }
    }
    if ( $this->{'regNum'} == 1 and !$this->{'regNumMayBeOne'} )  {
