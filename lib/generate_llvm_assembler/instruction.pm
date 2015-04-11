@@ -31,6 +31,7 @@ use strict;
 use Carp qw( cluck confess croak );
 
 use addr_name;
+use function;
 
 ## ****************************************************************************
 ## package identification
