@@ -165,11 +165,13 @@ sub function::generate
       # if there are arguments, start with their type
       $start_type= $$arg_listref[ $[ ];
    }
+   print "creating a basic block for function \"$name\"\n";;
    my( $basicBlock )= new BasicBlockSeq( undef, 
 	 { 'startPoison'=> $opt_hashref->{'startPoison'},
 	   'numSteps' => $opt_hashref->{'numSteps'},
            'startType' => $start_type,
            'stopType' => $ret_type,
+           'ftnName' => $name, #;;
 	 } );
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
