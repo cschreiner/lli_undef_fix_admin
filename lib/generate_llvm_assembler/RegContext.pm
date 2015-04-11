@@ -69,6 +69,9 @@ package RegContext;
 
       # llvm requires the first register of a function to be %1
       use constant MIN_REG_NUM => 1;
+
+      use vars qw ( $last_basic_block );;
+      $last_basic_block= undef;
    }}
 
    # =========================================================================
@@ -397,6 +400,7 @@ sub getRegType
 #
 # Inputs: 
 #   $this: the instance in question
+#   $basicBlock: the basic block in question
 #   $msg: a message to include in the error notification
 # 
 # Outputs: none
@@ -407,7 +411,15 @@ sub getRegType
 # ============================================================================
 sub carpIfRegNumReset
 {{;;
-   my( $this, $msg )= @_;
+   my( $this, $basicBlock, $msg )= @_;
+   if ( "$basicBlock" ne "$last_basic_block" )  {;;
+      if ( !defined($last_basic_block) )  {
+	 $last_basic_block= $basicBlock;
+      } else {
+	 print "got a new basic block: \"$basicBlock\", \n" . 
+	       "\t" . "last was \"$last_basic_block\". \n";
+      }
+   }
    if ( $this->{'regNum'} == 1 and !$this->{'regNumMayBeOne'} )  {
       print $msg;
       Carp::confess ( "   regNum=1, remaining steps= " . 

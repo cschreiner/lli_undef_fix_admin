@@ -306,23 +306,23 @@ sub generate
 
    print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
    while ( $this->{'remainingSteps'} > 0 )  {
-      $this->carpIfRegNumReset( 
+      $this->carpIfRegNumReset(  $this,
 	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       my( $def, $inst )= instruction::generate_one_inst( $this );
-      $this->carpIfRegNumReset( 
+      $this->carpIfRegNumReset(  $this,
 	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       $definitions.= $def;
-      $this->carpIfRegNumReset( 
+      $this->carpIfRegNumReset(  $this,
 	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       {
 	 # TODO: maybe move this to a method called by the instr. generator
 	 $this->{'remainingSteps'}--;
 	 $instructions.= $this->{'indent'} . "; step \n";
       }
-      $this->carpIfRegNumReset( 
+      $this->carpIfRegNumReset(  $this,
 	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       $instructions.= $inst;
-      $this->carpIfRegNumReset( 
+      $this->carpIfRegNumReset(  $this,
 	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       if ( $inst =~ m/%1\D.*%1\D/ )  {
 	 Carp::confess( $main::scriptname . 
