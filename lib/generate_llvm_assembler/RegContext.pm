@@ -29,6 +29,7 @@
 ## ****************************************************************************
 ## compiler directives (use's)
 use strict;
+use Carp qw( confess );
 
 use cas_listutil;
 
@@ -142,6 +143,7 @@ sub initRegContext
    my( $this, $prefix )= @_;
    $this->{'regPrefix'}= $prefix;
    $this->{'regNum'}= MIN_REG_NUM;
+   $this->{'regNumMayBeOne'}= $main::TRUE;;
    $this->{'regTypeHashref'}= {}; 
 	 # keys= reg names, values=TypeInteger instance
    $this->{'regNumArgs'}= 0; # the number of known arguments
@@ -168,6 +170,7 @@ sub getRegName
 
    my( $retVal )= "%" . $this->{'regPrefix'} . $this->{'regNum'};
    $this->{'regNum'}++;
+   $this->{'regNumMayBeOne'}= $main::FALSE;;
 
    # note that the register exists, but we don't know its type yet.
    $this->{'regTypeHashref'}->{$retVal}= undef;
@@ -379,6 +382,40 @@ sub getRegType
    my $retVal= $this->{'regTypeHashref'}->{$regName};
    return $retVal;
 }}
+
+## ===========================================================================
+## Subroutine carpIfRegNumReset()
+## ===========================================================================
+# Description: reports an error (and probably a stack trace) if field regNum
+#	got reset to 1
+#
+# Method: 
+#
+# Notes: this whole method is for debugging ;;
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance in question
+#   $msg: a message to include in the error notification
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS, or 
+#	if an error is reported, does not return
+#   
+# ============================================================================
+sub carpIfRegNumReset
+{{;;
+   my( $this, $msg )= @_;
+   if ( $this->{'regNum'} == 1 and !$this->{'regNumMayBeOne'} )  {
+      print $msg;
+      Carp::confess ( "   regNum=1, remaining steps= " . 
+	    $this->{'remainingSteps'} . ".\n" );;
+   }
+   return $main::PERL_SUCCESS;
+}}
+
 
 ## ===========================================================================
 ## Short get subroutines
