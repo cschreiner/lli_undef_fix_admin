@@ -567,7 +567,7 @@ sub instruction::generate_call_inst
    my $ftnName= addr_name::get("ftn"); # TODO: finish fixing this
    my $retType= $basicBlock->currentType();
 
-   my $numSteps= $basicBlock->numRemainingSteps()/ 3;
+   my $numSteps= int( $basicBlock->numRemainingSteps()/ 3 );
    if ( $numSteps < 2 )  {
       $numSteps= 2;
       # TODO: consider returning a NO_OP in this case, and make the caller
