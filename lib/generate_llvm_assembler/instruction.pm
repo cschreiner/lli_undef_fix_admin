@@ -226,9 +226,8 @@ sub instruction::generate_one_inst
       }
    }
 
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( 
+	 "(from beginning of instruction::generate_one_inst)\n" );;
 
    my( $pre_def, $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
@@ -249,11 +248,7 @@ sub instruction::generate_one_inst
 	    $opcode_hash{$opcode}->{'type'} . "\"\n";
    }
 
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      print "last instruction=\"$opcode\"\n";;
-      Carp::confess ( "   regNum=1\n" );;
-   }
-
+   $basicBlock->carpIfRegNumReset( "last instruction=\"$opcode\"\n" );;
    return ( $pre_def, $inst );
 }}
 
@@ -321,9 +316,9 @@ sub instruction::generate_storeload_insts
    # store instructions.
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   
+   $basicBlock->carpIfRegNumReset( 
+	 "at end of instruction::generate_storeload_insts($opcode)\n" );;
    return ( $pre_func, $inst );
 }}
 
@@ -380,9 +375,8 @@ sub instruction::generate_shift_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( 
+	 "at end of instruction::generate_shift_insts($opcode)\n" );;
    return ("", $inst );
 }}
 
@@ -449,9 +443,8 @@ sub instruction::generate_arith_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( 
+	 "at end of instruction::generate_arith_insts($opcode)\n" );;
    return ("", $inst );
 }}
 
@@ -489,9 +482,8 @@ sub instruction::generate_const_inst
 	 $basicBlock->currentType()->getName(). ' ' . 
          $basicBlock->currentType()->getRandVal() . ", 0 \n";
    $basicBlock->reportType( $regName, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( 
+	 "at end of instruction::generate_const_insts()\n" );;
    return ("", $inst );
 }}
 
@@ -675,9 +667,8 @@ sub instruction::generate_call_inst
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( 
+	 "at end of instruction::generate_call_insts($opcode)\n" );;
    return ( $definitions, $instructions );
 }}
 

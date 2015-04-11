@@ -306,39 +306,24 @@ sub generate
 
    print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
    while ( $this->{'remainingSteps'} > 0 )  {
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset( 
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       my( $def, $inst )= instruction::generate_one_inst( $this );
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset( 
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       $definitions.= $def;
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset( 
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       {
 	 # TODO: maybe move this to a method called by the instr. generator
 	 $this->{'remainingSteps'}--;
 	 $instructions.= $this->{'indent'} . "; step \n";
       }
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset( 
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       $instructions.= $inst;
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset( 
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       if ( $inst =~ m/%1\D.*%1\D/ )  {
 	 Carp::confess( $main::scriptname . 
 	    ": internal error 2015apr10_102650 " .
