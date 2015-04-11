@@ -8,7 +8,7 @@
 # For a copyright information, see the statement in the POD documentation at
 # the end of this file.  
 #
-# Description: 
+# Description: see POD documentation, below
 #	
 #
 # ****************************************************************************
@@ -33,6 +33,9 @@ use Getopt::Long;
 use Config;
 use File::Spec;
 use FileHandle;
+
+use BasicBlockSeq;
+use TypeInteger;
 
 # ****************************************************************************
 # package identification
@@ -82,7 +85,8 @@ use FileHandle;
       # set library search paths
 
       use FindBin;
-      use lib "$FindBin::Bin/../lib";
+      use lib "$FindBin::Bin/../../lib";
+      use lib "$FindBin::Bin/../../lib/generate_llvm_assembler";
 
       if ( exists($ENV{'USR_CAS_LIB'}) )  {
          push @INC, File::Spec->catdir( $ENV{'USR_CAS_LIB'} . 'perl' );
@@ -211,8 +215,13 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   
 
-## ===========================================================================
-##   
+{
+   my( $aa )= new BasicBlockSeq( undef, 
+	 {
+	    'startType'=> new TypeInteger( 61 ),
+	 } );
+   testBasicBlockSeq( $aa );
+}
 
 ## ===========================================================================
 ##   
@@ -225,6 +234,44 @@ if ( $debug_flag )  {
 
 ## ===========================================================================
 ##   
+
+## ===========================================================================
+##   
+
+## ===========================================================================
+## Subroutine testBasicBlockSeq()
+## ===========================================================================
+# Description: tests a BasicBlockSeq
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $block: the block instance in question
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub testBasicBlockSeq
+{{
+   my( $block )= @_;
+
+   my( $defs, $insts )= $block->generate();
+
+   print "#" x 60 . "\n\n";
+   print "defs= <<EOF\n" . $defs . "EOF\n\n"; 
+   print "#" x 60 . "\n\n";
+   print "insts= <<EOF\n" . $insts . "EOF\n"; 
+   print "#" x 78 . "\n" . "#" x 78 . "\n\n";
+
+   return $main::PERL_SUCCESS;
+}}
+
 
 
 # template 25 lines long
@@ -455,11 +502,7 @@ __END__
 
 =head1 NAME - BasicBlockSeq_basic.pl
 
-=cut
-
-#put a short (one line) description here
-
-=pod
+basic test case for class BasicBlockSeq.pm.
 
 =head1 SYNOPSIS
 
@@ -470,8 +513,9 @@ __END__
 
 =pod
 
- BasicBlockSeq_basic.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
- BasicBlockSeq_basic.pl [debug] ? 
+BasicBlockSeq_basic.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
+
+BasicBlockSeq_basic.pl [debug] 
 
 
 =head1 DESCRIPTION
@@ -495,13 +539,14 @@ __END__
 
 =head1 AUTHOR AND COPYRIGHT
 
-BasicBlockSeq_basic.pl was written by Christian A. Schreiner.  Copyright (C) 
-2015-2015 by University of Utah.  You may use, examine, or modify
-this software only in accordance with the GNU Public License, or, alternately, 
-by special arrangement with the author.  BasicBlockSeq_basic.pl is released without 
-any warranties; if you use it and something breaks, you are responsible for 
-cleaning up afterwards.  This notice is precautionary only and does not 
-inherently imply publication or release for public use.  
+BasicBlockSeq_basic.pl was written by Christian A. Schreiner.
+Copyright (C) 2015-2015 by University of Utah.  You may use, examine,
+or modify this software only in accordance with the GNU Public
+License, or, alternately, by special arrangement with the author.
+BasicBlockSeq_basic.pl is released without any warranties; if you use
+it and something breaks, you are responsible for cleaning up
+afterwards.  This notice is precautionary only and does not inherently
+imply publication or release for public use.
 
 =head1 SEE ALSO
 
