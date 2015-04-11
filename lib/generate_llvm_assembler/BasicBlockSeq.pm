@@ -116,6 +116,8 @@ use parent qw ( RegContext );
 #		the parent.
 #	stopType (TypeInteger instance): final integer type for the block. 
 #		If omitted, defaults to startType.
+#       ftnName (string): name of the function for which this BasicBlockSeq 
+#		is geing generated #;;
 # 
 # Outputs: none
 #   
@@ -129,6 +131,13 @@ sub new
    my $this= {};
    bless $this, $perl_class;
 
+   if ( !exists($optHashref->{'ftnName'}) )  {
+      Carp::confess( "no ftnName specified" );;
+   }
+   if ( $optHashref->{'ftnName'} eq "" )  {
+      Carp::confess( "ftnName specified as a null string" );;
+   }
+
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # copy over the options, element by element
 
@@ -138,6 +147,7 @@ sub new
 			    'numSteps' => 10,
 			    'startType' => undef,
 			    'stopType' => undef, 
+			    'ftnName' => 'unknown_ftn', #;;
 			   };
 
    # replace defaults with whatever options were handed in
@@ -304,8 +314,8 @@ sub generate
      # TODO2: replace the above operands with random numbers
    }
 
-   print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
    while ( $this->{'remainingSteps'} > 0 )  {
+      print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
       $this->carpIfRegNumReset(  $this,
 	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       my( $def, $inst )= instruction::generate_one_inst( $this );
