@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 #
 # ****************************************************************************
 # Project Name: lli_undef_fix
@@ -26,7 +26,7 @@
 # ****************************************************************************
 # Compiler Directives (use's)
 # make sure we are using this Perl version or later
-use 5.6.0;
+use 5.10.0;
 
 use strict;
 use Getopt::Long;
@@ -34,8 +34,6 @@ use Config;
 use File::Spec;
 use FileHandle;
 
-use BasicBlockSeq;
-use TypeInteger;
 
 # ****************************************************************************
 # package identification
@@ -111,6 +109,9 @@ use TypeInteger;
    # =========================================================================
    # require's and use's needed by the rest of the program
    # =========================================================================
+
+   use BasicBlockSeq;
+   use TypeInteger;
 
    # =========================================================================
    # subroutine END
@@ -218,7 +219,7 @@ if ( $debug_flag )  {
 {
    my( $aa )= new BasicBlockSeq( undef, 
 	 {
-	    'startType'=> new TypeInteger( 61 ),
+	    'startType'=> new TypeInteger( 31 ),
 	 } );
    testBasicBlockSeq( $aa );
 }
