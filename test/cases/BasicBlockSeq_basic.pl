@@ -220,6 +220,7 @@ if ( $debug_flag )  {
    my( $aa )= new BasicBlockSeq( undef, 
 	 {
 	    'startType'=> new TypeInteger( 31 ),
+	    'ftnName'=> $main::scriptname . "__aa", #;;
 	 } );
    testBasicBlockSeq( $aa );
 }
