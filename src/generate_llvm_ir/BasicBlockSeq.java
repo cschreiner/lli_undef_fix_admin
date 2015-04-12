@@ -43,18 +43,27 @@ package generate_llvm_ir;
 //import java.awt.Color.*;
 //import java.awt.geom.*;
 
+import generate_llvm_ir.*;
+// TODO2: see if this can be made more specific:
+//import generate_llvm_ir.RegContext;
+//import generate_llvm_ir.TypeInteger;
+//import generate_llvm_ir.instruction;
+
 
 // ****************************************************************************
 // File's primary class: BasicBlockSeq
 // ****************************************************************************
-/*** 
-   * <ul>
-   * <li> Description: 
-   *
-   * <li> Algorithm: 
-   * </ul>
-   */
-public class BasicBlockSeq 
+/*** Description: code to generate a basic block.  Recall that, in general, a
+ *	basic block is a sequence of instructions such that if any of them are
+ *	executed, all of them are executed.  A basic block sequence, here, is
+ *	a sequence of 1+ basic blocks, possibly interrupted by a control flow
+ *	statement (e.g. branch, switch, or similar).
+ *
+ * <ul> 
+ * <li> Algorithm: 
+ * </ul>
+ */
+public class BasicBlockSeq extends RegContext
 {
 
 /* ############################################################################
@@ -71,7 +80,43 @@ public class BasicBlockSeq
       * instance variables
       * =======================================================================
       */
+   /** contains the whitespace that should prefix the line of code currently
+      being generated.
+    */
+   String indent;
 
+   /** the prefix to apply to this block's register names */
+   String regPrefix;
+
+   /** the prefix to apply to this block's label names */
+   StringlabelPrefix;
+
+   /** the basic block that called this one.  Is null if this is the initial
+	basic block for a function.
+   */
+   BasicBlockSeq parentBasicBlock;
+
+
+   /** if a child block was to be created now (presumably as a result of a
+    * control flow instruction), would it be the 0th, first, second, or nth
+    * child block?
+    */
+   int childBlockNum;
+   /** string representation of childBlockNum */
+   String childBlock;
+
+   /** The data type that the block starts with, is currently using as the
+    * block's instructions are generated, and that the block should stop with.
+    * If this is the primary basic block for a function, stopType must be the
+    * type the function will return.
+    */
+   TypeInteger startType, currentType, stopType;
+
+   /** the number of steps (instructions) the block should have */
+   int numSteps;  
+
+   /** the number if steps (instructions) remaining to be generated */
+   int remainingSteps; 
 
    /* =========================================================================
       * constructors
@@ -109,6 +154,334 @@ public class BasicBlockSeq
       * methods
       * =======================================================================
       */
+## ===========================================================================
+## Subroutine new()
+## ===========================================================================
+# Description: creates a new instance
+#
+# Method: 
+#
+# Notes: reads command line arguments
+#
+# Warnings: 
+#
+# Inputs: 
+#   $perl_class: class info (provided by PERL)
+#   $parentBasicBlock: the basic block (or basic block sequence) invoking this
+#	one, or 
+#	undef if this is the first basic block of a function.
+#   $optHashref: reference to a hash of options.  This parameter must be 
+#	present, but may be empty.  Valid options are:
+#	startPoison (boolean): true if the block should set a variable to a 
+#		poison value early in the block.
+#       numSteps (unsigned): the number of steps (instructions) the block 
+#		should contain.  The actual number may be slightly higher 
+#		in order to do data conversions and other semantic 
+#		housekeeping.
+#	startType (TypeInteger instance): initial integer type for the 
+#		block.  This is required if the block has no parent.  If the
+#		block has a parent, this defaults to the current type of
+#		the parent.
+#	stopType (TypeInteger instance): final integer type for the block. 
+#		If omitted, defaults to startType.
+#       ftnName (string): name of the function for which this BasicBlockSeq 
+#		is geing generated #;;
+# 
+# Outputs: none
+#   
+# Return Value: a reference to the new instance
+#   
+# ============================================================================
+sub new
+{{
+   my( $perl_class, $parentBasicBlock, $optHashref )= @_;
+   print "starting BasicBlockSeq::new(~)\n";;
+
+   my $this= {};
+   bless $this, $perl_class;
+
+   if ( !exists($optHashref->{'ftnName'}) )  {
+      Carp::confess( "no ftnName specified" );;
+   }
+   if ( $optHashref->{'ftnName'} eq "" )  {
+      Carp::confess( "ftnName specified as a null string" );;
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # copy over the options, element by element
+
+   # set the default values
+   $this->{'optHashref'}= {
+			    'startPoison' => $main::FALSE,
+			    'numSteps' => 10,
+			    'startType' => undef,
+			    'stopType' => undef, 
+			    'ftnName' => 'unknown_ftn', #;;
+			   };
+
+   # replace defaults with whatever options were handed in
+   foreach my $opt ( keys( %{$this->{'optHashref'}} ) )  {
+      if ( exists($$optHashref{$opt}) )  {
+	 $this->{'optHashref'}->{$opt}= $optHashref->{$opt}; 
+      }
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # main initialization based on the parent block
+   if ( defined($parentBasicBlock) )  {
+      $parentBasicBlock->incrementSubBlock();
+      $this->{'numSteps'}= int($parentBasicBlock->{'remainingSteps'}/ 3);
+      if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
+	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
+      } else {
+	 $this->{'numSteps'}= int($parentBasicBlock->{'remainingSteps'}/ 3);
+      }
+      $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
+      if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
+	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
+      } else {
+	 $this->{'startType'}= $parentBasicBlock->{'currentType'};
+      }
+      $this->{'regPrefix'}= $parentBasicBlock->{'regPrefix'} . 
+	    $parentBasicBlock->{'subBlock'};
+      $this->{'labelPrefix'}= $parentBasicBlock->{'labelPrefix'} . 
+	    $parentBasicBlock->{'subBlock'};
+   } else {
+      if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
+	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
+      } else {
+	 # we need a number of steps
+	 die $main::scriptname . ": internal error 2015apr09_115148. \n";
+      }
+      $this->{'indent'}= "  ";
+      if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
+	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
+      } else {
+	 # no known starting type
+	 die $main::scriptname . ": internal error 2015apr09_114443.\n";
+      }
+      $this->{'regPrefix'}= ""; 
+	    # LLVM IR rules require the first register to be named %1, with no
+	    # prefix.  For consistency, other registers in this block don't
+	    # have a prefix, either.
+      $this->{'labelPrefix'}= "l_";
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # other main initialization 
+   $this->{'parentBasicBlock'}= $parentBasicBlock;
+   $this->{'subBlockNum'}= 0;
+   $this->{'subBlock'}= "-";
+   $this->{'currentType'}= $this->{'startType'};
+   if ( defined( $this->{'optHashref'}->{'stopType'} ) )  {
+      $this->{'stopType'}= $this->{'optHashref'}->{'stopType'}; 
+   } else {
+      $this->{'stopType'}= $this->{'startType'};
+   }
+   if ( $this->{'numSteps'} < 1 )  { 
+      $this->{'numSteps'}= 1; 
+   }
+   $this->{'remainingSteps'}= $this->{'numSteps'};
+   
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # initialize superclass with stuff derived from the above
+   $this->initRegContext( $this->{'regPrefix'} );
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # clean up and return
+   print "stopping BasicBlockSeq::new(~)\n";;
+   return $this;
+}}
+
+## ===========================================================================
+## Subroutine incrementSubBlock()
+## ===========================================================================
+# Description: increments the subblock designation
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work with (provided by PERL)
+# 
+# Outputs: none
+#   
+# Return Value: TRUE
+#   
+# ============================================================================
+sub incrementSubBlock
+{{
+   my( $this )= @_;
+
+   use constant DIGITS=> qw ( 
+	 a b c d e f g h i j k l m n o p q r s t u v w x y z );
+   use constant BASE=> scalar(DIGITS);
+   $this->{'subBlockNum'}++;
+
+   my $rest= $this->{'subBlockNum'};
+   my $st= "";
+
+   while ( $rest > 0 )  {
+      $st= DIGITS->[$rest % BASE] . $st;
+      $rest= $rest / BASE;
+   }
+
+   # a subblock always begins with a capital letter
+   substr($st, $[)= uc( substr($st, $[) );
+
+   # clean up and return
+   $this->{'subBlock'}= $st;
+   return $main::TRUE;
+}}
+
+## ===========================================================================
+## Subroutine generate()
+## ===========================================================================
+# Description: generates the block
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to work with
+# 
+# Outputs: none
+#   
+# Return Value: a list with these elements:
+#   string containing pre-function definitions related to the generated 
+#	instructions
+#   string containing the instruction generated
+#
+# ============================================================================
+sub generate
+{{
+   my( $this )= @_;
+   print "starting BasicBlockSeq::generate(~)\n";;
+
+   our ( $definitions, $instructions );
+
+   if ( !defined($this->{'parentBasicBlock'}) )  {
+      # A basic block beginning a function must initially set at least
+      # 2 registers, so later opcodes requiring 2 operands will have
+      # them available.  If there aren't enough arguments provided, create
+      # enough registers to compensate.
+      for ( my $ii= $this->numArgs(); $ii < 2; $ii++ )  {
+	 my ( $def, $inst )= instruction::generate_const_inst( $this );
+	 $definitions.= $def;
+	 $instructions.= $inst;
+      }
+   }
+
+   if ( $this->{'optHashref'}->{'startPoison'} )  {
+     $instructions.= "  " . $this->getRegName() . 
+	   "= sub nuw " . $this->currentType()->getName() . 
+	    " 0, 1 ; generates POISON \n";
+     # TODO2: replace the above operands with random numbers
+   }
+
+   while ( $this->{'remainingSteps'} > 0 )  {
+      print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
+      my( $def, $inst )= instruction::generate_one_inst( $this );
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
+      $definitions.= $def;
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
+      {
+	 # TODO: maybe move this to a method called by the instr. generator
+	 $this->{'remainingSteps'}--;
+	 $instructions.= $this->{'indent'} . "; step \n";
+      }
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
+      $instructions.= $inst;
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
+      if ( $inst =~ m/%1\D.*%1\D/ )  {
+	 Carp::confess( $main::scriptname . 
+	    ": internal error 2015apr10_102650 " .
+	    "(two %1s in inst)" );;
+      }
+      if ( $instructions =~ m/%1\D.*%1\D/ )  {
+	 Carp::confess( $main::scriptname . 
+	    ": internal error 2015apr10_102820 " .
+	    "(two %1s in instructions)" );;
+      }
+   }
+
+   if ( $this->{'currentType'}->compareTo( $this->{'stopType'} ) != 0 )  {
+      # TODO2: add code here to convert the last 1 or 2 registers to
+      # the stop type.
+      die $main::scriptname . ": internal error 2015apr09_114820.\n";
+   }
+ 
+   # clean up and return
+   print "stopping BasicBlockSeq::generate(~)\n";;
+   return ( $definitions, $instructions );
+}}
+
+## ===========================================================================
+## short getter routines
+## ===========================================================================
+# Description: return the corresponding field
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance whose field will be returned
+# 
+# Return Value: the field value
+#   
+# ============================================================================
+# template is 5 lines long
+#sub name
+#{{
+#   my( $this )= @_;
+#   return $this->{'xx'};
+#}}
+
+# returns the TypeInteger instance defining the stop type
+sub getStopType
+{{
+   my( $this )= @_;
+   return $this->{'stopType'};
+}}
+
+sub indent
+{{
+   my( $this )= @_;
+   return $this->{'indent'};
+}}
+
+sub getStartPoison
+{{
+   my( $this )= @_;
+   return $this->{'optHashref'}->{'startPoison'};
+}}
+
+sub numRemainingSteps
+{{
+   my( $this )= @_;
+   return $this->{'remainingSteps'};
+}}
+
+sub currentType
+{{
+   my( $this )= @_;
+   return $this->{'currentType'};
+}}
 
 
 /* ############################################################################
