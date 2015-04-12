@@ -30,28 +30,18 @@
    *   package
    * **************************************************************************
    */
-package <$package_name>;
+package generate_llvm_ir;
 
 /* ****************************************************************************
    *   imports
    * **************************************************************************
    */
-//import java.util.*;
-//import java.applet.Applet;
-//import java.awt.*;
-//import java.awt.event.*;
-//import java.awt.Color.*;
-//import java.awt.geom.*;
-
+import generate_llvm_ir.TypeInteger;
 
 // ****************************************************************************
 // File's primary class: BasicBlockSeqInitializer
 // ****************************************************************************
-/*** 
-   * <ul>
-   * <li> Description: 
-   *
-   * <li> Algorithm: 
+/*** holds values used to initialize a BasicBlockSeq
    * </ul>
    */
 public class BasicBlockSeqInitializer 
@@ -71,7 +61,36 @@ public class BasicBlockSeqInitializer
       * instance variables
       * =======================================================================
       */
+   /** true if the block should set a register to a poison value early
+    * in the block.
+    */
+   public boolean startPoison;
 
+   /**  the number of steps (instructions) the block 
+    * should contain.  The actual number may be slightly
+    * higher in order to do data conversions and other semantic 
+    * housekeeping. Must be > 0.
+    */
+   public int numSteps;
+
+   /** initial integer type for the block.  This is required if the
+    * block has no parent.  If the block has a parent, this defaults to
+    * the current type of the parent.
+    */
+   public TypeInteger startType;
+
+   /** final integer type for the block.  If this is the first block
+    * of a function, this must be set to the function's return type.  If
+    * omitted, defaults to startType.  
+    */ 
+   public TypeInteger stopType;
+
+   /** name of the function in which this BasicBlockSeq resides.  If
+    * omitted, is set to a special "unknown" value.  If this block has a
+    * parent, any value set here will be overridden with the parent's
+    * value.
+    */
+   public String ftnName;
 
    /* =========================================================================
       * constructors
@@ -99,9 +118,11 @@ public class BasicBlockSeqInitializer
       */
    private BasicBlockSeqInitializer()
    {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for BasicBlockSeqInitializer." );
-      System.exit(-127);
+      startPoison= false;
+      numSteps= 10;
+      startType= null;
+      stopType= null;
+      ftnName= "(unknown ftn)";
    }}
 
 
@@ -127,58 +148,6 @@ public class BasicBlockSeqInitializer
    * templates 
    * **************************************************************************
    */
-
-/* template is 22 lines long */
-// ############################################################################
-// class_name()
-// ############################################################################
-/***  
-   * 
-   * <ul>
-   * 
-   * <li> Detailed Description: 
-   * 
-   * <li> Algorithm: 
-   * </ul>
-   * 
-   */
-//private class class_name
-//{
-//   /* variables */
-//
-//   /* constructors */
-//   class_name() { }
-//
-//   /* methods */
-//} // end nestedclass class_name
-
-
-   /* template is 22 lines long */
-   /* Note: change the initial dots to stars for public functions */
-   // ------------------------------------------------------------------------
-   // fname()
-   // ------------------------------------------------------------------------
-   /***  
-      * 
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - 
-      *
-      * @throws 
-      */
-   //private type fname()
-   //{{
-   //}}
-
-
 
 /* ****************************************************************************
    *   end of file
