@@ -9,10 +9,12 @@ SRCS= \
 	RegContext.java \
 	TypeInteger.java 
 
+SRCS_W_PKG=$(addprefix generate_llvm_ir/, $(SRCS) ) 
+
 OBJS=$(subst .java,.class, $(SRCS) )
 
 default:
-	javac $(SRCS)
+	cd ..; javac $(SRCS_W_PKG)
 
 clean:
 	rm -f $(OBJS)
