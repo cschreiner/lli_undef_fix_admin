@@ -57,6 +57,7 @@ public class BasicBlockSeqInitializer
       * class variables
       * =======================================================================
       */
+   public static int NUM_STEPS_DEFAULT= -40345; // value chosen at random
 
    /* =========================================================================
       * instance variables
@@ -120,7 +121,7 @@ public class BasicBlockSeqInitializer
    private BasicBlockSeqInitializer()
    {{
       startPoison= false;
-      numSteps= 10;
+      numSteps= NUM_STEPS_DEFAULT;
       startType= null;
       stopType= null;
       ftnName= "(unknown ftn)";
