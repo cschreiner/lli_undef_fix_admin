@@ -164,6 +164,7 @@ public class AddrName
       System.err.print( generate_llvm_ir.Main.PROGRAM_NAME +
 			": internal error 2015apr09_220001. \n" );
       System.exit(-1);
+      return null;
    }}
 
    // ------------------------------------------------------------------------
