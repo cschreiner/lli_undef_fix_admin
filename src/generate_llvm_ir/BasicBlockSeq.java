@@ -48,6 +48,7 @@ import generate_llvm_ir.*;
 //import generate_llvm_ir.RegContext;
 //import generate_llvm_ir.TypeInteger;
 //import generate_llvm_ir.instruction;
+//import generate_llvm_ir.BasicBlockSeqInitializer;
 
 
 // ****************************************************************************
@@ -75,6 +76,7 @@ public class BasicBlockSeq extends RegContext
       * class variables
       * =======================================================================
       */
+   static final String INDENT_INCREMENT= "  ";
 
    /* =========================================================================
       * instance variables
@@ -96,7 +98,6 @@ public class BasicBlockSeq extends RegContext
    */
    BasicBlockSeq parentBasicBlock;
 
-
    /** if a child block was to be created now (presumably as a result of a
     * control flow instruction), would it be the 0th, first, second, or nth
     * child block?
@@ -110,13 +111,18 @@ public class BasicBlockSeq extends RegContext
     * If this is the primary basic block for a function, stopType must be the
     * type the function will return.
     */
-   TypeInteger startType, currentType, stopType;
-
-   /** the number of steps (instructions) the block should have */
-   int numSteps;  
+   TypeInteger currentType;
 
    /** the number if steps (instructions) remaining to be generated */
    int remainingSteps; 
+
+   /** fields obtained from the BasicBlockSeqInitializer passed to the
+    * constructor.  These are documented in that class.
+    */
+   boolean startPoison;
+   int numSteps;
+   TypeInteger startType, stopType;
+   String ftnName;
 
    /* =========================================================================
       * constructors
@@ -149,94 +155,100 @@ public class BasicBlockSeq extends RegContext
       System.exit(-127);
    }}
 
-
-   /* =========================================================================
-      * methods
-      * =======================================================================
+   // ------------------------------------------------------------------------
+   // BasicBlockSeq()
+   // ------------------------------------------------------------------------
+   /***  commonly used constructor
+      * 
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      * </ul>
+      *
+      * @param paramParentBasicBlock - the basic block (or basic block sequence)
+      *		invoking this one, or
+      *		null if this is the first basic block of a function.
+      *
+      * @param paramOptions - a BasicBlockSeqInitializer instance holding may
+      *		options configuring this BasicBlockSeq instance.  If this is
+      *		undef, default values are chosen.
+      * 
+      * @throws 
       */
-## ===========================================================================
-## Subroutine new()
-## ===========================================================================
-# Description: creates a new instance
-#
-# Method: 
-#
-# Notes: reads command line arguments
-#
-# Warnings: 
-#
-# Inputs: 
-#   $perl_class: class info (provided by PERL)
-#   $parentBasicBlock: the basic block (or basic block sequence) invoking this
-#	one, or 
-#	undef if this is the first basic block of a function.
-#   $optHashref: reference to a hash of options.  This parameter must be 
-#	present, but may be empty.  Valid options are:
-#	startPoison (boolean): true if the block should set a variable to a 
-#		poison value early in the block.
-#       numSteps (unsigned): the number of steps (instructions) the block 
-#		should contain.  The actual number may be slightly higher 
-#		in order to do data conversions and other semantic 
-#		housekeeping.
-#	startType (TypeInteger instance): initial integer type for the 
-#		block.  This is required if the block has no parent.  If the
-#		block has a parent, this defaults to the current type of
-#		the parent.
-#	stopType (TypeInteger instance): final integer type for the block. 
-#		If omitted, defaults to startType.
-#       ftnName (string): name of the function for which this BasicBlockSeq 
-#		is geing generated #;;
-# 
-# Outputs: none
-#   
-# Return Value: a reference to the new instance
-#   
-# ============================================================================
-sub new
-{{
-   my( $perl_class, $parentBasicBlock, $optHashref )= @_;
-   print "starting BasicBlockSeq::new(~)\n";;
+   public BasicBlockSeq()
+   {{
+      BasicBlockSeqInitializer options= null;
 
-   my $this= {};
-   bless $this, $perl_class;
-
-   if ( !exists($optHashref->{'ftnName'}) )  {
-      Carp::confess( "no ftnName specified" );;
-   }
-   if ( $optHashref->{'ftnName'} eq "" )  {
-      Carp::confess( "ftnName specified as a null string" );;
-   }
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # copy over the options, element by element
-
-   # set the default values
-   $this->{'optHashref'}= {
-			    'startPoison' => $main::FALSE,
-			    'numSteps' => 10,
-			    'startType' => undef,
-			    'stopType' => undef, 
-			    'ftnName' => 'unknown_ftn', #;;
-			   };
-
-   # replace defaults with whatever options were handed in
-   foreach my $opt ( keys( %{$this->{'optHashref'}} ) )  {
-      if ( exists($$optHashref{$opt}) )  {
-	 $this->{'optHashref'}->{$opt}= $optHashref->{$opt}; 
+      System.out.println( "starting BasicBlockSeq(~) constructor\n" );;
+      if ( options.ftnName == null ) {
+	 throw new Error( "ftnName may not be null." );
       }
-   }
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # main initialization based on the parent block
-   if ( defined($parentBasicBlock) )  {
-      $parentBasicBlock->incrementSubBlock();
-      $this->{'numSteps'}= int($parentBasicBlock->{'remainingSteps'}/ 3);
-      if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
-	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // check options
+
+      // if no options specified, use default values
+      if ( paramOptions == null )  {
+	 options= new BasicBlockSeqInitializer();
       } else {
-	 $this->{'numSteps'}= int($parentBasicBlock->{'remainingSteps'}/ 3);
+         options= paramOptions;
       }
-      $this->{'indent'}= $parentBasicBlock->{'indent'} . "  ";
+
+      if ( "".equals(options.ftnName) ) {
+	 throw new Error( "ftnName may not be an empty string." );
+      }
+
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // copy over the options, element by element
+      startPoison= options.startPoison;
+      numSteps= options.numSteps;
+      startType= options.startType;
+      stopType= options.stopType;
+      ftnName= options.ftnName;
+
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // main initialization based on the parent block
+      if ( paramParentBasicBlock == null )  {
+	 /* we DO NOT have a parent basic block; stated equivalently, we are the
+	  * first block of a function.
+	  */
+	 parentBasicBlock= null;
+	 if ( numSteps == BasicBlockSeqInitializer.NUM_STEPS_DEFAULT ) {
+	    throw new Error( "Number of steps is required for the first "+ 
+			     "block of a function." );
+	 }
+	 indent= INDENT_INCREMENT;
+	 if( options.startType != null ) {
+	    this.startType= options.startType;
+	 } else {
+	    throw new Error( "start type must be specified for the first "+
+			     "block of a function. (2015apr09_114443).\n" );
+	 }
+	 
+	 /* LLVM IR rules require the first register to be named %1, with no
+	    prefix.  For consistency, other registers in this block don't have
+	    a prefix, either.
+	 */
+	 regPrefix= "";
+	 
+	 labelPrefix= "l_";
+      } else {
+	 /* we DO have a parent basic block */
+	 parentBasicBlock= paramParentBasicBlock;
+         $parentBasicBlock->incrementSubBlock();
+
+	 if ( options.numSteps == BasicBlockSeqInitializer.NUM_STEPS_DEFAULT ) {
+	    numSteps= parentBasicBlock.numSteps/ 3;
+	 } else {
+	    numSteps= options.numSteps;
+	 }
+
+	 indent= parentBasicBlock.indent+ INDENT_INCREMENT;
+asdf
+
       if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
 	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
       } else {
@@ -265,6 +277,7 @@ sub new
 	    # prefix.  For consistency, other registers in this block don't
 	    # have a prefix, either.
       $this->{'labelPrefix'}= "l_";
+   } else {
    }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -288,11 +301,30 @@ sub new
    $this->initRegContext( $this->{'regPrefix'} );
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+   # check values
+   if ( numSteps <= 0 ) {
+      throw new Error( "Number of steps must be positive." );
+   }
+   if ( startType == null ) {
+      throw new Error( "startType must not be null." );
+   }
+   if ( currentType == null ) {
+      throw new Error( "currentType must not be null." );
+   }
+   if ( stopType == null ) {
+      throw new Error( "stopType must not be null." );
+   }
+
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
-   print "stopping BasicBlockSeq::new(~)\n";;
+   System.out.print( "stopping BasicBlockSeq::new(~)\n" );;
    return $this;
 }}
 
+   /* =========================================================================
+      * methods
+      * =======================================================================
+      */
 ## ===========================================================================
 ## Subroutine incrementSubBlock()
 ## ===========================================================================
