@@ -44,6 +44,7 @@ package generate_llvm_ir;
 //import java.awt.geom.*;
 
 import java.util.HashMap;
+import java.util.Random;
 
 // ****************************************************************************
 // File's primary class: AddrName
@@ -68,7 +69,9 @@ public class AddrName
       * class variables
       * =======================================================================
       */
-   private static HashMap<String,Object> addrsUsed= new HashMap<String,Object>;
+   private static HashMap<String,Object> addrsUsed= 
+	 new HashMap<String,Object>();
+   private static Random rand= new Random();
 
    /* =========================================================================
       * instance variables
@@ -135,18 +138,18 @@ public class AddrName
       *
       * @throws 
       */
-   public String get(String prefix )
+   public static String get(String prefix )
    {{
       // TODO: this could use a serious efficiency improvement
-      StringBuffer retVal= "@";
-      static const String CONSONANTS= "bcdfghjklmnpqrstvwxz"; 
-      static const String VOWELS= "aeiou";
-      StringBuffer core= "";
+      StringBuffer retVal= new StringBuffer("@");
+      final String CONSONANTS= "bcdfghjklmnpqrstvwxz"; 
+      final String VOWELS= "aeiou";
+      StringBuffer core= new StringBuffer("");
 
       retVal.append(prefix);
 
 
-      for ( safetyCounter= 0; safetyCounter < 1000; safetyCounter++ ) {
+      for ( int safetyCounter= 0; safetyCounter < 1000; safetyCounter++ ) {
 	 for ( int ii= 0; ii < 2; ii++ ) {
 	    core.append( getLetter(CONSONANTS) );
 	    core.append( getLetter(VOWELS) );
@@ -154,11 +157,11 @@ public class AddrName
 	 }
 	 if ( !addrsUsed.containsKey(core) ) {
             retVal.append(core);
-            return retVal;
+            return retVal.toString();
 	 }
       }
       // we couldn't generate a unique sequence in a reasonable number of tries
-      System.err.print( generate_llvm_ir::Main::PROGRAM_NAME +
+      System.err.print( generate_llvm_ir.Main.PROGRAM_NAME +
 			": internal error 2015apr09_220001. \n" );
       System.exit(-1);
    }}
@@ -172,9 +175,9 @@ public class AddrName
     *
     * @throws 
     */
-   private char getLetter( String letters )
+   private static char getLetter( String letters )
    {{
-      static Random rand= new Random();
+       Random rand= new Random();
       int length= letters.length();
       int ii= rand.nextInt(length);
       char retVal= letters.charAt(ii);
