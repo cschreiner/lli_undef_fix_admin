@@ -116,6 +116,8 @@ use parent qw ( RegContext );
 #		the parent.
 #	stopType (TypeInteger instance): final integer type for the block. 
 #		If omitted, defaults to startType.
+#       ftnName (string): name of the function for which this BasicBlockSeq 
+#		is geing generated #;;
 # 
 # Outputs: none
 #   
@@ -125,9 +127,17 @@ use parent qw ( RegContext );
 sub new
 {{
    my( $perl_class, $parentBasicBlock, $optHashref )= @_;
+   print "starting BasicBlockSeq::new(~)\n";;
 
    my $this= {};
    bless $this, $perl_class;
+
+   if ( !exists($optHashref->{'ftnName'}) )  {
+      Carp::confess( "no ftnName specified" );;
+   }
+   if ( $optHashref->{'ftnName'} eq "" )  {
+      Carp::confess( "ftnName specified as a null string" );;
+   }
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # copy over the options, element by element
@@ -138,6 +148,7 @@ sub new
 			    'numSteps' => 10,
 			    'startType' => undef,
 			    'stopType' => undef, 
+			    'ftnName' => 'unknown_ftn', #;;
 			   };
 
    # replace defaults with whatever options were handed in
@@ -210,6 +221,7 @@ sub new
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
+   print "stopping BasicBlockSeq::new(~)\n";;
    return $this;
 }}
 
@@ -282,6 +294,7 @@ sub incrementSubBlock
 sub generate
 {{
    my( $this )= @_;
+   print "starting BasicBlockSeq::generate(~)\n";;
 
    our ( $definitions, $instructions );
 
@@ -304,41 +317,26 @@ sub generate
      # TODO2: replace the above operands with random numbers
    }
 
-   print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
    while ( $this->{'remainingSteps'} > 0 )  {
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      print "remainingSteps=" . $this->{'remainingSteps'} . ".\n";;
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       my( $def, $inst )= instruction::generate_one_inst( $this );
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       $definitions.= $def;
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       {
 	 # TODO: maybe move this to a method called by the instr. generator
 	 $this->{'remainingSteps'}--;
 	 $instructions.= $this->{'indent'} . "; step \n";
       }
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       $instructions.= $inst;
-      if ( $this->{'regNum'}== 1 )  {;;
-         print "recent instructions= <<EOF \n" . $instructions . "\nEOF\n";;
-	 Carp::confess ( "   regNum=1, remaining steps= " . 
-	       $this->{'remainingSteps'} . ".\n" );;
-      }
+      $this->carpIfRegNumReset(  $this,
+	    "recent instructions= <<EOF \n" . $instructions . "\nEOF\n" );
       if ( $inst =~ m/%1\D.*%1\D/ )  {
 	 Carp::confess( $main::scriptname . 
 	    ": internal error 2015apr10_102650 " .
@@ -358,6 +356,7 @@ sub generate
    }
  
    # clean up and return
+   print "stopping BasicBlockSeq::generate(~)\n";;
    return ( $definitions, $instructions );
 }}
 

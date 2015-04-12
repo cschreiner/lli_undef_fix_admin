@@ -148,7 +148,7 @@ sub addr_name::get
       }
       if ( exists($addr_used_hash{$addr_core}) )  { next; }
       my( $addr)= '@' . $prefix . '_' . $addr_core;
-      if ( 0 )  {
+      if ( 1 )  {;;
 	 print "   returning address \"$addr\"\n";
       }
       return $addr;

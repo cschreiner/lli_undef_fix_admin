@@ -31,6 +31,7 @@ use strict;
 use Carp qw( cluck confess croak );
 
 use addr_name;
+use function;
 
 ## ****************************************************************************
 ## package identification
@@ -215,6 +216,7 @@ package instruction::private;
 sub instruction::generate_one_inst
 {{
    my( $basicBlock )= @_;
+   print "starting instruction::generate_one_inst(~) \n";;
 
    my( $opcode );
    {
@@ -225,9 +227,8 @@ sub instruction::generate_one_inst
       }
    }
 
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "(from beginning of instruction::generate_one_inst)\n" );;
 
    my( $pre_def, $inst );
    if ( $opcode_hash{$opcode}->{'type'} eq 'arith' )  {
@@ -248,11 +249,9 @@ sub instruction::generate_one_inst
 	    $opcode_hash{$opcode}->{'type'} . "\"\n";
    }
 
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      print "last instruction=\"$opcode\"\n";;
-      Carp::confess ( "   regNum=1\n" );;
-   }
-
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "last instruction=\"$opcode\"\n" );;
+   print "stopping instruction::generate_one_inst(~) \n";;
    return ( $pre_def, $inst );
 }}
 
@@ -320,9 +319,9 @@ sub instruction::generate_storeload_insts
    # store instructions.
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "at end of instruction::generate_storeload_insts($opcode)\n" );;
    return ( $pre_func, $inst );
 }}
 
@@ -379,9 +378,8 @@ sub instruction::generate_shift_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "at end of instruction::generate_shift_insts($opcode)\n" );;
    return ("", $inst );
 }}
 
@@ -448,9 +446,8 @@ sub instruction::generate_arith_inst
 	 $operand1 . ', ' . $operand2 . "\n";
 
    $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "at end of instruction::generate_arith_insts($opcode)\n" );;
    return ("", $inst );
 }}
 
@@ -488,9 +485,8 @@ sub instruction::generate_const_inst
 	 $basicBlock->currentType()->getName(). ' ' . 
          $basicBlock->currentType()->getRandVal() . ", 0 \n";
    $basicBlock->reportType( $regName, $basicBlock->currentType() );
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "at end of instruction::generate_const_insts()\n" );;
    return ("", $inst );
 }}
 
@@ -562,6 +558,7 @@ sub RegWithType_init
 sub instruction::generate_call_inst
 {{
    my( $basicBlock, $opcode )= @_;
+   print "starting instruction::generate_call_inst(~)\n";;
 
    if ( $opcode ne 'call' )  {
       die $main::scriptname . 
@@ -571,9 +568,10 @@ sub instruction::generate_call_inst
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # set up everything but the arguments
    my $ftnName= addr_name::get("ftn"); # TODO: finish fixing this
+   print "instruction::generate(~) generating ftn \"$ftnName\"\n";;
    my $retType= $basicBlock->currentType();
 
-   my $numSteps= $basicBlock->numRemainingSteps()/ 3;
+   my $numSteps= int( $basicBlock->numRemainingSteps()/ 3 );
    if ( $numSteps < 2 )  {
       $numSteps= 2;
       # TODO: consider returning a NO_OP in this case, and make the caller
@@ -674,9 +672,9 @@ sub instruction::generate_call_inst
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
    # clean up and return
-   if ( $basicBlock->{'regNum'}== 1 )  {;;
-      Carp::confess ( "   regNum=1\n" );;
-   }
+   $basicBlock->carpIfRegNumReset( $basicBlock,
+	 "at end of instruction::generate_call_insts($opcode)\n" );;
+   print "stopping instruction::generate_call_inst(~)\n";;
    return ( $definitions, $instructions );
 }}
 
