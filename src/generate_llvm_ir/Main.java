@@ -66,6 +66,7 @@ public class Main
       * class variables
       * =======================================================================
       */
+   public static final String PROGRAM_NAME= "generate_llvm_ir";
 
    /* =========================================================================
       * instance variables
@@ -109,6 +110,34 @@ public class Main
       * methods
       * =======================================================================
       */
+
+   // ------------------------------------------------------------------------
+   // main()
+   // ------------------------------------------------------------------------
+   /***  starts the program
+      * 
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * </ul>
+      * 
+      * @param argv - the supplied command line arguments
+
+      * @return - 
+      *
+      * @throws 
+      */
+   public static final int main( String[] argv )
+   {{
+      // TODO: add code here
+      return 0;
+
+   }}
+
 
 
 /* ############################################################################
