@@ -41,7 +41,8 @@ import generate_llvm_ir.TypeInteger;
 // ****************************************************************************
 // File's primary class: BasicBlockSeqInitializer
 // ****************************************************************************
-/*** holds values used to initialize a BasicBlockSeq
+/*** holds values used to initialize a BasicBlockSeq.  All members are
+   * public, so the user can set them at will.
    * </ul>
    */
 public class BasicBlockSeqInitializer 
