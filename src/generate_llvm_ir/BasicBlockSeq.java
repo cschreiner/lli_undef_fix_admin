@@ -247,127 +247,100 @@ public class BasicBlockSeq extends RegContext
 	 }
 
 	 indent= parentBasicBlock.indent+ INDENT_INCREMENT;
-asdf
-
-      if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
-	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
-      } else {
-	 $this->{'startType'}= $parentBasicBlock->{'currentType'};
+	 if ( startType == null ) {
+	    startType= parentBasicBlock.startType;
+	 }
+	 regPrefix= parentBasicBlock.regPrefix+ parentBasicBlock.subBlock;
+	 labelPrefix= parentBasicBlock.labelPrefix+ parentBasicBlock.subBlock;
       }
-      $this->{'regPrefix'}= $parentBasicBlock->{'regPrefix'} . 
-	    $parentBasicBlock->{'subBlock'};
-      $this->{'labelPrefix'}= $parentBasicBlock->{'labelPrefix'} . 
-	    $parentBasicBlock->{'subBlock'};
-   } else {
-      if ( defined( $this->{'optHashref'}->{'numSteps'} ) )  {
-	 $this->{'numSteps'}= $this->{'optHashref'}->{'numSteps'}; 
-      } else {
-	 # we need a number of steps
-	 die $main::scriptname . ": internal error 2015apr09_115148. \n";
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      # other main initialization 
+      subBlockNum= 0;
+      subBlock= "-";
+      currentType= startType;
+      if ( stopType== null ) {
+	 stopType= startType;
       }
-      $this->{'indent'}= "  ";
-      if ( defined( $this->{'optHashref'}->{'startType'} ) )  {
-	 $this->{'startType'}= $this->{'optHashref'}->{'startType'}; 
-      } else {
-	 # no known starting type
-	 die $main::scriptname . ": internal error 2015apr09_114443.\n";
+      if ( numSteps < 1 ) { numSteps= 1; }
+      remainingSteps= numSteps;
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      # initialize superclass with stuff derived from the above
+      super.init();
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      # check values
+      if ( numSteps <= 0 ) {
+	 throw new Error( "Number of steps must be positive." );
       }
-      $this->{'regPrefix'}= ""; 
-	    # LLVM IR rules require the first register to be named %1, with no
-	    # prefix.  For consistency, other registers in this block don't
-	    # have a prefix, either.
-      $this->{'labelPrefix'}= "l_";
-   } else {
-   }
+      if ( startType == null ) {
+	 throw new Error( "startType must not be null." );
+      }
+      if ( currentType == null ) {
+	 throw new Error( "currentType must not be null." );
+      }
+      if ( stopType == null ) {
+	 throw new Error( "stopType must not be null." );
+      }
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # other main initialization 
-   $this->{'parentBasicBlock'}= $parentBasicBlock;
-   $this->{'subBlockNum'}= 0;
-   $this->{'subBlock'}= "-";
-   $this->{'currentType'}= $this->{'startType'};
-   if ( defined( $this->{'optHashref'}->{'stopType'} ) )  {
-      $this->{'stopType'}= $this->{'optHashref'}->{'stopType'}; 
-   } else {
-      $this->{'stopType'}= $this->{'startType'};
-   }
-   if ( $this->{'numSteps'} < 1 )  { 
-      $this->{'numSteps'}= 1; 
-   }
-   $this->{'remainingSteps'}= $this->{'numSteps'};
-   
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # initialize superclass with stuff derived from the above
-   $this->initRegContext( $this->{'regPrefix'} );
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # check values
-   if ( numSteps <= 0 ) {
-      throw new Error( "Number of steps must be positive." );
-   }
-   if ( startType == null ) {
-      throw new Error( "startType must not be null." );
-   }
-   if ( currentType == null ) {
-      throw new Error( "currentType must not be null." );
-   }
-   if ( stopType == null ) {
-      throw new Error( "stopType must not be null." );
-   }
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # clean up and return
-   System.out.print( "stopping BasicBlockSeq::new(~)\n" );;
-   return $this;
-}}
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      # clean up and return
+      System.out.print( "stopping BasicBlockSeq::new(~)\n" );;
+      return $this;
+   }}
 
    /* =========================================================================
       * methods
       * =======================================================================
       */
-## ===========================================================================
-## Subroutine incrementSubBlock()
-## ===========================================================================
-# Description: increments the subblock designation
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $this: the instance to work with (provided by PERL)
-# 
-# Outputs: none
-#   
-# Return Value: TRUE
-#   
-# ============================================================================
-sub incrementSubBlock
-{{
-   my( $this )= @_;
+   // ------------------------------------------------------------------------
+   // incrementSubBlock()
+   // ------------------------------------------------------------------------
+   /*** increments the subblock designation
+      * 
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * <li> No inputs.
+      * </ul>
+      * 
+      * @return - void
+      *
+      * @throws 
+      */
+   private void incrementSubBlock()
+   {{
+      static final String DIGITS= "abcdefghijklmnopqrstuvwxyz";
+      static final int BASE= DIGITS.length();
+      int rest= 0;
 
-   use constant DIGITS=> qw ( 
-	 a b c d e f g h i j k l m n o p q r s t u v w x y z );
-   use constant BASE=> scalar(DIGITS);
-   $this->{'subBlockNum'}++;
+      // the reverse of the String we're trying to build
+      StringBuffer revSt= new StringBuffer(""); 
 
-   my $rest= $this->{'subBlockNum'};
-   my $st= "";
+      subBlockNum++;
+      rest= subBlockNum;
+      
+      while ( rest > 0 )  {
+	 revSt.append( DIGITS.charAt(rest % BASE ) );
+	 rest= rest / BASE;
+      }
 
-   while ( $rest > 0 )  {
-      $st= DIGITS->[$rest % BASE] . $st;
-      $rest= $rest / BASE;
-   }
+      # a subblock always begins with a capital letter
+      {
+	 int lastCharIdx= revSt.length()- 1;
+	 revSt.replace( lastCharIdx, lastCharIdx,
+			revSt.substring(lastCharIdx).toUpper() );
+      }
 
-   # a subblock always begins with a capital letter
-   substr($st, $[)= uc( substr($st, $[) );
+      subBlock= revSt.reverse();
+   }}
 
-   # clean up and return
-   $this->{'subBlock'}= $st;
-   return $main::TRUE;
-}}
+asdf
 
 ## ===========================================================================
 ## Subroutine generate()
