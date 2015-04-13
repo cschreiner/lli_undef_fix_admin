@@ -30,7 +30,7 @@
    *   package
    * **************************************************************************
    */
-package <$package_name>;
+package generate_llvm_ir;
 
 /* ****************************************************************************
    *   imports
@@ -110,7 +110,7 @@ public class CodeChunk
       //	    "unexpected call to default constructor for CodeChunk." );
       //System.exit(-127);
       definitions= null;
-      instructons= null;
+      instructions= null;
    }}
 	
    // -------------------------------------------------------------------------
@@ -142,7 +142,7 @@ public class CodeChunk
       //	    "unexpected call to default constructor for CodeChunk." );
       //System.exit(-127);
       definitions= dd;
-      instructons= ii;
+      instructions= ii;
    }}
 	
 
