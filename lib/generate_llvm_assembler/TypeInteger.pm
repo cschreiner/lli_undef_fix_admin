@@ -106,7 +106,7 @@ sub new
    my( $abs_min_width )= 1;
    my( $pref_min_width )= 6;
    my( $width );
-   if ( $target_width eq "" )  {
+   if ( !defined($target_width) or $target_width eq "" )  {
       $width= int( rand()*(MAX_WIDTH-$pref_min_width) + $pref_min_width );
    } else {
       if ( $target_width < $abs_min_width or $target_width > MAX_WIDTH )  {
@@ -227,7 +227,8 @@ sub compareTo
    # to insure both instances being compared are integers.
 
    if ( ref($that) ne "TypeInteger" )  {
-      confess ( $main::scriptname . ": internal error 2015apr10_095356, " . 
+      Carp::confess ( $main::scriptname . 
+	    ": internal error 2015apr10_095356, " . 
 	    "code=\"" . ref($that) . "\"\n" );
    }
 
