@@ -73,10 +73,12 @@ public class CodeChunk
       * =======================================================================
       */
 
-   /** String containing the definitions related to the code */
+   /** String containing the definitions related to the generated
+    * instructions 
+    */
    public String definitions;
 
-   /** String containing the main code */
+   /** String containing the generated instructions */
    public String instructions;
 
 
