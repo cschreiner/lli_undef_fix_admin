@@ -47,11 +47,12 @@ package <$package_name>;
 // ****************************************************************************
 // File's primary class: CodeChunk
 // ****************************************************************************
-/*** 
+/*** contains a chunk of code and associated definitions
    * <ul>
-   * <li> Description: 
+   * <li> Description: All fields are public.  This is intended for
+   * other classes to use as a simplistic return type.
+   * 
    *
-   * <li> Algorithm: 
    * </ul>
    */
 public class CodeChunk 
@@ -71,6 +72,12 @@ public class CodeChunk
       * instance variables
       * =======================================================================
       */
+
+   /** String containing the definitions related to the code */
+   public String definitions;
+
+   /** String containing the main code */
+   public String instructions;
 
 
    /* =========================================================================
@@ -97,13 +104,47 @@ public class CodeChunk
       *
       * @throws
       */
-   private CodeChunk()
+   public CodeChunk()
    {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for CodeChunk." );
-      System.exit(-127);
+      //System.err.println ( "Internal error: "+
+      //	    "unexpected call to default constructor for CodeChunk." );
+      //System.exit(-127);
+      definitions= null;
+      instructons= null;
    }}
-
+	
+   // -------------------------------------------------------------------------
+   // CodeChunk( String, String )
+   // -------------------------------------------------------------------------
+   /*** alternate constructor
+      *
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * <li> No inputs.
+      * </ul>
+      *
+      * @param dd - the definitions (copied to the definitions field)
+      *
+      * @param ii - the main code (copied to the instructons field)
+      * 
+      * @return - n/a (it's a constructor!)
+      *
+      * @throws
+      */
+   public CodeChunk( String dd, String ii )
+   {{
+      //System.err.println ( "Internal error: "+
+      //	    "unexpected call to default constructor for CodeChunk." );
+      //System.exit(-127);
+      definitions= dd;
+      instructons= ii;
+   }}
+	
 
    /* =========================================================================
       * methods
