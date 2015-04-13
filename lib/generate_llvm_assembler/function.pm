@@ -241,7 +241,8 @@ sub function::generate
       die $main::scriptname . ": internal error 2015apr09_235615.\n";
    }
 
-   $instructions.= "  ret " . $retRegisterType . ' ' . $retRegister . " \n";
+   $instructions.= "  ret " . $retRegisterType->getName . ' ' . 
+	 $retRegister . " \n";
    $instructions.= "} \n";
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
