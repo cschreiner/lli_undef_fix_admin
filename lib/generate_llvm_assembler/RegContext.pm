@@ -387,6 +387,38 @@ sub getRegType
 }}
 
 ## ===========================================================================
+## Subroutine getRegTypeOrCarp()
+## ===========================================================================
+# Description: returns the data type stored in a register
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to act on
+#   $regName: the name of the register whose type should be returned
+# 
+# Outputs: none
+#   
+# Return Value: a TypeInteger instance, 
+#   or dies with a Carp message if $regName is unknown 
+#
+# ============================================================================
+sub getRegTypeOrCarp
+{{
+   my( $this, $regName )= @_;
+
+   my $retVal= $this->getRegType($regName);
+   if ( $retVal eq "" )  {
+      Carp::confess( "internal error 2015apr13_135404: unknown register." );
+   }
+   return $retVal;
+}}
+
+## ===========================================================================
 ## Subroutine carpIfRegNumReset()
 ## ===========================================================================
 # Description: reports an error (and probably a stack trace) if field regNum
@@ -423,7 +455,7 @@ sub carpIfRegNumReset
 	 $mm.= "\t" . "last was \"$last_basic_block\". \n";
 	 $mm.= "\t" . "for ftn \"";
 	 $mm.= $last_basic_block->{'optHashref'}->{'ftnName'} . "\", \n"; 
-	 Carp::cluck( $mm . $msg );
+	 #;;Carp::cluck( $mm . $msg );
       }
    }
    if ( $this->{'regNum'} == 1 and !$this->{'regNumMayBeOne'} )  {
