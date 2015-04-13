@@ -235,7 +235,7 @@ sub function::generate
    $instructions.= "\n";
    $instructions.= "  ; clean up and return \n";
    my $retRegister= $basicBlock->getPrevRegName(1);
-   my $retRegisterType= $basicBlock->getRegType($retRegister);
+   my $retRegisterType= $basicBlock->getRegTypeOrCarp($retRegister);
    if ( $basicBlock->getStopType()->compareTo($retRegisterType) != 0 )  {
       # The return value should be of the intended return type.
       die $main::scriptname . ": internal error 2015apr09_235615.\n";
