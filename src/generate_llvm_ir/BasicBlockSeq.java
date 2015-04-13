@@ -49,6 +49,7 @@ import generate_llvm_ir.*;
 //import generate_llvm_ir.TypeInteger;
 //import generate_llvm_ir.instruction;
 //import generate_llvm_ir.BasicBlockSeqInitializer;
+//import generate_llvm_ir.CodeChunk;
 
 
 // ****************************************************************************
@@ -340,36 +341,30 @@ public class BasicBlockSeq extends RegContext
       subBlock= revSt.reverse();
    }}
 
-asdf
-
-## ===========================================================================
-## Subroutine generate()
-## ===========================================================================
-# Description: generates the block
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $this: the instance to work with
-# 
-# Outputs: none
-#   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the instruction generated
-#
-# ============================================================================
-sub generate
-{{
-   my( $this )= @_;
-   print "starting BasicBlockSeq::generate(~)\n";;
-
-   our ( $definitions, $instructions );
+   // ------------------------------------------------------------------------
+   // generate()
+   // ------------------------------------------------------------------------
+   /*** generates code for the block
+      * 
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * <li> No inputs.
+      * </ul>
+      * 
+      * @return - a code chunk with the generated code
+      *
+      * @throws 
+      */
+   public CodeChunk generate()
+   {{
+      StringBuffer definitions= new StringBuffer( "" );
+      StringBuffer instructions= new StringBuffer( "" );
+      System.out.print( "starting BasicBlockSeq::generate(~)\n" );;
 
    if ( !defined($this->{'parentBasicBlock'}) )  {
       # A basic block beginning a function must initially set at least
