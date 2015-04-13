@@ -296,7 +296,8 @@ sub generate
    my( $this )= @_;
    print "starting BasicBlockSeq::generate(~)\n";;
 
-   our ( $definitions, $instructions );
+   my $definitions= "";
+   my $instructions= "";
 
    if ( !defined($this->{'parentBasicBlock'}) )  {
       # A basic block beginning a function must initially set at least
