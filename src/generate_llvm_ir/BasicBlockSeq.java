@@ -16,6 +16,9 @@
    *
    */
 
+asdf this file is incomplete-- find the asdf below to see where to resume work.
+-- CAS 2015apr14
+
 /*.. Configuration Management Information:
    * 
    * $Source: /home/cas/templates/auto_uut/RCS/cas_tmpl.java,v $
