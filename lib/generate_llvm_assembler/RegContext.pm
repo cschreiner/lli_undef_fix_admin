@@ -412,8 +412,9 @@ sub getRegTypeOrCarp
    my( $this, $regName )= @_;
 
    my $retVal= $this->getRegType($regName);
-   if ( $retVal eq "" )  {
-      Carp::confess( "internal error 2015apr13_135404: unknown register." );
+   if ( !defined($retVal) or $retVal eq "" )  {
+      Carp::confess( "internal error 2015apr13_135404 " . 
+	    "(unknown register \"$regName\"):" );
    }
    return $retVal;
 }}
