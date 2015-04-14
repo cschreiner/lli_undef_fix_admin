@@ -299,6 +299,14 @@ sub generate
    my $definitions= "";
    my $instructions= "";
 
+   #;;if ( $instructions =~ m/%1\D.*%1\D/ )  {
+   if ( $instructions ne "" )  {
+      Carp::confess( $main::scriptname . 
+	 ": internal error 2015apr14_003114 " .
+	 "(old code in \$instructions)" . "\n" . 
+	 "instructions= <<EOF\n" . $instructions . "\nEOF\n" );;
+   }
+
    if ( !defined($this->{'parentBasicBlock'}) )  {
       # A basic block beginning a function must initially set at least
       # 2 registers, so later opcodes requiring 2 operands will have
