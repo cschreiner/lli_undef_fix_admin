@@ -517,6 +517,11 @@ sub RegWithType_init
 {{
    my( $name, $type )= @_;
 
+   if ( ref($type) ne "TypeInteger" )  {
+      Carp::confess( "internal error 2015apr14_004122: type is a \"" . 
+	    ref($type) . "\"\n" );
+   }
+
    my $ret_val= { 'register'=> $name, 'type'=>$type };
    if ( $ret_val->{'register'} eq "" )  {;;
       warn $main::scriptname . ": found a null register at 2015apr9_194003.\n";;
@@ -588,10 +593,10 @@ sub instruction::generate_call_inst
    my @allAboutArgList= (); 
    my @argTypeList= (); 
    if ( $numArgs >= 1 )  {
-      my $name= $basicBlock->getPrevRegName(1);
+      my $name= $basicBlock->getPrevRegName(0);
       my $allAboutArgHashref= RegWithType_init( 
             $name,
-            $basicBlock->getRegType($name) );
+            $basicBlock->getRegTypeOrCarp($name) );
       push @allAboutArgList, $allAboutArgHashref;
    }
    for ( my $ii= ($[+1); $ii < $numArgs; $ii++ )  {
