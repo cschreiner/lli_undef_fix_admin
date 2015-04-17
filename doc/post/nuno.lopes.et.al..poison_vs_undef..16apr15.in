@@ -1,0 +1,147 @@
+From regehr@cs.utah.edu Thu Apr 16 07:23:54 2015
+Return-Path: <regehr@cs.utah.edu>
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on rio.cs.utah.edu
+X-Spam-Level: 
+X-Spam-Status: No, score=-3.5 required=5.0 tests=ALL_TRUSTED,FROM_CS_UTAH,
+	FROM_UTAH autolearn=ham version=3.3.2
+X-Original-To: cas@cs.utah.edu
+Delivered-To: cas@cs.utah.edu
+Received: from localhost (localhost [127.0.0.1])
+	by mail-svr1.cs.utah.edu (Postfix) with ESMTP id 9637F6501C1
+	for <cas@cs.utah.edu>; Thu, 16 Apr 2015 07:23:54 -0600 (MDT)
+Received: from mail-svr1.cs.utah.edu ([127.0.0.1])
+	by localhost (mail-svr1.cs.utah.edu [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id ZyqCI4j6pfek for <cas@cs.utah.edu>;
+	Thu, 16 Apr 2015 07:23:53 -0600 (MDT)
+Received: from johnregehrs-MacBook-Air.local (xwi2.xmission.com [166.70.6.5])
+	by smtps.cs.utah.edu (Postfix) with ESMTPSA id 5AB236501B9
+	for <cas@cs.utah.edu>; Thu, 16 Apr 2015 07:23:48 -0600 (MDT)
+Message-ID: <552FB7DB.8010100@cs.utah.edu>
+Date: Thu, 16 Apr 2015 07:23:39 -0600
+From: John Regehr <regehr@cs.utah.edu>
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:31.0) Gecko/20100101 Thunderbird/31.6.0
+MIME-Version: 1.0
+To: "Christian A. Schreiner" <cas@cs.utah.edu>
+Subject: Fwd: Fixing LLVM's IR
+References: <003601d07845$aca6e640$05f4b2c0$@ist.utl.pt>
+In-Reply-To: <003601d07845$aca6e640$05f4b2c0$@ist.utl.pt>
+X-Forwarded-Message-Id: <003601d07845$aca6e640$05f4b2c0$@ist.utl.pt>
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: 7bit
+X-CAS-Duplicate-Message: No 
+Status: R
+
+Please read very carefully, we'll discuss tomorrow.
+
+John
+
+
+-------- Forwarded Message --------
+Subject: Fixing LLVM's IR
+Date: Thu, 16 Apr 2015 14:03:03 +0100
+From: Nuno Lopes <nuno.lopes@ist.utl.pt>
+To: John Regehr <regehr@cs.utah.edu>, David Majnemer 
+<david.majnemer@gmail.com>
+
+Hi John,
+
+David and I met Monday and we discussed how to fix LLVM's IR once and for
+all and a bit of Alive as well.
+Follows a summary of the discussion. David please let me know if there's
+something missing or incorrect.
+
+Current situation:
+LLVM has a lattice of undefined behavior: UB, undef values, and poison
+values.  Undef and poison can be executed speculatively, but not UB.
+All operations that crash at run-time must be UB; everything else the
+compiler gets to choose.
+
+Inconsistencies:
+Right now, LLVM is inconsistent regarding the set of allowed
+transformations. Consider the following:
+%v = select %c, %a, undef
+
+LLVM will transform this into:
+%v = %a
+
+However, if %a is poison, and %c=true, this transformation is not really
+valid. Before we had an arbitrary bit pattern (undef), and now we have a
+poison value, which cannot be untainted.
+
+David then implied that having a lattice of undefined behavior is probably
+not going to work. Therefore he is proposing to remove poison altogether and
+make undef more aggressive.
+
+What was the motivation for poison in the first place?  To be able to fold
+a<a+1 to true.
+As a solution, David proposed to make icmp return undef if any of its
+operand is undef.
+
+
+The summary of the proposed changes:
+  - Reading from uninitialized memory returns undef, but each load returns a
+different undef (so that RAUW of a load with undef works).
+  - All operations, except and+or return undef if any of the operands is
+undef (and+or are an exception because we want to be able to replace
+branches with speculative execution)
+  - Poison is removed
+
+
+Now, how do we know this is what we want?  There are two angles to answer
+this questions:
+  - Correctness: is this IR semantics consistent?
+  - Performance: can we do all (most?) the transformations we care about?
+
+Regarding correctness, we think the proof we need to do is the following:
+Given a well-defined program, apply any set of valid transformations. The
+resulting program is well-defined.
+
+The proof for this kind of theorem is complicated. It is done by structural
+induction over the syntax of programs, which is non-trivial to automate.
+I suggested we could start by taking all programs up to, say, 5
+instructions, and prove that any set of transformations still generates a
+well-defined program.  When we get some confidence, then do the proof for
+unbounded program lengths.
+
+
+Regarding performance, we can do a few things:
+  1) I can implement a switch in Alive with the proposed semantics and then
+we can run it over our 300+ InstCombine patterns and check which ones fail,
+and which ones get weaker preconditions.
+  2) Run LLVM with random or real programs, and extract IR before and after
+InstCombine and use Alive to prove equivalence.  If it fails, we investigate
+(we have to limit ourselves to functions that fall within Alive's IR
+subset).
+
+
+The end result would be new semantics for the IR, which allows the
+transformations that LLVM already does, but without loop-holes. Removing
+poison also seems a good thing, since most developers still get confused
+with it.
+Then, we can also write a nice paper on the different possibilities and
+their different trade-offs, why some solutions don't work, a comparison
+between different compilers (David already collected great information!),
+and so on. I don't think there has been any study on the impact of UB in the
+design of IRs.
+
+
+Now, a few side notes regarding Alive.
+I was wondering whether we could deploy Alive within LLVM at some point.
+This would entail rewriting (incrementally) most of InstCombine/InstSimplify
+to get all of the benefits. Benefits would include termination checking, and
+improved compilation speed (by possibly traversing the IR only once by
+combining multiple transformations in one good -- still a research problem
+on itself).  Before we were a bit constrained by Z3's license, but I guess
+that's not the case anymore.
+David said it is probably low priority right now. We would need his help for
+deploying this, so I guess let's await for now. I guess we should fix the IR
+first anyway.
+
+David, please let me know if I forgot something or if there are any
+inaccuracies. John, please let us know what you think and if you would like
+to work on this project.
+
+Nuno
+
+
+
