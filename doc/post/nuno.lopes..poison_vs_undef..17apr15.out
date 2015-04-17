@@ -1,3 +1,191 @@
+To:  TBD
+Tentative-To: John Regehr <regehr@cs.utah.edu> 
+Subject: Re:  Fwd: Fixing LLVM's IR
+
+Nuno, David:
+
+I am one of John's graduate students who has been working on this
+problem.  In particular, I have created a LLVM IR interpreter that
+tracks poison, and is capable of applying different poison handling
+rules and reporting the effects.  The proposal in your 16apr2015
+email brings up some interesting ideas, and I believe John's and my
+findings can help refine them.
+
+ > Inconsistencies:
+ > Right now, LLVM is inconsistent regarding the set of allowed
+ > transformations. Consider the following:
+ > %v = select %c, %a, undef
+ > 
+ > LLVM will transform this into:
+ > %v = %a
+ > 
+ > However, if %a is poison, and %c=true, this transformation is not really
+ > valid. Before we had an arbitrary bit pattern (undef), and now we have a
+ > poison value, which cannot be untainted.
+
+First of all, my understanding of the undef value is that the compiler
+can assume it is anything at all.  I have always pictured "anything"
+as including a poison value.  Therefore the above transformation is
+fully valid.  I picture this transformation as also poisoning %v.
+Does this make sense to you, or do you see this leading to messy
+consequences?
+
+Second, I have been moving towards the conclusion that the spec should
+adopt David's earlier suggestion of untainting ("antidoting") poison
+values by declaring that if the result of an operation can be
+determined without using a poison operand, then the result is
+unpoisoned.  (After reading your email, I wonder if this concept could
+be applied to your proposed merger of poison and undef, but more on that
+below.)
+
+To give an example, consider:
+
+	%icmp50= icmp sgt %arg1, %int_min
+	br %icmp50 label_a, label_b
+label_a:
+	%51= sub nsw %arg1, 1  ; produces poison iff %arg1==%int_min
+	%br label_c
+label_b:
+	%52= add %arg1, %arg2
+label_c:
+	%53= phi label_a %51, label_b %52
+
+The "Simplify the Control Flow Graph" optimization pass reduces this to:
+
+	%51= sub nsw %arg1, 1  ; produces poison iff %arg1==%int_min
+	%52= add %arg1, %arg2
+	%icmp50= icmp sgt %arg1, %int_min
+	%53= select %icmp50, %51, %52
+
+Under the current poison handling rules, if %arg1==%int_min, then %53
+is unpoisoned in the original code, but is poisoned in the optimized
+code.  But if we apply David's rule of "result is unpoisoned if it can
+be determined without using any poison values", then %53 is fine.
+
+# TODO: continue from here
+# TODO: consider giving an exampe where the %icmp50 is poisoned.
+
+Would this ability to untaint poison values (I
+call it "antidoting") change David's and Nuno's conclusions?
+
+Thirdly, I agree that the combination of undefined behavior, undef
+value, poison, and normal values is rather complicated.  So maybe David's
+and Nuno's proposal can help the LLVM community find a simpler, more general
+solution than a mere tweak of the poison rules.
+
+ > David then implied that having a lattice of undefined behavior is probably
+ > not going to work. Therefore he is proposing to remove poison altogether and
+ > make undef more aggressive.
+ > 
+ > What was the motivation for poison in the first place?  To be able to fold
+ > a<a+1 to true.
+
+I think there were other, similar, things that poison was trying to
+accomplish.  Let me go back through my notes.
+
+ > As a solution, David proposed to make icmp return undef if any of its
+ > operand is undef.
+
+How does this help?  Then I understand a compiler fully compiling to the
+current spec would compile (a < a+1) as: 
+
+	; wrap check unnecessary as C doesn't define signed wraparound.
+	%aplus1= add nsw %a, 1 
+
+	%result= icmp slt %a, %aplus1
+
+If %a is initially INT_MAX (for whatever the width de jour is), then %aplus1
+is a poisoned INT_MIN, and %result is a poisoned 0 (false).
+
+Under the proposal, %aplus1 would be the undef value, and %result is
+therefore the undef value.  But at what point is the compiler justified in
+replacing the undef value with an arbitrary bit pattern?  If so, why not
+optimise the above to:
+
+	%aplus1= add %a, 1
+	            ^^^ change from the above
+	%result= icmp slt %a, %aplus1
+
+and let %result be 0 when %a==INT_MAX and 1 otherwise?  I suspect that would
+execute faster than adding a preceeding check for %a==INT_MAX.  
+
+One could also use a more complicated application pattern for the optimizing
+path, and optimize it to
+
+	%result= 1
+
+but without applying a poison flag %result, the compiler can't give a
+guarantee that %result won't affect any outputs when %a==INT_MAX.  With
+poison, a compiler could concievably do some simple static analysis to
+determine if it needs to warn the programmer that a tainted value might be
+output.  And maybe this is ok-- we might decide that such a warning is the
+responsibility of a separate static analyzer, not of the compiler.  If so,
+we should have some mechanism to tell the separate static analyzer what the
+optimized code looks like, so the compiler optimizations don't invalidate
+the static analysis.  (Footnote: yes, in an ideal world, the source language
+specification would only have one interpretation.  But that isn't
+necessarily true in reality, leading to the risk that the compiler optimizer
+and the static analyzer might have slightly different interpretations of the
+spec.)
+
+ > The summary of the proposed changes:
+ >   - Reading from uninitialized memory returns undef, but each load returns a
+ > different undef (so that RAUW of a load with undef works).
+
+This "different" undef is what I think of as "different flavors of undef".
+(You said a while back the term "different flavors" didn't make sense to
+you.)
+
+ >   - All operations, except and+or return undef if any of the operands is
+ > undef (and+or are an exception because we want to be able to replace
+ > branches with speculative execution)
+ >   - Poison is removed
+
+So what _do_ and+or return if an operand is undef?  `0x55 & undef` is what?
+If and+or are handled specially, what about xor?  What about the not
+operation?
+
+If we go this route, why not change the 2nd rule to "the result of an
+operation with an undef operand is defined if the result can be determined
+without using the undef operand"?
+
+ > Now, how do we know this is what we want?  There are two angles to answer
+ > this questions:
+ >   - Correctness: is this IR semantics consistent?
+ >   - Performance: can we do all (most?) the transformations we care about?
+ > 
+ > Regarding correctness, we think the proof we need to do is the following:
+ > Given a well-defined program, apply any set of valid transformations. The
+ > resulting program is well-defined.
+ > 
+ > The proof for this kind of theorem is complicated. It is done by structural
+ > induction over the syntax of programs, which is non-trivial to automate.
+ > I suggested we could start by taking all programs up to, say, 5
+ > instructions, and prove that any set of transformations still generates a
+ > well-defined program.  
+
+The fuzzer I'm working on might help with this.  
+
+Further reflection: This might be doable by a proof by exhaustion.  I count
+56 relevant llvm instructions, of which about half are pretty rarely used in
+csmith programs (like insertelement).  28^5= 17e6 cases, which is doable
+with some parallelism.  A full treatment (56^5) is 550e6 cases, is still
+doable with more parallelism.
+
+ > When we get some confidence, then do the proof for
+ > unbounded program lengths.
+
+Of course, I reserve the result to change my mind as I think about this
+further.  :-)
+
+Best wishes,
+
+-- Christian
+
+-----------------------------------------------------------------------------
+Christian Schreiner
+cas@cs.utah.edu
+
 Writeup of Poison Research in project lli_undef_fix
 ----------------------------------------------------
 
