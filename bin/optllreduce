@@ -1158,7 +1158,7 @@ optllreduce [debug] B<opt_options> F<llvm_file>
 
 =head1 DESCRIPTION
 
-I<optllreduce> determines which llvm optimization pass introduces the 
+B<optllreduce> determines which llvm optimization pass introduces the 
 code that first generates poison.
 
 =head2 Algorithm
@@ -1167,31 +1167,34 @@ code that first generates poison.
 
 =item
 
-I<optllreduce> first runs the .ll file through poison-aware lli, to
-see if the code generates any poison.  If it does, I<optllreduce>
+B<optllreduce> first runs the .ll file through poison-aware B<lli>, to
+see if the code generates any poison.  If it does, B<optllreduce>
 prints a message to that effect and exits.
 
 =item
 
-I<optllreduce> runs opt on an llvm .ll file.  (Recall that opt is the
-llvm optimizer executeable.)  A typical opt command line loks like this:
+B<optllreduce> runs B<opt> on an llvm .ll file.  (Recall that B<opt> is the
+llvm optimizer executeable.)  A typical B<opt> command line looks like this:
 
     opt -S <other options from the optllreduce command line> --print-after-all file.ll
 
-Often one specifies -O1 or similar on the I<optllreduce> command line
+Often one specifies -O1 or similar on the B<optllreduce> command line
 if one knows that the poison first appeared when optimizing from -O0
 to -O1.
 
-Recall that opt writes the cumulative result of all optimization passes to
+Recall that B<opt> writes the cumulative result of all optimization passes to
 stdout, but writes notes on the result of each pass (due to --print-after-all)
 to stderr.
 
-opt typicall prefixes the output of each optimization pass with a line like
+B<opt> typicall prefixes the output of each optimization pass with a line like
 this:
 
 *** IR Dump After Module Verifier ***
 
-where "Module Verifier" is the name of the optimization pass just completed.  What follows is one function out of the input .ll file.  After this is another '***' line indicating the start of the next pass.  Finally, one gets a line like this:
+where "Module Verifier" is the name of the optimization pass just completed.
+What follows is one function out of the input .ll file.  After this is
+another '***' line indicating the start of the next pass.  Finally, one gets
+a line like this:
 
 *** IR Dump After Print module to stderr ***; ModuleID = '4-O0.ll'  
 
@@ -1200,11 +1203,11 @@ the whole .ll file.
 
 =item
 
-I<optllreduce> takes the function spelled out after each pass, inserts
+B<optllreduce> takes the function spelled out after each pass, inserts
 it into a copy of the original .ll file, and runs it through
 poison-aware lli.  If lli reports the resulting code generates poison,
-I<optllredue> stops.  If not, I<optllreduce> continues with the code
-from the next pass.  If no poison is found by the end, I<optllreduce>
+I<optllredue> stops.  If not, B<optllreduce> continues with the code
+from the next pass.  If no poison is found by the end, B<optllreduce>
 prints a message to that effect and exits.
 
 =back
