@@ -7,9 +7,9 @@ Nuno, David:
 I am one of John's graduate students who has been working on this
 problem.  In particular, I have created a LLVM IR interpreter that
 tracks poison, and is capable of applying different poison handling
-rules and reporting the effects.  The proposal in your 16apr2015
-email brings up some interesting ideas, and I believe John's and my
-findings can help refine them.
+rules and reporting the effects.  The proposal in your 16apr2015 email
+brings up some interesting ideas, and I believe John's and my findings
+can help refine them.
 
  > Inconsistencies:
  > Right now, LLVM is inconsistent regarding the set of allowed
