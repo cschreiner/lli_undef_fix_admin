@@ -7,10 +7,11 @@ Nuno, David:
 I am one of John's graduate students who has been working on this
 problem.  In particular, I have created a LLVM IR interpreter that
 tracks poison, and is capable of applying different poison handling
-rules and reporting the effects.  The proposal in your 16apr2015 email
+rules and reporting the effects, and I've been studying the effects of
+poison on different C programs.  The proposal in your 16apr2015 email
 brings up some interesting ideas, and I believe John's and my findings
 can help refine them.  With your permission, I'd like to join this
-conversation with the following thoughts:
+conversation by sharing the following initial thoughts:
 
  > Inconsistencies:
  > Right now, LLVM is inconsistent regarding the set of allowed
@@ -25,7 +26,7 @@ conversation with the following thoughts:
  > poison value, which cannot be untainted.
 
 First of all, my understanding of the undef value is that the compiler
-can assume it is anything at all.  I have always pictured "anything"
+can assume it is anything at all.  I have pictured "anything"
 as including a poison value.  Therefore the above transformation is
 fully valid.  I picture this transformation as also poisoning %v.
 Does this make sense to you, or do you see this leading to messy
@@ -39,6 +40,11 @@ unpoisoned.  I think of this as the "antidote if poison operand
 unused" rule.  (After reading your email, I wonder if this concept
 could be applied to your proposed merger of poison and undef, but more
 on that below.)
+
+David, your email to the LLVM Developer List on 27 Jan says that this
+rule is already in effect.  John and I have found it to be not
+implemented in the current LLVM optimizer (at least not consistently),
+and, yes, its absence causes grief.
 
 To give an example, consider:
 
@@ -59,14 +65,15 @@ The "Simplify the Control Flow Graph" optimization pass reduces this to:
 	%icmp50= icmp sgt %arg1, %int_min
 	%53= select %icmp50, %51, %52
 
-Under the current poison handling rules, if %arg1==%int_min, then %53
-is unpoisoned in the original code, but is poisoned in the optimized
-code.  But if we apply David's "antidote if poison operand unused"
-rule, then %53 is fine.
+Under the current poison handling rules, if %arg1==%int_min, then the
+result, %53, is unpoisoned in the original code, but is poisoned in
+the optimized code.  But if we apply David's "antidote if poison
+operand unused" rule, then %53 is fine.
 
 There are more opportunities for the optimizer to introduce poison
 when there are multiple icmp instructions.  Consider this example,
-which is the LLVM representation of an actual function from a C program:
+which is from an actual C program that had bugs John couldn't
+explain until he and I looked for poison handling issues:
 
 define i32 @x3(i64 %x4) #0 {
   %1 = load i64* @x0, align 8
@@ -106,9 +113,10 @@ instruction would make %or.cond (and the return value) only be
 poisoned if %1 != 0, which is the same behavior as the raw case.
 
 When I mentally run these cases following the proposal that unwanted
-overflow produces the undef value, I get the same results that the
-"antidote if poison operand unused" rule produces.  (Do you concur?)
-This observation has led to the following thoughts:
+overflow produces the undef value (the "poison==undef" proposal), I
+get the same results that the "antidote if poison operand unused" rule
+produces.  (David, Nuno: do you concur?)  This observation has led to
+the following thoughts:
 
 I agree that the combination of undefined behavior, undef
 value, poison, and normal values is rather complicated.  So maybe
@@ -127,7 +135,8 @@ don't invalidate the static analysis.  (Footnote: yes, in an ideal
 world, the source language specification would only have one
 interpretation.  But that isn't necessarily true in reality, leading
 to the risk that the compiler optimizer and the static analyzer might
-have slightly different interpretations of the spec. Hence the
+have slightly different interpretations of the spec.  Any bugs in the
+compiler or static analyzer compound the problem.  Hence the
 importance of telling the static analyzer what the compiler was
 thinking when it ran its optimization pass.)
 
@@ -144,7 +153,6 @@ that flag is not propagated as poison is.
 I have tools that might be able to help with this, namely a customized
 interpreter and an LLVM fuzzer.
 
- > 
  > Regarding correctness, we think the proof we need to do is the following:
  > Given a well-defined program, apply any set of valid transformations. The
  > resulting program is well-defined.
