@@ -9,7 +9,8 @@ problem.  In particular, I have created a LLVM IR interpreter that
 tracks poison, and is capable of applying different poison handling
 rules and reporting the effects.  The proposal in your 16apr2015 email
 brings up some interesting ideas, and I believe John's and my findings
-can help refine them.
+can help refine them.  With your permission, I'd like to join this
+conversation with the following thoughts:
 
  > Inconsistencies:
  > Right now, LLVM is inconsistent regarding the set of allowed
@@ -106,7 +107,7 @@ poisoned if %1 != 0, which is the same behavior as the raw case.
 
 When I mentally run these cases following the proposal that unwanted
 overflow produces the undef value, I get the same results that the
-"antidote if poison operand unused" rule produces.  (Do you consur?)
+"antidote if poison operand unused" rule produces.  (Do you concur?)
 This observation has led to the following thoughts:
 
 I agree that the combination of undefined behavior, undef
@@ -118,7 +119,7 @@ That said, I keep coming back to this thought: with some kind of a
 poison flag accompanying a value, the compiler can do a simplistic
 static analysis and warn a user if the result of a wraparound is
 likely to affect an output value.  Without a poison concept, it can't.
-Maybe this is ok-- we might decide that such a warning is the
+Maybe this is OK-- we might decide that such a warning is the
 responsibility of a separate static analyzer, not of the compiler.  If
 so, we should have some mechanism to tell the separate static analyzer
 what the optimized code looks like, so the compiler optimizations
@@ -130,10 +131,19 @@ have slightly different interpretations of the spec. Hence the
 importance of telling the static analyzer what the compiler was
 thinking when it ran its optimization pass.)
 
+As a side note, the "poison" concept is reminiscent of the behavior of
+many processors-- when wraparound happens, they load a result in the
+destination register, but set a separate overflow flag.  Of course,
+that flag is not propagated as poison is.
+
  > Now, how do we know this is what we want?  There are two angles to answer
  > this questions:
  >   - Correctness: is this IR semantics consistent?
  >   - Performance: can we do all (most?) the transformations we care about?
+
+I have tools that might be able to help with this, namely a customized
+interpreter and an LLVM fuzzer.
+
  > 
  > Regarding correctness, we think the proof we need to do is the following:
  > Given a well-defined program, apply any set of valid transformations. The
@@ -145,18 +155,14 @@ thinking when it ran its optimization pass.)
  > instructions, and prove that any set of transformations still generates a
  > well-defined program.  
 
-The fuzzer I'm working on might help with this.  
+Further reflection: These proofs for groups of 4-5 instructions might
+be doable by exhaustion.  I count 56 relevant LLVM instructions, of
+which about half are pretty rarely used in csmith-generated programs
+(like insertelement).  28^5= 17e6 cases, which is doable with some
+parallelism.  A full treatment (56^5) is 550e6 cases, is still doable
+with more parallelism.
 
-Further reflection: This might be doable by a proof by exhaustion.  I count
-56 relevant llvm instructions, of which about half are pretty rarely used in
-csmith programs (like insertelement).  28^5= 17e6 cases, which is doable
-with some parallelism.  A full treatment (56^5) is 550e6 cases, is still
-doable with more parallelism.
-
- > When we get some confidence, then do the proof for
- > unbounded program lengths.
-
-Of course, I reserve the result to change my mind as I think about this
+Of course, I reserve the result to change my mind as we discuss this
 further.  :-)
 
 Best wishes,
