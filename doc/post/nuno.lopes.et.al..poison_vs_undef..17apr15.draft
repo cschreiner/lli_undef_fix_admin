@@ -7,44 +7,22 @@ Nuno, David:
 I am one of John's graduate students who has been working on this
 problem.  In particular, I have created a LLVM IR interpreter that
 tracks poison, and is capable of applying different poison handling
-rules and reporting the effects, and I've been studying the effects of
-poison on different C programs.  The proposal in your 16apr2015 email
-brings up some interesting ideas, and I believe John's and my findings
-can help refine them.  With your permission, I'd like to join this
+rules and reporting the effects, and I've been studying their effects
+on different C programs.  The proposal in your 16apr2015 email brings
+up some interesting ideas, and I believe John's and my findings can
+help refine them.  With your permission, I'd like to join this
 conversation by sharing the following initial thoughts:
 
- > Inconsistencies:
- > Right now, LLVM is inconsistent regarding the set of allowed
- > transformations. Consider the following:
- > %v = select %c, %a, undef
- > 
- > LLVM will transform this into:
- > %v = %a
- > 
- > However, if %a is poison, and %c=true, this transformation is not really
- > valid. Before we had an arbitrary bit pattern (undef), and now we have a
- > poison value, which cannot be untainted.
-
-First of all, my understanding of the undef value is that the compiler
-can assume it is anything at all.  I have pictured "anything"
-as including a poison value.  Therefore the above transformation is
-fully valid.  I picture this transformation as also poisoning %v.
-Does this make sense to you, or do you see this leading to messy
-consequences?
-
-Second, I have been moving towards the conclusion that the spec should
-adopt David's earlier suggestion of untainting ("antidoting") poison
-values by declaring that if the result of an operation can be
-determined without using a poison operand, then the result is
-unpoisoned.  I think of this as the "antidote if poison operand
-unused" rule.  (After reading your email, I wonder if this concept
-could be applied to your proposed merger of poison and undef, but more
-on that below.)
-
-David, your email to the LLVM Developer List on 27 Jan says that this
-rule is already in effect.  John and I have found it to be not
-implemented in the current LLVM optimizer (at least not consistently),
-and, yes, its absence causes grief.
+I have been moving towards the conclusion that whatever changes happen
+to the spec will need to have the property that David brought up in
+his 27 Jan email to the LLVM Developer list, January, namely that a
+value tainted by overflow (whether the taint is named poison, undef,
+or whatever) must not propagate the taint when used in an operation
+whose result can be determined without using the tainted operand.  I
+think of this as the "antidote if poison operand isn't used"
+rule. John and I have found this concept is not implemented in the
+current LLVM optimizer (at least not consistently), and, yes, its
+absence causes grief.
 
 To give an example, consider:
 
@@ -65,10 +43,10 @@ The "Simplify the Control Flow Graph" optimization pass reduces this to:
 	%icmp50= icmp sgt %arg1, %int_min
 	%53= select %icmp50, %51, %52
 
-Under the current poison handling rules, if %arg1==%int_min, then the
-result, %53, is unpoisoned in the original code, but is poisoned in
-the optimized code.  But if we apply David's "antidote if poison
-operand unused" rule, then %53 is fine.
+Under the current poison handling implementation, if %arg1==%int_min,
+then the result, %53, is unpoisoned in the original code, but is
+poisoned in the optimized code.  But if we apply David's "antidote if
+poison operand isn't used" rule, then %53 is fine.
 
 There are more opportunities for the optimizer to introduce poison
 when there are multiple icmp instructions.  Consider this example,
@@ -108,67 +86,54 @@ define i32 @x3(i64 %x4) #0 {
 Assuming that the subtraction generates poison in both the raw and
 optimized cases, the raw case only returns with poison if %1 != 0,
 while the optimized case ends with poison unconditionally.  However,
-applying David's "antidote if poison operand unused" rule at the and
+applying David's "antidote if poison operand isn't used" rule at the and
 instruction would make %or.cond (and the return value) only be
 poisoned if %1 != 0, which is the same behavior as the raw case.
 
 When I mentally run these cases following the proposal that unwanted
 overflow produces the undef value (the "poison==undef" proposal), I
-get the same results that the "antidote if poison operand unused" rule
-produces.  (David, Nuno: do you concur?)  This observation has led to
-the following thoughts:
+get the same results that poison with the "antidote if poison operand
+isn't used" rule produces.  (David, Nuno: do you concur?)  This
+observation has led to the following thoughts:
 
-I agree that the combination of undefined behavior, undef
-value, poison, and normal values is rather complicated.  So maybe
-David's and Nuno's poison==undef proposal can help the LLVM community find a
+1. I agree that the combination of undefined behavior, undef value,
+poison, and normal values is rather complicated.  So maybe David's and
+Nuno's poison==undef proposal can help the LLVM community find a
 simpler, more general solution than a mere tweak of the poison rules.
 
-That said, I keep coming back to this thought: with some kind of a
-poison flag accompanying a value, the compiler can do a simplistic
-static analysis and warn a user if the result of a wraparound is
-likely to affect an output value.  Without a poison concept, it can't.
-Maybe this is OK-- we might decide that such a warning is the
-responsibility of a separate static analyzer, not of the compiler.  If
-so, we should have some mechanism to tell the separate static analyzer
-what the optimized code looks like, so the compiler optimizations
-don't invalidate the static analysis.  (Footnote: yes, in an ideal
-world, the source language specification would only have one
-interpretation.  But that isn't necessarily true in reality, leading
-to the risk that the compiler optimizer and the static analyzer might
-have slightly different interpretations of the spec.  Any bugs in the
-compiler or static analyzer compound the problem.  Hence the
-importance of telling the static analyzer what the compiler was
-thinking when it ran its optimization pass.)
+2. I would like to better understand your thinking behind the proposed rule:
+
+ >   - All operations, except and+or return undef if any of the operands is
+ > undef (and+or are an exception because we want to be able to replace
+ > branches with speculative execution)
+
+If the result of an operation can be determined without using an undef
+operand (e.g. `mul 0, undef` is always 0), why should the operation
+return undef?  Might this idea be better stated, "An operation with an
+undef operand always returns undef unless the result can be determined
+without using the undef operand."?
+
+3. Are there _any_ advantages that poison offers over undef, or was it
+an oversight to create poison and undef as separate concepts?
 
 As a side note, the "poison" concept is reminiscent of the behavior of
-many processors-- when wraparound happens, they load a result in the
-destination register, but set a separate overflow flag.  Of course,
-that flag is not propagated as poison is.
+many processors-- when wraparound happens, the processor loads a
+result assuming a carry/borrow was done into the destination register,
+but set a separate overflow flag.  Of course, that flag is not
+propagated as poison is.  
 
  > Now, how do we know this is what we want?  There are two angles to answer
  > this questions:
  >   - Correctness: is this IR semantics consistent?
  >   - Performance: can we do all (most?) the transformations we care about?
 
-I have tools that might be able to help with this, namely a customized
-interpreter and an LLVM fuzzer.
+I agree with these criteria.
 
- > Regarding correctness, we think the proof we need to do is the following:
- > Given a well-defined program, apply any set of valid transformations. The
- > resulting program is well-defined.
- > 
- > The proof for this kind of theorem is complicated. It is done by structural
- > induction over the syntax of programs, which is non-trivial to automate.
- > I suggested we could start by taking all programs up to, say, 5
- > instructions, and prove that any set of transformations still generates a
- > well-defined program.  
-
-Further reflection: These proofs for groups of 4-5 instructions might
-be doable by exhaustion.  I count 56 relevant LLVM instructions, of
-which about half are pretty rarely used in csmith-generated programs
-(like insertelement).  28^5= 17e6 cases, which is doable with some
-parallelism.  A full treatment (56^5) is 550e6 cases, is still doable
-with more parallelism.
+I have tools that might be be useful for studing this, namely a
+customized interpreter that can track wraparound taint (under whatever
+name) and an LLVM fuzzer.  They may be able to help refine ideas
+before going through the effort to make a formal proof, and help
+understand the effects on optimizing real code.
 
 Of course, I reserve the result to change my mind as we discuss this
 further.  :-)
