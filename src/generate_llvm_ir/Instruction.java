@@ -482,49 +482,52 @@ public class Instruction
 	    operand1+ ", "+ operand2+ "\n";
 
    basicBlock.reportType( destReg, basicBlock.currentType() );
-   $basicBlock->carpIfRegNumReset( basicBlock,
+   basicBlock.carpIfRegNumReset( basicBlock,
 	 "at end of instruction::generate_arith_insts("+ opcode.name+ ")\n" );;
    return new CodeChunk( "", inst );
 }}
 
-## ===========================================================================
-## Subroutine generate_const_inst()
-## ===========================================================================
-# Description: generates a constant-assignment instruction.  A constant 
-#	assignment instruction assigns a constant to a register. 
-#
-# Method: This has to be implemented by adding 0 to a constant.  Sheesh.
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $basicBlock: a BasicBlockSeq instance with context information
-#	for the instruction.
-#   
-# Outputs: none
-#   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the instruction generated
-#   
-# ============================================================================
-sub instruction::generate_const_inst
-{{
-   my( $basicBlock )= @_;
+   // ------------------------------------------------------------------------
+   // generateConstInst()
+   // ------------------------------------------------------------------------
+   /** generates a constant-assignment instruction.  A constant 
+    *	assignment instruction assigns a constant to a register. 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    * 
+    * @param basicBlock - context info for the instruction
+    *
+    * @param opcode - the actual opcode to generate (Admittedly this
+    *	parameter is redundant, but it provides consistency with similar
+    *	methods in this class.)
+    * 
+    * @return - the instructions generated, and associated necessary 
+    *	definitions
+    *
+    * @throws 
+    */
+    public CodeChunk generateXxInst( BasicBlockSeq basicBlock, 
+				     OpcodeCharacteristics opcode )
+   {{
+      init();
 
-   my $regName= $basicBlock->getRegName();
-   my $inst= "  " . 
-	 $regName. "= add ". 
-	 $basicBlock->currentType()->getName(). ' ' . 
-         $basicBlock->currentType()->getRandVal() . ", 0 \n";
-   $basicBlock->reportType( $regName, $basicBlock->currentType() );
-   $basicBlock->carpIfRegNumReset( $basicBlock,
-	 "at end of instruction::generate_const_insts()\n" );;
-   return ("", $inst );
-}}
+      retName= basicBlock.getRegName();
+      String inst= basicBlock.indent()+
+	    regName+ "= add "+ 
+	    basicBlock.currentType().getName()+ ' ' + 
+	    basicBlock.currentType().getRandVal() + ", 0 \n";
+      basicBlock.reportType( regName, basicBlock.currentType() );
+      basicBlock.carpIfRegNumReset( basicBlock,
+	    "at end of instruction::generate_const_insts()\n" );;
+      return new CodeChunk("", inst );
+   }}
 
 ## ===========================================================================
 ## Subroutine RegWithType_init()
