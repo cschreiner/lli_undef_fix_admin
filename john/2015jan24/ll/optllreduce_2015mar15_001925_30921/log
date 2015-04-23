@@ -1,0 +1,4 @@
+command line arguments: 
+   "-O1"
+   "4-O0.ll"
+opt command: "opt -S -O1  --print-after-all 4-O0.ll 2> optllreduce_2015mar15_001925_30921/opt.stderr" 

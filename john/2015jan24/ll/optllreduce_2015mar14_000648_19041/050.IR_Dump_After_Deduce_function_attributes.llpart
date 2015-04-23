@@ -1,0 +1,2 @@
+; Function Attrs: nounwind
+declare i32 @printf(i8* nocapture readonly, ...) #2

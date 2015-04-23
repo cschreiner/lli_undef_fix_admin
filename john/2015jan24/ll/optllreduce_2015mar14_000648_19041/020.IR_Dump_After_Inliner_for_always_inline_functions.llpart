@@ -1,0 +1,7 @@
+; Function Attrs: nounwind uwtable
+define i32 @x6() #0 {
+  %1 = load i32* @x1, align 4
+  %2 = icmp eq i32 %1, 0
+  %3 = zext i1 %2 to i32
+  ret i32 %3
+}

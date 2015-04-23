@@ -1,0 +1,19 @@
+LUF Option settings via LLI_LUF_OPTS: 
+  antidote_select=0 (default=0) 
+  antidote_and_or=1 (default=0) 
+  print_new_poison=0 (default=0) 
+  (end of options) 
+
+starting visitBinaryOperator(~) for scalar op... 
+starting Instruction::And: 
+starting visitBinaryOperator(~) for scalar op... 
+starting Instruction::Xor: 
+starting visitBinaryOperator(~) for scalar op... 
+starting Instruction::Sub: 
+	Src1  = 9223372036854775807
+	Src2  = 18446744073709551612
+	result= 9223372036854775811
+starting executeICMP_SGT(~)... 
+starting visitBinaryOperator(~) for scalar op... 
+starting Instruction::And: 
+   select: poison bits Src1=1 Src2=0 Src3=0 Dest=1
