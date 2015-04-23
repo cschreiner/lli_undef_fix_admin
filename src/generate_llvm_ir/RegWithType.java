@@ -43,6 +43,7 @@ package generate_llvm_ir;
 //import java.awt.Color.*;
 //import java.awt.geom.*;
 
+import generate_llvm_ir.*;
 
 // ****************************************************************************
 // File's primary class: RegWithType
@@ -71,7 +72,8 @@ public class RegWithType
       * instance variables
       * =======================================================================
       */
-
+   public String name;
+   public TypeInteger type;
 
    /* =========================================================================
       * constructors
@@ -118,17 +120,17 @@ public class RegWithType
       *
       * </ul>
       *
-      * @param
+      * @param name - the name of the register
+      * @param type - the data type of the register
       * 
       * @return - n/a (it's a constructor!)
       *
       * @throws
       */
-   private RegWithType()
+   public RegWithType( String name, TypeInteger type )
    {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for RegWithType." );
-      System.exit(-127);
+      this.name= name;
+      this.type= type;
    }}
 
 
