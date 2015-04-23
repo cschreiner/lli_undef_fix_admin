@@ -1,9 +1,9 @@
 /*.. 
    * Project Name: lli_undef_fix
    *
-   * File Name: Opcode.java
+   * File Name: OpcodeCharacteristics.java
    *
-   * File Description: class Opcode
+   * File Description: class OpcodeCharacteristics
    *	(list here the package-scope classes in this file)
    *
    * lli_undef_fix was written by Christian A. Schreiner at University of
@@ -45,16 +45,16 @@ package generate_llvm_ir;
 
 
 // ****************************************************************************
-// File's primary class: Opcode
+// File's primary class: OpcodeCharacteristics
 // ****************************************************************************
-/*** holds information about an opcode
-   * <ul>
-   * <li> Description: 
-   *
-   * <li> Algorithm: 
-   * </ul>
-   */
-public class Opcode 
+/** holds information about an opcode
+ * <ul>
+ * <li> Description: 
+ *
+ * <li> Algorithm: 
+ * </ul>
+ */
+public class OpcodeCharacteristics 
 {
 
 /* ############################################################################
@@ -84,33 +84,33 @@ public class Opcode
       */
 
    // -------------------------------------------------------------------------
-   // Opcode()
+   // OpcodeCharacteristics()
    // -------------------------------------------------------------------------
-   /*** default constructor
-      *
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - n/a (it's a constructor!)
-      *
-      * @throws
-      */
-   private Opcode()
+   /** default constructor
+    *
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - n/a (it's a constructor!)
+    *
+    * @throws
+    */
+   private OpcodeCharacteristics()
    {{
       System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for Opcode." );
+	    "unexpected call to default constructor for OpcodeCharacteristics." );
       System.exit(-127);
    }}
 
    // ------------------------------------------------------------------------
-   // Opcode()
+   // OpcodeCharacteristics()
    // ------------------------------------------------------------------------
    /**  commonly used constructor
     * 
@@ -134,7 +134,7 @@ public class Opcode
     *
     * @throws 
     */
-   public Opcode( String name, String type, String genName, String[] flags )
+   public OpcodeCharacteristics( String name, String type, String genName, String[] flags )
    {{
       this.name= name;
       this.type= type;
@@ -157,7 +157,7 @@ public class Opcode
    * end of primary class
    * **************************************************************************
    */
-} // end class Opcode
+} // end class OpcodeCharacteristics
 
 
 /* ****************************************************************************
