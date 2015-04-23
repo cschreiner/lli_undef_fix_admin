@@ -264,27 +264,24 @@ public class Instruction
 
       CodeChunk cc= null;
       if ( "arith".equals(opcode.type) ) {
-	 cc= instruction::generate_arith_inst( basicBlock, opcode );
-asdf
-   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'shift' )  {
-      ( $pre_def, $inst )= instruction::generate_shift_inst( 
-	    $basicBlock, $opcode );
-   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'storeload' )  {
-      ( $pre_def, $inst )= instruction::generate_storeload_insts( 
-	    $basicBlock, $opcode );
-   } elsif ( $opcode_hash{$opcode}->{'type'} eq 'call' )  {
-      ( $pre_def, $inst )= instruction::generate_call_inst( 
-	    $basicBlock, $opcode );
-   } else {
-      die $main::scriptname . 
-	    ": don't recognize opcode type for \"$opcode\", \"" . 
-	    $opcode_hash{$opcode}->{'type'} . "\"\n";
-   }
+	 cc= generate_arith_inst( basicBlock, opcode );
+      } else if ( "shift".equals(opcode.type) )  {
+	  cc= generate_shift_inst( basicBlock, opcode );
+      } else if ( "storeload".equals(opcode.type) )  {
+	  cc= generate_storeload_inst( basicBlock, opcode );
+      } else if ( "call".equals(opcode.type) )  {
+	  cc= generate_call_inst( basicBlock, opcode );
+      } else {
+	  throw new Error( Main::PROGRAM_NAME+  
+	       ": don't recognize opcode type for \"$opcode\", \""+ 
+	       $opcode_hash{$opcode}->{'type'}+ 
+	       "\"(message 2015apr23_111740)\n" );
+      }
 
-   $basicBlock->carpIfRegNumReset( $basicBlock,
+   basicBlock.carpIfRegNumReset( basicBlock,
 	 "last instruction=\"$opcode\"\n" );;
    System.out.print( "stopping instruction::generate_one_inst(~) \n" );;
-   return ( $pre_def, $inst );
+   return cc;
 }}
 
 
