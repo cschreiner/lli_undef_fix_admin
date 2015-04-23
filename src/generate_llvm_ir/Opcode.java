@@ -47,7 +47,7 @@ package generate_llvm_ir;
 // ****************************************************************************
 // File's primary class: Opcode
 // ****************************************************************************
-/*** 
+/*** holds information about an opcode
    * <ul>
    * <li> Description: 
    *
@@ -72,6 +72,11 @@ public class Opcode
       * =======================================================================
       */
 
+   /* see constructor comments for info on each of these fields */
+   String name; 
+   String type; 
+   String genFtn; 
+   String[] flags;
 
    /* =========================================================================
       * constructors
@@ -104,6 +109,38 @@ public class Opcode
       System.exit(-127);
    }}
 
+   // ------------------------------------------------------------------------
+   // Opcode()
+   // ------------------------------------------------------------------------
+   /**  commonly used constructor
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    * 
+    * @param name - the name of the opcode e.g. "add"
+    * @param type - the category the opcode is in e.g. 'arith'
+    * @param genFtn - the name of the function to call to generate the
+    * 		instruction
+    * 		TODO2: change this to the name of some instance whose
+    * 		interface has a standard generate(~) method for this
+    * 		instruction.
+    * @param flags - an array of flags that the instruction may use. 
+    *
+    * @throws 
+    */
+   public Opcode( String name, String type, String genFtn, String[] flags )
+   {{
+      this.name= name;
+      this.type= type;
+      this.genFtn= genFtn;
+      this.flags= flags;
+   }}
 
    /* =========================================================================
       * methods
@@ -132,16 +169,16 @@ public class Opcode
 // ############################################################################
 // class_name()
 // ############################################################################
-/***  
-   * 
-   * <ul>
-   * 
-   * <li> Detailed Description: 
-   * 
-   * <li> Algorithm: 
-   * </ul>
-   * 
-   */
+/**  
+ * 
+ * <ul>
+ * 
+ * <li> Detailed Description: 
+ * 
+ * <li> Algorithm: 
+ * </ul>
+ * 
+ */
 //private class class_name
 //{
 //   /* variables */
@@ -158,22 +195,22 @@ public class Opcode
    // ------------------------------------------------------------------------
    // fname()
    // ------------------------------------------------------------------------
-   /***  
-      * 
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - 
-      *
-      * @throws 
-      */
+   /**  
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
    //private type fname()
    //{{
    //}}
