@@ -125,8 +125,8 @@ public class Opcode
     * 
     * @param name - the name of the opcode e.g. "add"
     * @param type - the category the opcode is in e.g. 'arith'
-    * @param genFtn - the name of the function to call to generate the
-    * 		instruction
+    * @param genName - the name of the "generator" function to call to 
+    * 		generate the instruction
     * 		TODO2: change this to the name of some instance whose
     * 		interface has a standard generate(~) method for this
     * 		instruction.
@@ -134,11 +134,11 @@ public class Opcode
     *
     * @throws 
     */
-   public Opcode( String name, String type, String genFtn, String[] flags )
+   public Opcode( String name, String type, String genName, String[] flags )
    {{
       this.name= name;
       this.type= type;
-      this.genFtn= genFtn;
+      this.genName= genName;
       this.flags= flags;
    }}
 
