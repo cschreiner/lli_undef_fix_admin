@@ -75,7 +75,7 @@ public class OpcodeCharacteristics
    /* see constructor comments for info on each of these fields */
    String name; 
    String type; 
-   String genFtn; 
+   String genName; 
    String[] flags;
 
    /* =========================================================================
