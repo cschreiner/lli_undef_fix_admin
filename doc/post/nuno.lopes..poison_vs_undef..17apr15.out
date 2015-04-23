@@ -4,12 +4,12 @@ Subject: Re:  Fwd: Fixing LLVM's IR
 
 Nuno, David:
 
-I am one of John's graduate students who has been working on this
-problem.  In particular, I have created a LLVM IR interpreter that
-tracks poison, and is capable of applying different poison handling
-rules and reporting the effects.  The proposal in your 16apr2015
-email brings up some interesting ideas, and I believe John's and my
-findings can help refine them.
+I am one of John's graduate students who has been working on this problem.  In
+particular, I have created a LLVM IR interpreter that tracks poison, and is
+capable of applying different poison handling rules and reporting the effects.
+I have been using this tool to examine effects of various proposed LLVM spec
+changes.  Your 16apr2015 email brings up some interesting ideas, and I believe
+John's and my findings can help refine them.
 
  > Inconsistencies:
  > Right now, LLVM is inconsistent regarding the set of allowed
@@ -23,20 +23,18 @@ findings can help refine them.
  > valid. Before we had an arbitrary bit pattern (undef), and now we have a
  > poison value, which cannot be untainted.
 
-First of all, my understanding of the undef value is that the compiler
-can assume it is anything at all.  I have always pictured "anything"
-as including a poison value.  Therefore the above transformation is
-fully valid.  I picture this transformation as also poisoning %v.
-Does this make sense to you, or do you see this leading to messy
-consequences?
+First of all, my understanding of the undef value-- under the current spec--
+is that the compiler can assume it is anything at all.  I have always pictured
+"anything" as including a poison value.  Therefore the above transformation is
+fully valid.  I picture this transformation as also poisoning %v.  Does this
+make sense to you, or do you see this leading to messy consequences?
 
-Second, I have been moving towards the conclusion that the spec should
-adopt David's earlier suggestion of untainting ("antidoting") poison
-values by declaring that if the result of an operation can be
-determined without using a poison operand, then the result is
-unpoisoned.  (After reading your email, I wonder if this concept could
-be applied to your proposed merger of poison and undef, but more on that
-below.)
+Second, I have been moving towards the conclusion that the spec should adopt
+David's earlier suggestion of untainting ("antidoting") poison values by
+declaring that if the result of an operation can be determined without using a
+poison operand, then the result is unpoisoned.  (After reading your email, I
+wonder if this concept could be applied to your proposed merger of poison and
+undef, but more on that below.)
 
 To give an example, consider:
 
