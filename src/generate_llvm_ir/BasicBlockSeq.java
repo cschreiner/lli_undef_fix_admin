@@ -169,8 +169,8 @@ public class BasicBlockSeq extends RegContext
       * <li> Reentrancy: unknown
       * </ul>
       *
-      * @param paramParentBasicBlock - the basic block (or basic block sequence)
-      *		invoking this one, or
+      * @param paramParentBasicBlock - the basic block (or basic block 
+      *		sequence) invoking this one, or
       *		null if this is the first basic block of a function.
       *
       * @param paramOptions - a BasicBlockSeqInitializer instance holding may
@@ -179,7 +179,8 @@ public class BasicBlockSeq extends RegContext
       * 
       * @throws 
       */
-   public BasicBlockSeq()
+   public BasicBlockSeq( BasicBlockSeq paramParentBasicBlock, 
+			 BasicBlockSeqInitializer paramOptions )
    {{
       BasicBlockSeqInitializer options= null;
 
@@ -406,12 +407,12 @@ public class BasicBlockSeq extends RegContext
       carpIfRegNumReset(  this,
 	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
       if ( cc2.instructions.toString().matches(".*%1\D.*%1\D.*")  )  {
-         throw new CarpException( main.scriptname+ ": "+ 
+         throw new CarpException( Main.PROGRAM_NAME+ ": "+ 
 	       "internal error 2015apr10_102650 "+ 
 	       "(two %1s in cc2.instructions)" );;
       }
       if ( $instructions.toString().matches(".*%1\D.*%1\D.*")  )  {
-         throw new CarpException( main.scriptname+ ": "+
+         throw new CarpException( Main.PROGRAM_NAME+ ": "+
 	       "internal error 2015apr10_102820 "+ 
 	       "(two %1s in instructions)" );;
       }
@@ -421,7 +422,7 @@ public class BasicBlockSeq extends RegContext
       /* TODO2: add code here to convert the last 1 or 2 registers to
          the stop type.  Until then, we have to give up.
       */
-      throw new Error( $main::scriptname+ 
+      throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr09_114820.\n" );
    }
  

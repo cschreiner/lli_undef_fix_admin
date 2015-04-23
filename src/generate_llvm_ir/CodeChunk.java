@@ -54,6 +54,12 @@ package generate_llvm_ir;
    * 
    *
    * </ul>
+   *
+   * TODO2: consider adding an append(CodeChunk other) method that
+   * automatically appends the other chunk's definitions string onto this one,
+   * ditto the instructions string.
+   *
+   * TODO2: consider making the internal fields be private StringBuffers.
    */
 public class CodeChunk 
 {
