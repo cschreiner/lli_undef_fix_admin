@@ -224,9 +224,9 @@ public class Instruction
    }}
 
    // ------------------------------------------------------------------------
-   // generate_one_inst()
+   // generateOneInst()
    // ------------------------------------------------------------------------
-   /**  
+   /**  generates a randomly selected instruction
     * 
     * <ul>
     * <li> Detailed Description: 
@@ -245,8 +245,10 @@ public class Instruction
     *
     * @throws 
     */
-   private type generate_one_inst( BasicBlockSeq basicBlock )
+   public type generateOneInst( BasicBlockSeq basicBlock )
    {{
+      init();
+
       static Random randomizer= new Random();
       System.out.print( "starting instruction::generate_one_inst(~) \n" );;
 
@@ -264,220 +266,225 @@ public class Instruction
 
       CodeChunk cc= null;
       if ( "arith".equals(opcode.type) ) {
-	 cc= generate_arith_inst( basicBlock, opcode );
+	 cc= generateArithInst( basicBlock, opcode );
       } else if ( "shift".equals(opcode.type) )  {
-	  cc= generate_shift_inst( basicBlock, opcode );
+	  cc= generateShiftInst( basicBlock, opcode );
       } else if ( "storeload".equals(opcode.type) )  {
-	  cc= generate_storeload_inst( basicBlock, opcode );
+	  cc= generateStoreLoadInst( basicBlock, opcode );
       } else if ( "call".equals(opcode.type) )  {
-	  cc= generate_call_inst( basicBlock, opcode );
+	  cc= generateCallinst( basicBlock, opcode );
       } else {
 	  throw new Error( Main::PROGRAM_NAME+  
-	       ": don't recognize opcode type for \"$opcode\", \""+ 
+	       ": don't recognize opcode type for \""+ opcode.name+ "\", \""+ 
 	       $opcode_hash{$opcode}->{'type'}+ 
 	       "\"(message 2015apr23_111740)\n" );
       }
 
    basicBlock.carpIfRegNumReset( basicBlock,
-	 "last instruction=\"$opcode\"\n" );;
+	 "last instruction=\""+ opcode.name+ "\"\n" );;
    System.out.print( "stopping instruction::generate_one_inst(~) \n" );;
    return cc;
 }}
 
+   // ------------------------------------------------------------------------
+   // generateStoreLoadInst()
+   // ------------------------------------------------------------------------
+   /** Generates a store instruction, immediately followed by a load
+    *	instruction.  The idea is to make sure every value gets stored also
+    *	gets loaded later in the program.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param basicBlock - context info for the instruction
+    *
+    * @param opcode - the actual opcode to generate (Admittedly this
+    *	parameter is redundant, but it provides consistency with similar
+    *	methods in this class.)
+    * 
+    * @return - the instructions generated, and associated necessary 
+    *	definitions
+    *
+    * @throws 
+    */
+    public CodeChunk generateStoreLoadInst( BasicBlockSeq basicBlock, 
+					    OpcodeCharacteristics opcode )
+   {{           
+      init();
 
-## ===========================================================================
-# Subroutine generate_storeload_insts()
-# ============================================================================
-# Description: generates a store instruction, immediately followed by a load
-#	instruction.  The idea is to make sure every value gets stored also
-#	gets loaded later in the program.
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $basicBlock: a BasicBlockSeq instance with context information
-#	for the instruction.
-#   $opcode: the opcode to generate
-# 
-# Outputs: none
-#   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the instruction generated
-#
-# ============================================================================
-sub instruction::generate_storeload_insts
-{{
-   my( $basicBlock, $opcode )= @_;
+      /* TODO2: have a package similar to RegContext that generates
+       * these names and guarantees that the same name is not used
+       * twice.  Maybe make the names have form
+       * consonant-vowel-consonant_consonant-vowel-consonant to make
+       * them pronouncible. 
+       */
 
-   # TODO2: have a package similar to RegContext that generates these names
-   # and guarantees that the same name is not used twice.  Maybe make the
-   # names have form consonant-vowel-consonant_consonant-vowel-consonant to
-   # make them pronouncible.
-   my( $addr_name )= addr_name::get('var');
+      String addrName= AddrName.get('var');
+      String destReg= basicBlock.getRegName();
+      String srcReg= basicBlock.getPrevRegName(1);
+      StringBuffer defs= new StringBuffer("");
+      StringBuffer insts= new StringBuffer("");
 
-   my( $dest_reg )= $basicBlock->getRegName();
-   my( $src_reg )= $basicBlock->getPrevRegName(1);
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   my( $pre_func )= $addr_name . " = global " . 
-	 $basicBlock->currentType()->getName() . 
-	 " " . $basicBlock->currentType()->getRandVal() . "\n";
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      defs.append( addrName+ " = global "+
+		   basicBlock.currentType().getName()+ " "+
+		   basicBlock.currentType().getRandVal()+ "\n" );
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   my( $store_flags )= " ";
-   if ( rand() < .5 )  {
-      $store_flags= "volatile ";
-   }
-   # recall that flags strings must always end in a space
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      String storeFlags= " ";
+      if ( Math.random() < .5 )  {
+	  storeFlags= "volatile ";
+      }
+      // recall that flags strings must always end in a space
 
-   my( $inst );
-   $inst.= "  " . "store " . 
-         $store_flags . $basicBlock->currentType()->getName() . ' ' . 
-	 $src_reg . ', ' . 
-         $basicBlock->currentType()->getName() . '* ' . $addr_name . "\n";
-   $inst.= "  " . $dest_reg . "= load " . 
-	 $basicBlock->currentType()->getName() . 
-	 "* $addr_name \n";
-   # TODO2: consider adding an 'align 4' or similar to the load and 
-   # store instructions.
+      insts.append( "  "+ "store "+
+	    $storeFlags+ $basicBlock->currentType()->getName()+ ' '+
+	    $srcReg+ ', '+ 
+	    basicBlock->currentType()->getName()+ '* '+ addrName+ "\n" );
+      insts.append( "  "+ destReg+ "= load "+
+	    basicBlock->currentType()->getName()+
+	    "* "+ addrName+ " \n" );
+      /* TODO2: consider adding an 'align 4' or similar to the load and 
+	 store instructions, possibly as an optional flag.
+      */
 
-   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
+   basicBlock->reportType( destReg, basicBlock->currentType() );
    
-   $basicBlock->carpIfRegNumReset( $basicBlock,
-	 "at end of instruction::generate_storeload_insts($opcode)\n" );;
-   return ( $pre_func, $inst );
+   basicBlock->carpIfRegNumReset( basicBlock,
+	 "at end of instruction::generate_storeload_insts("+ opcode.name+ 
+	 ")\n" );;
+   return new CodeChunk( defs, insts );
 }}
 
-## ===========================================================================
-## Subroutine generate_shift_inst()
-## ===========================================================================
-# Description: generates a shift instruction.  Shift instructions 
-#	use a register value for one argument, and randomly generated
-#	constant for the other.  This guards against the constant
-#	being larger than the number of bits in the register.
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $basicBlock: a BasicBlockSeq instance with context information
-#	for the instruction.
-#   $opcode: the opcode to generate
-# 
-# Outputs: none
-#   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the instruction generated
-#
-# ============================================================================
-sub instruction::generate_shift_inst
-{{
-   my( $basicBlock, $opcode )= @_;
+   // ------------------------------------------------------------------------
+   // generateShiftInst()
+   // ------------------------------------------------------------------------
+   /** generates a shift instruction.  Shift instructions 
+    *	use a register value for one argument, and randomly generated
+    *	constant for the other.  This guards against the constant
+    *	being larger than the number of bits in the register.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param basicBlock - context info for the instruction
+    *
+    * @param opcode - the actual opcode to generate 
+    * 
+    * @return - the instructions generated, and associated necessary 
+    *	definitions
+    *
+    * @throws 
+    */
+    public CodeChunk generateShiftInst( BasicBlockSeq basicBlock, 
+					OpcodeCharacteristics opcode )
+   {{
+      init();
 
-   my( $dest_reg )= $basicBlock->getRegName();
+      String destReg= basicBlock.getRegName();
+      StringBuffer flags= new StringBuffer( "" );
 
-   my( $flags )= "";
-   my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
-   for ( my $ii= 0; $ii < scalar(@$flag_listref); $ii++ )  {
-      if ( rand() < .5 )  {
-	 # a flag must ALWAYS end in a space. 
-         $flags.= $$flag_listref[$ii] . " ";
+
+   for ( int ii= 0; ii < opcode.flags.length; ii++ )  {
+      if ( Math.random() < .5 )  {
+	 // a flag must ALWAYS end in a space. 
+	 flags.append( opcode.flags[ii] . " " );
       }
    } 
 
-   my( $operand1 )= $basicBlock->getPrevRegName(1);
+   String operand1= basicBlock.getPrevRegName(1);
 
-   my( $operand2 );
-   # operand is a constant
-   $operand2= $basicBlock->currentType()->getRandShiftVal();
+   // operand2 is a constant
+   String operand2= basicBlock.currentType().getRandShiftVal();
    
-   my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $basicBlock->currentType()->getName() . ' ' .
-	 $operand1 . ', ' . $operand2 . "\n";
+   StringBuffer inst= new StringBuffer("");
+   inst.append( "  "+ destReg+ "= "+ opcode.name+ ' '+
+	 flags+ basicBlock->currentType()->getName()+ ' '+
+	 operand1+ ', '+ operand2+ "\n" );
 
-   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   $basicBlock->carpIfRegNumReset( $basicBlock,
-	 "at end of instruction::generate_shift_insts($opcode)\n" );;
-   return ("", $inst );
+   basicBlock.reportType( destReg, basicBlock.currentType() );
+   $basicBlock->carpIfRegNumReset( basicBlock,
+	 "at end of instruction::generate_shift_insts("+ opcode.name+ ")\n" );;
+   return new CodeChunk("", inst );
 }}
 
-## ===========================================================================
-## Subroutine generate_arith_inst()
-## ===========================================================================
-# Description: generates an arithmetic instruction.  Arithmetic instructions 
-#	use a register value for one argument, and either a register or a 
-#	literal value for the other.  These arguments can be in either order. 
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $basicBlock: a BasicBlockSeq instance with context information
-#	for the instruction.
-#   $opcode: the opcode to generate
-# 
-# Outputs: none
-#   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the instruction generated
-#
-# ============================================================================
-sub instruction::generate_arith_inst
-{{
-   my( $basicBlock, $opcode )= @_;
+   // ------------------------------------------------------------------------
+   // generateArithInst()
+   // ------------------------------------------------------------------------
+   /** generates an arithmetic instruction.  Arithmetic instructions 
+    *	use a register value for one argument, and either a register or a 
+    *	literal value for the other.  These arguments can be in either order. 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    * 
+    * @param basicBlock - context info for the instruction
+    *
+    * @param opcode - the actual opcode to generate 
+    * 
+    * @return - the instructions generated, and associated necessary 
+    *	definitions
+    *
+    * @throws 
+    */
+    public CodeChunk generateArithInst( BasicBlockSeq basicBlock, 
+					OpcodeCharacteristics opcode )
+   {{
+      init();
 
-   my( $dest_reg )= $basicBlock->getRegName();
+      String destReg= basicBlock.getRegName();
+      StringBuffer flags= new StringBuffer("");
 
-   my( $flags )= "";
-   my( $flag_listref )= $opcode_hash{$opcode}->{'flag_listref'};
-   for ( my $ii= 0; $ii < scalar(@$flag_listref); $ii++ )  {
-      if ( rand() < .5 )  {
-
-         $flags.= $$flag_listref[$ii] . " ";
+      for( int ii= 0; ii < opcode.flags.length; ii++ )  {
+	 if ( Math.random() < .5 )  {
+	     flags.append( opcode.flags[ii]+ " " );
+	 }
       }
-   } 
 
-   my( $operand1 )= $basicBlock->getPrevRegName(1);
+      String operand1= basicBlock.getPrevRegName(1);
 
-   my( $operand2 );
-   if ( rand() < .5 )  {
-      # operand is a constant
-      $operand2= $basicBlock->currentType()->getRandVal();
-   } else {
-      $operand2= $basicBlock->getRecentRegName();
-   }
+      String operand2= "";
+      if ( Math.random() < .5 )  {
+	 # operand will be a constant
+	 operand2= basicBlock.currentType().getRandVal();
+      } else {
+	 operand2= basicBlock.getRecentRegName();
+      }
    
-   # maybe swap operands
-   if ( rand() < .5 )  {
-      my( $tmp )= $operand1;
-      $operand1= $operand2;
-      $operand2= $tmp;
-   }
+      // maybe swap operands
+      if ( Math.random() < .5 )  {
+	  String tmp= operand1;  
+	  operand1= operand2;
+	  operand2= tmp;
+      }
 
-   my( $inst )= "  " . $dest_reg . "= " . $opcode . ' ' . 
-	 $flags . $basicBlock->currentType()->getName() . ' ' .
-	 $operand1 . ', ' . $operand2 . "\n";
+      String inst= "  " + destReg+ "= "+ opcode.name+ " "+ 
+	    flags+ basicBlock.currentType().getName()+ " "+
+	    operand1+ ", "+ operand2+ "\n";
 
-   $basicBlock->reportType( $dest_reg, $basicBlock->currentType() );
-   $basicBlock->carpIfRegNumReset( $basicBlock,
-	 "at end of instruction::generate_arith_insts($opcode)\n" );;
-   return ("", $inst );
+   basicBlock.reportType( destReg, basicBlock.currentType() );
+   $basicBlock->carpIfRegNumReset( basicBlock,
+	 "at end of instruction::generate_arith_insts("+ opcode.name+ ")\n" );;
+   return new CodeChunk( "", inst );
 }}
 
 ## ===========================================================================
@@ -612,7 +619,7 @@ sub instruction::generate_call_inst
    use constant MAX_NUM_ARGS => 3;
 
    # should yield something in range 0...MAX_NUM_ARGS.
-   my $numArgs= int( rand()* (MAX_NUM_ARGS+1) );  
+   my $numArgs= int( Math.random()* (MAX_NUM_ARGS+1) );  
 
    my @allAboutArgList= (); 
    my @argTypeList= (); 
@@ -634,8 +641,8 @@ sub instruction::generate_call_inst
    }
    # permute the order of the arguments
    for ( my $ii= 0; $ii < (2*$numArgs); $ii++ )  {
-      my $aa= int( rand()* $numArgs );
-      my $bb= int( rand()* $numArgs );
+      my $aa= int( Math.random()* $numArgs );
+      my $bb= int( Math.random()* $numArgs );
       if ( $aa == $bb ) { next; }
       my $tmp= $allAboutArgList[$aa];
       $allAboutArgList[$aa]= $allAboutArgList[$bb];
