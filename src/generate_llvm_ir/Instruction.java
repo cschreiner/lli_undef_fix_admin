@@ -446,8 +446,8 @@ public class Instruction
     *
     * @throws 
     */
-    public CodeChunk generateArithInst( BasicBlockSeq basicBlock, 
-					OpcodeCharacteristics opcode )
+   public CodeChunk generateArithInst( BasicBlockSeq basicBlock, 
+				       OpcodeCharacteristics opcode )
    {{
       init();
 
@@ -481,11 +481,12 @@ public class Instruction
 	    flags+ basicBlock.currentType().getName()+ " "+
 	    operand1+ ", "+ operand2+ "\n";
 
-   basicBlock.reportType( destReg, basicBlock.currentType() );
-   basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction::generate_arith_insts("+ opcode.name+ ")\n" );;
-   return new CodeChunk( "", inst );
-}}
+      basicBlock.reportType( destReg, basicBlock.currentType() );
+      basicBlock.carpIfRegNumReset( basicBlock,
+	    "at end of instruction::generate_arith_insts("+ opcode.name+ 
+	    ")\n" );;
+      return new CodeChunk( "", inst );
+   }}
 
    // ------------------------------------------------------------------------
    // generateConstInst()
@@ -513,8 +514,8 @@ public class Instruction
     *
     * @throws 
     */
-    public CodeChunk generateXxInst( BasicBlockSeq basicBlock, 
-				     OpcodeCharacteristics opcode )
+    public CodeChunk generateConstInst( BasicBlockSeq basicBlock, 
+					OpcodeCharacteristics opcode )
    {{
       init();
 
@@ -529,193 +530,158 @@ public class Instruction
       return new CodeChunk("", inst );
    }}
 
-## ===========================================================================
-## Subroutine RegWithType_init()
-## ===========================================================================
-# Description: initializes a "RegWithType" record
-#
-# Method: 
-#   A "RegWithType" is a simple hash with two fields:
-#	register: the name of the register
-#	type: a TypeInteger giving the register's data type
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $name: a string holding the register's name
-#   $type: a TypeInteger instance giving the register's type
-# 
-# Outputs: none
-#   
-# Return Value: a reference to the hash
-#   
-# ============================================================================
-sub RegWithType_init
-{{
-   my( $name, $type )= @_;
+   // ------------------------------------------------------------------------
+   // generateCallInst()
+   // ------------------------------------------------------------------------
+   /** generates a call instruction, and a function for it to call
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    *
+    * </ul>
+    * 
+    * @param basicBlock - context info for the instruction
+    *
+    * @param opcode - the actual opcode to generate (Admittedly this
+    *	parameter is redundant, but it provides consistency with similar
+    *	methods in this class.)
+    * 
+    * @return - the instructions generated, and associated necessary 
+    *	definitions
+    *
+    * @throws 
+    */
+   public CodeChunk generateCallInst( BasicBlockSeq basicBlock, 
+				      OpcodeCharacteristics opcode )
+   {{
+      init();
 
-   my $ret_val= { 'register'=> $name, 'type'=>$type };
-   if ( $ret_val->{'register'} eq "" )  {;;
-      warn $main::scriptname . ": found a null register at 2015apr9_194003.\n";;
-   }
-   if ( $ret_val->{'type'} eq "" )  {;;
-      warn $main::scriptname . ": found a null type at 2015apr9_190554.\n";;
-   }
-   if ( !defined($ret_val->{'type'}) )  {
-      warn $main::scriptname . ": internal warning 2015apr09_170526\n";
-   }
-   return $ret_val;
-}}
+      System.out.print( "starting instruction::generate_call_inst(~)\n" );;
 
-
-## ===========================================================================
-## Subroutine instruction::generate_call_inst()
-## ===========================================================================
-# Description: generates a call instruction, and a function for it to call
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $basicBlock: a BasicBlockSeq instance with context information
-#	for the instruction.
-#   $opcode: the opcode to generate
-#   
-# Outputs: none
-#   
-# Return Value: a list with these elements:
-#   string containing pre-function definitions related to the generated 
-#	instructions
-#   string containing the instruction generated
-#   
-# ============================================================================
-sub instruction::generate_call_inst
-{{
-   my( $basicBlock, $opcode )= @_;
-   System.out.print( "starting instruction::generate_call_inst(~)\n" );;
-
-   if ( $opcode ne 'call' )  {
-      die $main::scriptname . 
-	    ": internal error 2015apr9_162208, code=\"$opcode\". \n";
-   }
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # set up everything but the arguments
-   my $ftnName= addr_name::get("ftn"); # TODO: finish fixing this
-   System.out.print( "instruction::generate(~) generating ftn \"$ftnName\"\n" );;
-   my $retType= $basicBlock->currentType();
-
-   my $numSteps= int( $basicBlock->numRemainingSteps()/ 3 );
-   if ( $numSteps < 2 )  {
-      $numSteps= 2;
-      # TODO: consider returning a NO_OP in this case, and make the caller
-      # then choose a different instruction.
-   }
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # set up arguments
-   use constant MAX_NUM_ARGS => 3;
-
-   # should yield something in range 0...MAX_NUM_ARGS.
-   my $numArgs= int( Math.random()* (MAX_NUM_ARGS+1) );  
-
-   my @allAboutArgList= (); 
-   my @argTypeList= (); 
-   if ( $numArgs >= 1 )  {
-      my $name= $basicBlock->getPrevRegName(1);
-      my $allAboutArgHashref= RegWithType_init( 
-            $name,
-            $basicBlock->getRegType($name) );
-      push @allAboutArgList, $allAboutArgHashref;
-   }
-   for ( my $ii= ($[+1); $ii < $numArgs; $ii++ )  {
-      my $name= $basicBlock->getRecentRegName();
-      my $allAboutArgHashref= RegWithType_init( 
-            $name,
-            $basicBlock->getRegType($name) );
-      push @allAboutArgList, $allAboutArgHashref;
-      System.out.print( "pushing to allAboutArgList[$ii], type=\"" . 
-	    $allAboutArgHashref->{'type'} . "\"\n" );;
-   }
-   # permute the order of the arguments
-   for ( my $ii= 0; $ii < (2*$numArgs); $ii++ )  {
-      my $aa= int( Math.random()* $numArgs );
-      my $bb= int( Math.random()* $numArgs );
-      if ( $aa == $bb ) { next; }
-      my $tmp= $allAboutArgList[$aa];
-      $allAboutArgList[$aa]= $allAboutArgList[$bb];
-      $allAboutArgList[$bb]= $tmp;
-   }
-   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
-      push @argTypeList, $allAboutArgList[$ii]->{'type'};
-      System.out.print( "allAboutArgList[$ii]->type=\"" . 
-	    $allAboutArgList[$ii]->{'type'} . "\"\n" );;
-   }
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # generate the target function
-   my( $definitions, $instructions );
-   {
-      my( $defs, $insts )= function::generate(
-	    $retType,
-            $ftnName,
-	    \@argTypeList,
-	    { 'numSteps' => $numSteps,
-              # TODO: find some way of ensuring a basic block uses ALL of its
-              # args to compute its result, and delete this.  Until then, we
-              # need this to guarantee that poison is not lost when calling a
-              # function whenever the poisoned argument does not happen to be
-              # called.
-	      'startPoison' => $basicBlock->getStartPoison(),
-	    } );
-
-      if ( $defs =~ m/%1\D.*%1\D/ )  {
-	 confess( $main::scriptname . ": internal error 2015apr10_100654 " .
-	       "(two %1s in defs)" );;
-      }
-      if ( $insts =~ m/%1\D.*%1\D/ )  {
-	 confess( $main::scriptname . ": internal error 2015apr10_101421 " .
-	       "(two %1s in defs)" );;
+      if ( ! "call".equals(opcode.name) )  {
+	 throw new Error( Main.PROGRAM_NAME+
+			  ": internal error 2015apr9_162208, code=\""+ 
+			  opcode.name+ "\". \n" );
       }
 
-      $definitions.= $defs;
-      $definitions.= $insts;
-      if ( $definitions =~ m/%1\D.*%1\D/ )  {
-	 confess( $main::scriptname . ": internal error 2015apr10_100943 " .
-	       "(two %1s in definitions)" );;
-      }
-   }
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // set up everything but the arguments
+      String ftnName= AddrName.get("ftn"); // TODO: finish fixing this
+					  // CAS: what is there still to fix?
+      System.out.print( "Instruction::generateCallInst(~) generating ftn \""+ 
+			ftnName+ "\"\n" );;
+      TypeInteger retType= basicBlock.currentType();
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # generate the function call
-   #
-   # we're trying to generate something like this:
-   # %call = call i32* @func_2(i32 %13, i32 %12)
-   my $dest= $basicBlock->getRegName();
-   $basicBlock->getRegType( $dest, $retType );
-   $instructions= $basicBlock->indent() . "$dest= " .
-	 "call " . $retType->getName() . " $ftnName( ";
-   for ( my $ii= $[; $ii < $numArgs; $ii++ )  {
-      $instructions.= $allAboutArgList[$ii]->{'type'}->getName() . ' ' . 
-	    $allAboutArgList[$ii]->{'register'};
-      if ( $ii < ($numArgs-1) )  {
-	 $instructions.= ", ";
+      int numSteps= basicBlock->numRemainingSteps()/ 3;
+      if ( numSteps < 2 )  {
+	 numSteps= 2;
+	 /* TODO2: consider returning a NO_OP in this case, and make the
+	    caller then choose a different instruction.
+	 */
       }
-   }
-   $instructions.= " ) \n";
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-   # clean up and return
-   $basicBlock->carpIfRegNumReset( $basicBlock,
-	 "at end of instruction::generate_call_insts($opcode)\n" );;
-	 System.out.print( "stopping instruction::generate_call_inst(~)\n" );;
-   return ( $definitions, $instructions );
-}}
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // set up arguments
+      static final int MAX_NUM_ARGS= 3;
+      static Random randomizer= new Random();
+
+      // should yield something in range 0...MAX_NUM_ARGS.
+      int numArgs= randomizer.nextInt( MAX_NUM_ARGS+1 );
+      // TODO: make allAboutArgVector into a simple array.
+      Vector<RegWithType> allAboutArgVector= new Vector<RegWithType>(numArgs);
+      TypeInteger argTypeArray[numArgs];
+
+      if ( numArgs >= 1 )  {
+	 RegWithType allAbout1Arg= basicBlock->getPrevRegWithType(1);
+	 allAboutArgVector[0]= allAbout1Arg;
+      }
+      for ( int ii= 1; ii < numArgs; ii++ )  {
+	 RegWithType allAbout1Arg= basicBlock->getRecentRegWithType();
+	 allAboutArgsArray[ii]= allAbout1Arg;
+	 System.out.print( "pushing to allAboutArgsArray["+ ii+ "], "+ 
+			   "type=\""+ $allAbout1Arg.type.name+ "\"\n" );;
+      }
+
+      // permute the order of the arguments
+      for ( int ii= 0; ii < (2*numArgs); ii++ )  {
+	 int aa= randomizer.nextInt(numArgs);
+	 int bb= randomizer.nextInt(numArgs);
+	 if ( aa == bb ) { continue; }
+	 RegWithType tmp= allAboutArgsArray[aa];
+	 $allAboutArgsArray[aa]= $allAboutArgsArray[bb];
+	 $allAboutArgsArray[bb]= $tmp;
+      }
+      for ( ii= 0; ii < numArgs; ii++ )  {
+	 argTypeArray[ii]= $allAboutArgsArray[ii].type;
+	 System.out.print( "allAboutArgsArray["+ ii+ "].type=\""+
+			   $allAboutArgsArray[ii].type+ "\"\n" );;
+      }
+
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // generate the target function
+      StringBuffer definitions= new StringBuffer("");
+      StringBuffer instructions= new StringBuffer("");
+      {
+	 CodeChunk newFtnChunk= Function.generate( retType, ftnName, 
+	       argtypeArray, numSteps, false, 
+	       /* TODO: find some way of ensuring a basic block uses ALL of
+		* its args to compute its result, and delete this.  Until
+		* then, we need this to guarantee that poison is not lost when
+		* calling a function whenever the poisoned argument does not
+		* happen to be called.
+		*/
+	       basicBlock.getStartPoison() );
+
+	 if ( newFtnChunk.definitions.matches( ".*%1\D.*%1\D.*" ) )  {
+	    throw new Error( Main.PROGRAM_NAME+
+			     ": internal error 2015apr10_100654 " .
+			     "(two %1s in newFtn defs)" );;
+	 }
+	 if ( newFtnChunk.instructions.matches( ".*%1\D.*%1\D.*" ) )  {
+	    throw new Error( Main.PROGRAM_NAME+
+			     ": internal error 2015apr10_101421 " .
+			     "(two %1s in newFtn insts)" );;
+	 }
+
+	 definitions.append( newFtnChunk.definitions ); 
+	 definitions.append( newFtnChunk.instructions ); 
+	 if ( definitions.toString =~ m/%1\D.*%1\D/ )  {
+	    throw new Error( Main.PROGRAM_NAME+ 
+			     ": internal error 2015apr10_100943 " .
+			     "(two %1s in definitions)" );;
+	 }
+      }
+
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // generate the function call
+      // 
+      // we're trying to generate something like this:
+      // %call = call i32* @func_2(i32 %13, i32 %12)
+      String destReg= basicBlock.getRegName();
+      basicBlock.reportType( destReg, retType );
+      instructions.append( basicBlock.indent()+ destReg+ "= "+
+			   "call "+ retType.getName()+ " "+ ftnName+ "( " );
+      for ( ii= 0; ii < numArgs; ii++ )  {
+	 instructions.append( allAboutArgsArray[ii].type.getName()+ " "+  
+			      allAboutArgsArray[ii].regName );
+	       if ( ii < (numArgs-1) )  {
+		  instructions.append( ", " );
+	       }
+      }
+      instructions.append( " ) \n" );
+
+      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+      // clean up and return
+      basicBlock.carpIfRegNumReset( basicBlock,
+	 "at end of instruction::generate_call_insts("+ opcode.name+ ")\n" );;
+      System.out.print( "stopping instruction::generate_call_inst(~)\n" );;
+      return new CodeChunk( definitions, instructions );
+   }}
 
 
 /* ############################################################################
