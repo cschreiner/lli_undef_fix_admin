@@ -53,6 +53,9 @@ package generate_llvm_ir;
    *
    * <li> Algorithm: 
    * </ul>
+
+   * TODO: add methods getPrevRegWithType(int) and getRecentRegWithType(void).
+   * They should return RegWithTypes.
    */
 public class RegContext 
 {
