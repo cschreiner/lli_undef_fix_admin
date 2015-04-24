@@ -205,7 +205,7 @@ public class Function
       for ( int ii= 0; ii < args.length; ii++ ) {
 	 String argName= "%arg"+ (ii+ 1);
 	 System.out.print( "   "+ ii+ "\n" );;
-	 instructions.append( args[ii]->getName()+ " "+ argName );
+	 instructions.append( args[ii].getName()+ " "+ argName );
 	 basicBlock.registerArg( argName, args[ii] );
 	 if ( ii < (args.length-1) ) {
 	    instructions.append( ", " );

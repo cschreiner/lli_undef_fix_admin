@@ -261,7 +261,7 @@ public class Instruction
 	 }
       }
 
-      basicBlock->carpIfRegNumReset( $basicBlock,
+      basicBlock.carpIfRegNumReset( $basicBlock,
 	    "(from beginning of instruction::generate_one_inst)\n" );;
 
       CodeChunk cc= null;
@@ -276,7 +276,7 @@ public class Instruction
       } else {
 	  throw new Error( Main::PROGRAM_NAME+  
 	       ": don't recognize opcode type for \""+ opcode.name+ "\", \""+ 
-	       $opcode_hash{$opcode}->{'type'}+ 
+	       opcode.type+ 
 	       "\"(message 2015apr23_111740)\n" );
       }
 
@@ -345,19 +345,19 @@ public class Instruction
       // recall that flags strings must always end in a space
 
       insts.append( "  "+ "store "+
-	    $storeFlags+ $basicBlock->currentType()->getName()+ ' '+
+	    $storeFlags+ $basicBlock.currentType().getName()+ ' '+
 	    $srcReg+ ', '+ 
-	    basicBlock->currentType()->getName()+ '* '+ addrName+ "\n" );
+	    basicBlock.currentType().getName()+ '* '+ addrName+ "\n" );
       insts.append( "  "+ destReg+ "= load "+
-	    basicBlock->currentType()->getName()+
+	    basicBlock.currentType().getName()+
 	    "* "+ addrName+ " \n" );
       /* TODO2: consider adding an 'align 4' or similar to the load and 
 	 store instructions, possibly as an optional flag.
       */
 
-   basicBlock->reportType( destReg, basicBlock->currentType() );
+   basicBlock.reportType( destReg, basicBlock.currentType() );
    
-   basicBlock->carpIfRegNumReset( basicBlock,
+   basicBlock.carpIfRegNumReset( basicBlock,
 	 "at end of instruction::generate_storeload_insts("+ opcode.name+ 
 	 ")\n" );;
    return new CodeChunk( defs, insts );
@@ -412,11 +412,11 @@ public class Instruction
    
    StringBuffer inst= new StringBuffer("");
    inst.append( "  "+ destReg+ "= "+ opcode.name+ ' '+
-	 flags+ basicBlock->currentType()->getName()+ ' '+
+	 flags+ basicBlock.currentType().getName()+ ' '+
 	 operand1+ ', '+ operand2+ "\n" );
 
    basicBlock.reportType( destReg, basicBlock.currentType() );
-   $basicBlock->carpIfRegNumReset( basicBlock,
+   $basicBlock.carpIfRegNumReset( basicBlock,
 	 "at end of instruction::generate_shift_insts("+ opcode.name+ ")\n" );;
    return new CodeChunk("", inst );
 }}
@@ -577,7 +577,7 @@ public class Instruction
 			ftnName+ "\"\n" );;
       TypeInteger retType= basicBlock.currentType();
 
-      int numSteps= basicBlock->numRemainingSteps()/ 3;
+      int numSteps= basicBlock.numRemainingSteps()/ 3;
       if ( numSteps < 2 )  {
 	 numSteps= 2;
 	 /* TODO2: consider returning a NO_OP in this case, and make the
@@ -597,11 +597,11 @@ public class Instruction
       TypeInteger argTypeArray[numArgs];
 
       if ( numArgs >= 1 )  {
-	 RegWithType allAbout1Arg= basicBlock->getPrevRegWithType(1);
+	 RegWithType allAbout1Arg= basicBlock.getPrevRegWithType(1);
 	 allAboutArgVector[0]= allAbout1Arg;
       }
       for ( int ii= 1; ii < numArgs; ii++ )  {
-	 RegWithType allAbout1Arg= basicBlock->getRecentRegWithType();
+	 RegWithType allAbout1Arg= basicBlock.getRecentRegWithType();
 	 allAboutArgsArray[ii]= allAbout1Arg;
 	 System.out.print( "pushing to allAboutArgsArray["+ ii+ "], "+ 
 			   "type=\""+ $allAbout1Arg.type.name+ "\"\n" );;

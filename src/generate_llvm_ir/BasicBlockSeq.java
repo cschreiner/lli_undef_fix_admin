@@ -92,7 +92,7 @@ public class BasicBlockSeq extends RegContext
    String regPrefix;
 
    /** the prefix to apply to this block's label names */
-   StringlabelPrefix;
+   String labelPrefix;
 
    /** the basic block that called this one.  Is null if this is the initial
 	basic block for a function.
@@ -240,7 +240,7 @@ public class BasicBlockSeq extends RegContext
       } else {
 	 /* we DO have a parent basic block */
 	 parentBasicBlock= paramParentBasicBlock;
-         parentBasicBlock->incrementSubBlock();
+         parentBasicBlock.incrementSubBlock();
 
 	 if ( options.numSteps == BasicBlockSeqInitializer.NUM_STEPS_DEFAULT ) {
 	    numSteps= parentBasicBlock.numSteps/ 3;
