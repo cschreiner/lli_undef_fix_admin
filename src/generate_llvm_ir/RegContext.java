@@ -443,46 +443,49 @@ public class RegContext
       return;
    }}
 
-## ===========================================================================
-## Subroutine reportType()
-## ===========================================================================
-# Description: reports the type of a register, so it can be used by future 
-#	instructions
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $this: the instance to work on
-#   $name: name of the register, which must already have been created via 
-#	getName(), and not have a type reported.
-#   $type: type of the register (formatted as an TypeInteger instance)
-# 
-# Outputs: none
-#   
-# Return Value: PERL_SUCCESS
-#   
-# ============================================================================
-sub reportType
-{{
-   my( $this, $name, $type )= @_;
+   // ------------------------------------------------------------------------
+   // reportType()
+   // ------------------------------------------------------------------------
+   /** Reports the type of a register, so it can be used by future 
+    *   instructions.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param regName - the name of the register, which must have already been
+    *     created via getRegName(), and must not have already had a type
+    *     reported.
+    *
+    * @param type - the type of the register
+    * 
+    * @return void
+    *
+    * @throws 
+    */
+   public void reportType( String regName, TypeInteger type )
+   {{
+      if ( ! regTypeHash.containsKey(regName) )  {
+	 //  the register hasn't been created yet 
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_112208, code=\""+ 
+			  regName+ "\". \n" );
+      }
+      if ( regTypeHash.get(regName) != null ) {
+	 // the register already had its type reported 
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_112337, code=\""+ 
+			  regName+ "\". \n" );
+      }
 
-   if ( !exists( $this->{'regTypeHashref'}->{$name} ) )  {
-      # the register hasn't been created yet 
-      die $main::scriptname . 
-	    ": internal error 2015apr09_112208, code=\"$name\". \n";
-   }
-   if ( defined( $this->{'regTypeHashref'}->{$name} ) )  {
-      # the register already had its type reported 
-      die $main::scriptname . 
-	    ": internal error 2015apr09_112337, code=\"$name\". \n";
-   }
-   $this->{'regTypeHashref'}->{$name}= $type;
-   return $main::PERL_SUCCESS;
-}}
+      regTypeHash.put( regName, type );
+      return;
+   }}
 
 ## ===========================================================================
 ## Subroutine getRegType()
