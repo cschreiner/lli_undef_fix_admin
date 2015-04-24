@@ -131,6 +131,15 @@ public class RegWithType
    {{
       this.name= name;
       this.type= type;
+
+      if ( name == null || "".equals(name) )  {;;
+         throw new Exception( Main.PROGRAM_NAME+ 
+	       ": found a null register at 2015apr9_194003.\n" );
+      }
+      if ( type == null )  {
+         throw new Exception( Main.PROGRAM_NAME+ 
+	       ": internal warning 2015apr09_170526 (null TypeInteger)\n" );
+      }
    }}
 
 
