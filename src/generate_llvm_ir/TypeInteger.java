@@ -36,7 +36,7 @@ package generate_llvm_ir;
    *   imports
    * **************************************************************************
    */
-//import java.util.*;
+import java.util.*;
 //import java.applet.Applet;
 //import java.awt.*;
 //import java.awt.event.*;
@@ -47,13 +47,19 @@ package generate_llvm_ir;
 // ****************************************************************************
 // File's primary class: TypeInteger
 // ****************************************************************************
-/*** 
-   * <ul>
-   * <li> Description: 
-   *
-   * <li> Algorithm: 
-   * </ul>
-   */
+/** Holds information on a bitwidth, such as its maximum and minimum
+ *	integer values, a random number generator, and so forth.
+ *
+ * TODO3: adjust this (and the rest of this class) to handle 64+-bit ints.
+ * This will be non-trivial under java, as LLVM IR integers are unsigned, and
+ * a java signed long can only get up to (2**63-1).
+ * 
+ * <ul>
+ * <li> Detailed Description: 
+ *
+ * <li> Algorithm: 
+ * </ul>
+ */
 public class TypeInteger 
 {
 
@@ -63,20 +69,26 @@ public class TypeInteger
    */
 
    /* =========================================================================
-      * class variables
-      * =======================================================================
-      */
+    * class variables
+    * =========================================================================
+    */
+   public static final int MAX_WIDTH= 32;
+   public static final int MIN_WIDTH= 1;
+   public static final int PREFERRED_MIN_WIDTH= 6;
+
+   private static Random randomizer= new Random();
 
    /* =========================================================================
-      * instance variables
-      * =======================================================================
-      */
-
+    * instance variables
+    * =========================================================================
+    */
+   long maxVal, minVal;
+   String name;
 
    /* =========================================================================
-      * constructors
-      * =======================================================================
-      */
+    * constructors
+    * =========================================================================
+    */
 
    // -------------------------------------------------------------------------
    // TypeInteger()
@@ -90,7 +102,7 @@ public class TypeInteger
       *
       * <li> Reentrancy: unknown
       *
-      * <li> No inputs.
+      * <li> No inputs.  The bitwidth is chosen at random.
       * </ul>
       * 
       * @return - n/a (it's a constructor!)
@@ -99,9 +111,43 @@ public class TypeInteger
       */
    private TypeInteger()
    {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for TypeInteger." );
-      System.exit(-127);
+      //System.err.println ( "Internal error: "+
+      //   "unexpected call to default constructor for TypeInteger." );
+      //System.exit(-127);
+
+      bitWidth= randomizer.nextInt(MAX_WIDTH- PREFERRED_MIN_WIDTH)+ 
+	    PREF_MIN_WIDTH;
+
+      constructorHelper();
+   }}
+
+   // -------------------------------------------------------------------------
+   // TypeInteger(int)
+   // -------------------------------------------------------------------------
+   /*** commonly used constructor
+      *
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * </ul>
+      * @param targetWidth - the preferred bitwidth to work with.
+      * 
+      * @return - n/a (it's a constructor!)
+      *
+      * @throws
+      */
+   private TypeInteger( int targetWidth )
+   {{
+      if ( (targetWidth < MIN_WIDTH) || (targetWidth > MAX_WIDTH) )  {
+	 throw new Error( Main.PROGRAM_NAME+ 
+	       ": internal error 2015apr24_122941, bitwidth out of range. \n" );
+      }
+      bitWidth= targetWidth;
+      constructorHelper();
    }}
 
 
@@ -109,6 +155,39 @@ public class TypeInteger
       * methods
       * =======================================================================
       */
+
+   // ------------------------------------------------------------------------
+   // constructorHelper()
+   // ------------------------------------------------------------------------
+   /**  initializes fields common to most (all) constructors
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void constructorHelper()
+   {{
+      maxVal= 1;
+      for (int ii= 1; ii < bitWidth; ii++ )  {
+	 maxVal*= 2;
+      }
+      maxVal-= 1;
+
+      minVal= 0;
+      name= "i"+ bitWidth;
+      return;
+   }}
+
 
 
 /* ############################################################################
