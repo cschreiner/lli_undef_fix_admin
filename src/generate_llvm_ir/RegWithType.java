@@ -72,7 +72,7 @@ public class RegWithType
       * instance variables
       * =======================================================================
       */
-   public String name;
+   public String regName;
    public TypeInteger type;
 
    /* =========================================================================
@@ -129,7 +129,7 @@ public class RegWithType
       */
    public RegWithType( String name, TypeInteger type )
    {{
-      this.name= name;
+      this.regName= name;
       this.type= type;
 
       if ( name == null || "".equals(name) )  {;;
