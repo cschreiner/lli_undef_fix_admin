@@ -406,42 +406,42 @@ public class RegContext
       return chosenReg;
    }}
 
-## ===========================================================================
-## Subroutine registerArg()
-## ===========================================================================
-
-# Description: registers a function argument and its type, so future
-#	instructions can use it.
-#
-# Method: 
-#
-# Notes: 
-#
-# Warnings: 
-#
-# Inputs: 
-#   $this: the instance to work on
-#   $name: name of the argument, which must not already be registered
-#   $type: type of the argument (formatted as an TypeInteger instance)
-# 
-# Outputs: none
-#   
-# Return Value: PERL_SUCCESS
-#   
-# ============================================================================
-sub registerArg
-{{
-   my( $this, $name, $type )= @_;
-
-   if ( exists( $this->{'regTypeHashref'}->{$name} ) )  {
-      # the argument was already registered
-      die $main::scriptname . 
-	    ": internal error 2015apr09_111444, code=\"$name\". \n";
-   }
-   $this->{'regTypeHashref'}->{$name}= $type;
-   $this->{'regNumArgs'}++;
-   return $main::PERL_SUCCESS;
-}}
+   // ------------------------------------------------------------------------
+   // registerArg()
+   // ------------------------------------------------------------------------
+   /** Registers a function argument and its type, so future instructions can
+    * use it.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param argName - the name of the argument
+    *
+    * @param type - the type of the argument
+    * 
+    * @return void
+    *
+    * @throws 
+    */
+   public void registerArg( String argName, TypeInteger type )
+   {{
+      if ( regTypeHash.containsKey(argName) ) {
+	 // the argument was already registered
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_111444, "+ 
+			  "code=\""+ argName+ "\". \n" );
+      }
+      regTypeHash.put( argName, type );
+      unusedRegVec.add( argName );
+      numArgs++;
+      return;
+   }}
 
 ## ===========================================================================
 ## Subroutine reportType()
