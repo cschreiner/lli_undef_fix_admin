@@ -96,7 +96,7 @@ public class RegContext
    int numArgs;
 
    /** contains every register that hasn't been read yet */
-   Vector<String> unusedRegVec;
+   Vector<String> unreadRegVec;
 
    /** after initial setup is done, callers may not change it */
    boolean setupComplete;
@@ -198,7 +198,7 @@ public class RegContext
       regNumMayBeOne= false;
       regTypeHash= new Hashtable<String, TypeInteger>();
       numArgs= 0;
-      unusedRegVec= new Vector<String>;
+      unreadRegVec= new Vector<String>;
       setupComplete= false;
 
       return;
@@ -353,12 +353,12 @@ public class RegContext
    public String getRecentRegName()
    {{
       // see if we can return a previously unread register
-      if ( unusedRegVec.size() > 0 ) {
-         for( int ii= 0; ii < unusedRegVec.size(); ii++ ) {
-	    String reg= unusedRegVec.get(ii);
+      if ( unreadRegVec.size() > 0 ) {
+         for( int ii= 0; ii < unreadRegVec.size(); ii++ ) {
+	    String reg= unreadRegVec.get(ii);
 	    if ( regTypeHash.get(reg) != null ) {
 	       // this register meets our criteria
-	       unusedRegVec.remove(ii);
+	       unreadRegVec.remove(ii);
 	       return reg;
 	    }
 	 }
@@ -438,7 +438,7 @@ public class RegContext
 			  "code=\""+ argName+ "\". \n" );
       }
       regTypeHash.put( argName, type );
-      unusedRegVec.add( argName );
+      unreadRegVec.add( argName );
       numArgs++;
       return;
    }}
