@@ -329,64 +329,82 @@ public class RegContext
       return retVal;
    }}
 
-
-## ===========================================================================
-## Subroutine getRecentRegName
-## ===========================================================================
-# Description: gets the name of a recently issued register or argument.  The 
-#	register/argument's type is guaranteed to be known.
-#
-# Inputs: 
-#   $this: the instance to work on (provided by PERL)
-# 
-# Outputs: none
-#
-# Return Value: per description
-#
-# ============================================================================
-sub getRecentRegName
-{{
-   my( $this )= @_;
-
-   if ( $main::FALSE )  {
-      # An old way of implementing this function that might still be useful.
-      my( $limit )= 10;
-      my( $max_returnable_regNum )= $this->{'regNum'}- 3;
-      if ( $max_returnable_regNum < $limit )  { 
-	 $limit= $max_returnable_regNum; 
-      };
-      my( $rr )= $max_returnable_regNum- int( rand()*$limit );
-      if ( $rr < MIN_REG_NUM )  {
-      die $main::scriptname . 
-	       ": internal error 2014nov24_210556, code=\"$rr\"\n";
+   // ------------------------------------------------------------------------
+   // getRecentRegName()
+   // ------------------------------------------------------------------------
+   /** Gets the name of a recently issued register or argument.  The
+    *	register/argument's type is guaranteed to be known.  Marks the
+    *	register as read.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - per description
+    *
+    * @throws 
+    */
+   public String getRecentRegName()
+   {{
+      // see if we can return a previously unread register
+      if ( unusedRegVec.size() > 0 ) {
+         for( int ii= 0; ii < unusedRegVec.size(); ii++ ) {
+	    String reg= unusedRegVec.get(ii);
+	    if ( regTypeHash.get(reg) != null ) {
+	       // this register meets our criteria
+	       unusedRegVec.remove(ii);
+	       return reg;
+	    }
+	 }
       }
-      return "%" . $this->{'regPrefix'} . $rr;
-   }
 
-   # find all of the registers/arguments with known types
-   my @regList;
-   foreach my $reg ( keys( %{$this->{'regTypeHashref'}} ) )  {
-      if ( defined($this->{'regTypeHashref'}->{$reg} ) )  {
-	 push @regList, $reg;
+      // ok, we'll have to return a register that was already read.
+
+      // find all of the registers/arguments with known types
+      Vector<String> knownTypeRegVector= new Vector<String>();
+      for( String reg: regTypeHash.keys() ) {
+	 TypeInteger type= regTypeHash.get(reg);
+	 if ( type != null ) {
+	    knownTypeRegVector.add(reg);
+	 }
       }
-   }
 
-   # choose one at random and return
-   my $numRegs= scalar( @regList );
-   if ( $numRegs < 1 )  {
-      # There should be at least _some_ registers, because we forcibly create
-      # 2 registers if there aren't any arguments.
-      die $main::scriptname . ": internal error 2015apr09_135003. \n";
-   }
-   my $retVal= $regList[ int(rand()*$numRegs) ]; 
-   if ( $retVal =~ m/^\s*$/ )  {
-      # why is the register name a null string?
-      print "reg list= < " . cas_listutil::quote2( \@regList ) . "> \n";;
-      print "   num regs= $numRegs. \n";;
-      die $main::scriptname . ": internal error 2015apr09_133530. \n";
-   }
-   return $retVal;
-}}
+      // choose a register at random 
+      if ( knownTypeRegVector.size() < 1 )  {
+	 /* There should be at least _some_ registers, because we forcibly
+	    create 2 registers if there aren't any arguments.
+	 */
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_135003. \n" );
+      }
+      static Random randomizer= new Random();
+      String chosenReg= knownTypeRegVector.get( 
+	    randomizer.nextInt( knownTypeRegVector.size() ) 
+	    );
+
+      // check it
+      if ( chosenReg.matches("\\s*") )  {;;
+	 // why is the register name a null string?
+	 System.out.print( 
+	       "Warning: Why is chosenReg a whitespace string?\n" );
+	 System.out.print( "knownTypeRegVector= < " );
+	 for( int ii= 0; ii < knownTypeRegVector.size(); ii++ ) {
+	    System.out.print( "\""+ knownTypeRegVector.get(ii)+ "\"," );
+	 }
+	 System.out.print( "<end> len="+ knowntypeRegVector.size()+ "> \n" );
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_133530. \n" );
+      }
+
+      // clean up and return
+      return chosenReg;
+   }}
 
 ## ===========================================================================
 ## Subroutine registerArg()
