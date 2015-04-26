@@ -316,8 +316,8 @@ public class BasicBlockSeq extends RegContext
       */
    private void incrementSubBlock()
    {{
-      static final String DIGITS= "abcdefghijklmnopqrstuvwxyz";
-      static final int BASE= DIGITS.length();
+      final String DIGITS= "abcdefghijklmnopqrstuvwxyz";
+      final int BASE= DIGITS.length();
       int rest= 0;
 
       // the reverse of the String we're trying to build
@@ -364,72 +364,72 @@ public class BasicBlockSeq extends RegContext
    {{
       StringBuffer definitions= new StringBuffer( "" );
       StringBuffer instructions= new StringBuffer( "" );
-      System.out.print( "starting BasicBlockSeq::generate(~)\n" );;
+      System.out.print( "starting BasicBlockSeq.generate(~)\n" );;
 
-   if ( parentBasicBlock == null ) )  {
-      /* A basic block beginning a function must initially set at least
-         2 registers, so later opcodes requiring 2 operands will have
-         them available.  If there aren't enough arguments provided, create
-         enough registers to compensate.
-      */
-      for ( ii= numArgs(); ii < 2; ii++ )  {
-	 CodeChunk cc= instruction::generate_const_inst( $this );
-	 definitions.append( cc.definitions );
-	 instructions.append( cc.instructions );
+      if ( parentBasicBlock == null )  {
+	 /* A basic block beginning a function must initially set at least
+	    2 registers, so later opcodes requiring 2 operands will have
+	    them available.  If there aren't enough arguments provided, create
+	    enough registers to compensate.
+	 */
+	 for ( ii= numArgs(); ii < 2; ii++ )  {
+	    CodeChunk cc= instruction.generate_const_inst( $this );
+	    definitions.append( cc.definitions );
+	    instructions.append( cc.instructions );
+	 }
       }
-   }
-
-   if ( startPoison )  {
-     instructions.append( "  "+ getRegName()+
-	   "= sub nuw "+ currentType().getName()+ 
-	    " 0, 1 ; generates POISON \n" );
-     // TODO2: replace the above operands with random numbers
-   }
-
-   while ( remainingSteps > 0 )  {
-      System.out.print( "remainingSteps="+ remainingSteps+ ".\n" );;
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      new CodeChunk cc2= instruction::generate_one_inst( this );
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      definitions.append( cc2.definitions );
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      {
-	 // TODO: maybe move this to a method called by the instr. generator
-	 remainingSteps--;
-	 $instructions.append( indent+ "; step \n" );
+      
+      if ( startPoison )  {
+	 instructions.append( "  "+ getRegName()+
+			      "= sub nuw "+ currentType().getName()+ 
+			      " 0, 1 ; generates POISON \n" );
+	 // TODO2: replace the above operands with random numbers
       }
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      instructions.append( cc2.instructions ); 
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      if ( cc2.instructions.toString().matches(".*%1\D.*%1\D.*")  )  {
-         throw new CarpException( Main.PROGRAM_NAME+ ": "+ 
-	       "internal error 2015apr10_102650 "+ 
-	       "(two %1s in cc2.instructions)" );;
+      
+      while ( remainingSteps > 0 )  {
+	 System.out.print( "remainingSteps="+ remainingSteps+ ".\n" );;
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 CodeChunk cc2= instruction.generate_one_inst( this );
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 definitions.append( cc2.definitions );
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 {
+	    // TODO: maybe move this to a method called by the instr. generator
+	    remainingSteps--;
+	    $instructions.append( indent+ "; step \n" );
+	 }
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 instructions.append( cc2.instructions ); 
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 if ( cc2.instructions.toString().matches(".*%1\\D.*%1\\D.*")  )  {
+	    throw new CarpException( Main.PROGRAM_NAME+ ": "+ 
+				     "internal error 2015apr10_102650 "+ 
+				     "(two %1s in cc2.instructions)" );;
+	 }
+	 if ( $instructions.toString().matches(".*%1\\D.*%1\\D.*")  )  {
+	    throw new CarpException( Main.PROGRAM_NAME+ ": "+
+				     "internal error 2015apr10_102820 "+ 
+				     "(two %1s in instructions)" );;
+	 }
       }
-      if ( $instructions.toString().matches(".*%1\D.*%1\D.*")  )  {
-         throw new CarpException( Main.PROGRAM_NAME+ ": "+
-	       "internal error 2015apr10_102820 "+ 
-	       "(two %1s in instructions)" );;
+      
+      if ( currentType.compareTo( stopType ) != 0 )  {
+	 /* TODO2: add code here to convert the last 1 or 2 registers to
+	    the stop type.  Until then, we have to give up.
+	 */
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_114820.\n" );
       }
-   }
-
-   if ( currentType.compareTo( stopType ) != 0 )  {
-      /* TODO2: add code here to convert the last 1 or 2 registers to
-         the stop type.  Until then, we have to give up.
-      */
-      throw new Error( Main.PROGRAM_NAME+ 
-		       ": internal error 2015apr09_114820.\n" );
-   }
- 
-   // clean up and return
-   System.out.print( "stopping BasicBlockSeq::generate(~)\n";;
-   return new Codechunk ( $definitions, $instructions );
-}}
+      
+      // clean up and return
+      System.out.print( "stopping BasicBlockSeq.generate(~)\n" );;
+      return new Codechunk ( $definitions, $instructions );
+   }}
 
 // ------------------------------------------------------------------------
 // short getter/setter routines
@@ -451,7 +451,7 @@ int numRemainingSteps()
 {{ return remainingSteps; }}
 
 /** @return the data type this block is currently using */
-TypeInteger currentType
+TypeInteger currentType()
 {{ return currentType; }}
 
 
