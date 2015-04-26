@@ -36,7 +36,7 @@ package generate_llvm_ir;
    *   imports
    * **************************************************************************
    */
-//import java.util.*;
+import java.util.*;
 //import java.applet.Applet;
 //import java.awt.*;
 //import java.awt.event.*;
@@ -71,7 +71,7 @@ public class Instruction
 
    //Vector<Opcode> opcodes= new Vector<Opcode>();
    private static boolean initialized= false;
-   private final static Opcodes[] opcodes= {
+   private final static OpcodeCharacteristics[] opcodes= {
       new OpcodeCharacteristics( 
 				"add",  // name
 				"arith", // type
