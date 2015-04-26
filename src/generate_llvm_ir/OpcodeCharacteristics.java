@@ -134,7 +134,8 @@ public class OpcodeCharacteristics
     *
     * @throws 
     */
-   public OpcodeCharacteristics( String name, String type, String genName, String[] flags )
+   public OpcodeCharacteristics( String name, String type, String genName, 
+	 String[] flags )
    {{
       this.name= name;
       this.type= type;
