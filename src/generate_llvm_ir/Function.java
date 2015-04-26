@@ -174,21 +174,21 @@ public class Function
    
       System.out.print( "creating a basic block for function \"$name\"\n" );;
 
-      BasicBlockSeqInitializer bbi();
+      BasicBlockSeqInitializer bbi= new BasicBlockInitializer();
       bbi.startPoison= startPoison;
       bbi.numSteps= numSteps;
       bbi.startType= startType;
       bbi.stopType= retType;
       bbi.ftnName= name;
 
-      BasicBlockSeq basicBlock( null, bbi );
+      BasicBlockSeq basicBlock= new BasicBlockSeq( null, bbi );
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // generate function heading
       StringBuffer definitions= new StringBuffer("");
       StringBuffer instructions= new StringBuffer("");
 
-      instructions.append( "define "+ retType.getName()+ ' '+ $name+ '( ' ); 
+      instructions.append( "define "+ retType.getName()+ " "+ $name+ "( " ); 
 
       {
 	 System.out.print( "arg_listref=>[" );  
@@ -213,9 +213,9 @@ public class Function
       }
 
       instructions.append( " ) { \n" ); 
-      instructions.append( "  ; \%convert [? x i8]* to i8* \n" );
+      instructions.append( "  ; %convert [? x i8]* to i8* \n" );
       instructions.append( 
-	    "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
+	    "  %printf_st_i8 = getelementptr [37 x i8]* @printf_st, "+
 	    "i64 0, i64 0\n" );
       instructions.append( "\n" );
 
@@ -223,24 +223,24 @@ public class Function
       // generate instructions
       {
 	 CodeChunk cc= basicBlock.generate();
-	 if ( cc.instructions.matches( ".*%1\D.*%1\D.*" ) ) {
+	 if ( cc.instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
 	    throw new Error( Main.PROGRAM_NAME+ 
-			     ": internal error 2015apr10_101817 " .
+			     ": internal error 2015apr10_101817 "+
 			     "(two %1s in cc.instructions)" );;
 	 }
-	 if ( cc.definitions.matches( ".*%1\D.*%1\D.*" ) ) {
+	 if ( cc.definitions.matches( ".*%1\\D.*%1\\D.*" ) ) {
 	    throw new Error( Main.PROGRAM_NAME+ 
-			     ": internal error 2015apr10_101506 " .
+			     ": internal error 2015apr10_101506 "+
 			     "(two %1s in cc.definitions)" );;
 	 }
 	 definitions.append( cc.definitions );
 	 instructions.append( cc.instructions );
       }
-      if ( instructions.matches( ".*%1\D.*%1\D.*" ) ) {
+      if ( instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
       throw new error( Main.PROGRAM_NAME+ 
 		       "(two %1s in definitions)" );;
    }
-   if ( instructions.matches( ".*%1\D.*%1\D.*" ) ) {
+   if ( instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
       throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr10_100654 "+
 		       "(two %1s in instructions)" );;
@@ -253,13 +253,13 @@ public class Function
 
    if ( printRetVal ) {
       instructions.append( 
-	    "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, "+
+	    "  call i32 (i8*, ...)* @printf(i8* %printf_st_i8, "+
 	    basicBlock.currentType().getName()+ " "+  
 	    basicBlock.getPrevRegName()+ ")\n" );
    }
 
-   instructions+ "\n";
-   instructions+ "  ; clean up and return \n";
+   instructions.append( "\n" );
+   instructions.append( "  ; clean up and return \n" );
    String retRegister= basicBlock.getPrevRegName(1);
    TypeInteger retRegisterType= basicBlock.getRegType(retRegister);
    if ( basicBlock.getStopType().compareTo(retRegisterType) != 0 )  {
