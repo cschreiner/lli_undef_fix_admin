@@ -75,7 +75,9 @@ public class RegContext
    // llvm requires the first register of a function to be %1
    private static final int MIN_REG_NUM= 1;
 
-   private static BasicBlock lastBasicBlock= null;
+   private static BasicBlockSeq lastBasicBlock= null;
+
+   static Random randomizer= new Random();
 
    /* =========================================================================
       * instance variables
@@ -198,7 +200,7 @@ public class RegContext
       regNumMayBeOne= false;
       regTypeHash= new Hashtable<String, TypeInteger>();
       numArgs= 0;
-      unreadRegVec= new Vector<String>;
+      unreadRegVec= new Vector<String>();
       setupComplete= false;
 
       return;
@@ -320,7 +322,7 @@ public class RegContext
 
       String retVal="%"+ regPrefix+ (regNum- 1- steps);
       if ( retVal.matches("\\s*") )  {
-	 # why is the register name a null string?
+	 // why is the register name a null string?
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr09_133615. \n" );
       }  
@@ -383,7 +385,6 @@ public class RegContext
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr09_135003. \n" );
       }
-      static Random randomizer= new Random();
       String chosenReg= knownTypeRegVector.get( 
 	    randomizer.nextInt( knownTypeRegVector.size() ) 
 	    );
@@ -547,11 +548,11 @@ public class RegContext
 	 StringBuffer mm= new StringBuffer("");
 	 mm.append( "got a new basic block: \""+ basicBlock.hashCode()+ 
 		    "\", \n" ); 
-	 mm.append( "\t" . "for ftn \"" );
+	 mm.append( "\t"+ "for ftn \"" );
 	 mm.append( basicBlock.ftnName()+ "\", \n" );
-	 mm.append( "\t" . "last was \""+ lastBasicBlock.hashCode()+ 
+	 mm.append( "\t"+ "last was \""+ lastBasicBlock.hashCode()+ 
 		    "\". \n" );
-	 mm.append( "\t" . "for ftn \"" );
+	 mm.append( "\t"+ "for ftn \"" );
 	 mm.append( lastBasicBlock.ftnName()+ "\", \n" );
 	 System.err.print( mm );
 	 System.err.print( msg );
