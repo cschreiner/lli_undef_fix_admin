@@ -67,6 +67,8 @@ public class Instruction
     * class variables
     * =======================================================================
     */
+   static Random randomizer= new Random();
+
    //Vector<Opcode> opcodes= new Vector<Opcode>();
    private static boolean initialized= false;
    private final static Opcodes[] opcodes= {
@@ -74,84 +76,84 @@ public class Instruction
 				"add",  // name
 				"arith", // type
 				"generate_arith_inst", // genFtn
-				{ "nsw", "nuw" } ), // flags
+				new String[] { "nsw", "nuw" } ), // flags
       new OpcodeCharacteristics( 
 				"sub",  // name
 				"arith", // type
 				"generate_arith_inst", // genFtn
-				{ "nsw", "nuw" } ), // flags
+				new String[] { "nsw", "nuw" } ), // flags
 //;; TODO: reinstate these opcodes
 //;;      new OpcodeCharacteristics( 
 //;;				"mul",  // name
 //;;				"arith", // type
 //;;				"generate_arith_inst", // genFtn
-//;;				{ "nsw", "nuw" } ), // flags
+//;;				new String[] { "nsw", "nuw" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"sdiv",  // name
 //;;				"arith", // type
 //;;				"generate_arith_inst", // genFtn
-//;;				{ "exact" } ), // flags
+//;;				new String[] { "exact" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"udiv",  // name
 //;;				"arith", // type
 //;;				"generate_arith_inst", // genFtn
-//;;				{ "exact" } ), // flags
+//;;				new String[] { "exact" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"srem",  // name
 //;;				"arith", // type
 //;;				"generate_arith_inst", // genFtn
-//;;				{ } ), // flags
+//;;				new String[] { } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"urem",  // name
 //;;				"arith", // type
 //;;				"generate_arith_inst", // genFtn
-//;;				{ } ), // flags
+//;;				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"and",  // name
 				"arith", // type
 				"generate_arith_inst", // genFtn
-				{ } ), // flags
+				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"or",  // name
 				"arith", // type
 				"generate_arith_inst", // genFtn
-				{ } ), // flags
+				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"xor",  // name
 				"arith", // type
 				"generate_arith_inst", // genFtn
-				{ } ), // flags
+				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"shl",  // name
 				"shift", // type
 				"generate_arith_inst", // genFtn
-				{ "nsw", "nuw" } ), // flags
+				new String[] { "nsw", "nuw" } ), // flags
       new OpcodeCharacteristics( 
 				"lshr",  // name
 				"shift", // type
 				"generate_arith_inst", // genFtn
-				{ "exact" } ), // flags
+				new String[] { "exact" } ), // flags
       new OpcodeCharacteristics( 
 				"ashr",  // name
 				"shift", // type
 				"generate_arith_inst", // genFtn
-				{ "exact" } ), // flags
+				new String[] { "exact" } ), // flags
       new OpcodeCharacteristics( 
 				"storeload",  // name
 				"storeload", // type
 				"generate_storeload_inst", // genFtn
-				{ } ), // flags
+				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"call",  // name
 				"call", // type
 				"generate_call_inst", // genFtn
-				{ } ), // flags
+				new String[] { } ), // flags
       // template is 5 lines long
       //new OpcodeCharacteristics( 
       //			  "call",  // name
       //			  "call", // type
       //			  "generate_call_inst", // genFtn
-      //			  { } ), // flags
+      //			  new String[] { } ), // flags
    };
 
    /* =========================================================================
@@ -249,20 +251,19 @@ public class Instruction
    {{
       init();
 
-      static Random randomizer= new Random();
-      System.out.print( "starting instruction::generate_one_inst(~) \n" );;
+      System.out.print( "starting instruction.generate_one_inst(~) \n" );;
 
       OpcodeCharacteristics opcode= null;
       {
 	 int opcodeIdx= randomizer.nextInt(opcodes.length);
          opcode= opcodes[opcodeIdx];
-	 if ( $main::debug_flag )  {
+	 if ( Main.debugFlag )  {
 	    System.out.print( "selected opcode=\""+ opcode.name+ "\"\n" );
 	 }
       }
 
       basicBlock.carpIfRegNumReset( $basicBlock,
-	    "(from beginning of instruction::generate_one_inst)\n" );;
+	    "(from beginning of instruction.generate_one_inst)\n" );;
 
       CodeChunk cc= null;
       if ( "arith".equals(opcode.type) ) {
@@ -274,7 +275,7 @@ public class Instruction
       } else if ( "call".equals(opcode.type) )  {
 	  cc= generateCallinst( basicBlock, opcode );
       } else {
-	  throw new Error( Main::PROGRAM_NAME+  
+	  throw new Error( Main.PROGRAM_NAME+  
 	       ": don't recognize opcode type for \""+ opcode.name+ "\", \""+ 
 	       opcode.type+ 
 	       "\"(message 2015apr23_111740)\n" );
@@ -282,7 +283,7 @@ public class Instruction
 
    basicBlock.carpIfRegNumReset( basicBlock,
 	 "last instruction=\""+ opcode.name+ "\"\n" );;
-   System.out.print( "stopping instruction::generate_one_inst(~) \n" );;
+   System.out.print( "stopping instruction.generate_one_inst(~) \n" );;
    return cc;
 }}
 
@@ -325,7 +326,7 @@ public class Instruction
        * them pronouncible. 
        */
 
-      String addrName= AddrName.get('var');
+      String addrName= AddrName.get("var");
       String destReg= basicBlock.getRegName();
       String srcReg= basicBlock.getPrevRegName(1);
       StringBuffer defs= new StringBuffer("");
@@ -345,20 +346,20 @@ public class Instruction
       // recall that flags strings must always end in a space
 
       insts.append( "  "+ "store "+
-	    $storeFlags+ $basicBlock.currentType().getName()+ ' '+
-	    $srcReg+ ', '+ 
-	    basicBlock.currentType().getName()+ '* '+ addrName+ "\n" );
+	    $storeFlags+ $basicBlock.currentType().getName()+ " "+
+	    $srcReg+ ", "+ 
+	    basicBlock.currentType().getName()+ "* "+ addrName+ "\n" );
       insts.append( "  "+ destReg+ "= load "+
 	    basicBlock.currentType().getName()+
 	    "* "+ addrName+ " \n" );
-      /* TODO2: consider adding an 'align 4' or similar to the load and 
+      /* TODO2: consider adding an "align 4" or similar to the load and 
 	 store instructions, possibly as an optional flag.
       */
 
    basicBlock.reportType( destReg, basicBlock.currentType() );
    
    basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction::generate_storeload_insts("+ opcode.name+ 
+	 "at end of instruction.generate_storeload_insts("+ opcode.name+ 
 	 ")\n" );;
    return new CodeChunk( defs, insts );
 }}
@@ -401,7 +402,7 @@ public class Instruction
    for ( int ii= 0; ii < opcode.flags.length; ii++ )  {
       if ( Math.random() < .5 )  {
 	 // a flag must ALWAYS end in a space. 
-	 flags.append( opcode.flags[ii] . " " );
+	 flags.append( opcode.flags[ii]+ " " );
       }
    } 
 
@@ -411,13 +412,13 @@ public class Instruction
    String operand2= basicBlock.currentType().getRandShiftVal();
    
    StringBuffer inst= new StringBuffer("");
-   inst.append( "  "+ destReg+ "= "+ opcode.name+ ' '+
-	 flags+ basicBlock.currentType().getName()+ ' '+
-	 operand1+ ', '+ operand2+ "\n" );
+   inst.append( "  "+ destReg+ "= "+ opcode.name+ " "+
+	 flags+ basicBlock.currentType().getName()+ " "+
+	 operand1+ ", "+ operand2+ "\n" );
 
    basicBlock.reportType( destReg, basicBlock.currentType() );
    $basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction::generate_shift_insts("+ opcode.name+ ")\n" );;
+	 "at end of instruction.generate_shift_insts("+ opcode.name+ ")\n" );;
    return new CodeChunk("", inst );
 }}
 
@@ -464,7 +465,7 @@ public class Instruction
 
       String operand2= "";
       if ( Math.random() < .5 )  {
-	 # operand will be a constant
+	 // operand will be a constant
 	 operand2= basicBlock.currentType().getRandVal();
       } else {
 	 operand2= basicBlock.getRecentRegName();
@@ -483,7 +484,7 @@ public class Instruction
 
       basicBlock.reportType( destReg, basicBlock.currentType() );
       basicBlock.carpIfRegNumReset( basicBlock,
-	    "at end of instruction::generate_arith_insts("+ opcode.name+ 
+	    "at end of instruction.generate_arith_insts("+ opcode.name+ 
 	    ")\n" );;
       return new CodeChunk( "", inst );
    }}
@@ -522,11 +523,11 @@ public class Instruction
       retName= basicBlock.getRegName();
       String inst= basicBlock.indent()+
 	    regName+ "= add "+ 
-	    basicBlock.currentType().getName()+ ' ' + 
+	    basicBlock.currentType().getName()+ " " + 
 	    basicBlock.currentType().getRandVal() + ", 0 \n";
       basicBlock.reportType( regName, basicBlock.currentType() );
       basicBlock.carpIfRegNumReset( basicBlock,
-	    "at end of instruction::generate_const_insts()\n" );;
+	    "at end of instruction.generate_const_insts()\n" );;
       return new CodeChunk("", inst );
    }}
 
@@ -561,7 +562,7 @@ public class Instruction
    {{
       init();
 
-      System.out.print( "starting instruction::generate_call_inst(~)\n" );;
+      System.out.print( "starting instruction.generate_call_inst(~)\n" );;
 
       if ( ! "call".equals(opcode.name) )  {
 	 throw new Error( Main.PROGRAM_NAME+
@@ -573,7 +574,7 @@ public class Instruction
       // set up everything but the arguments
       String ftnName= AddrName.get("ftn"); // TODO: finish fixing this
 					  // CAS: what is there still to fix?
-      System.out.print( "Instruction::generateCallInst(~) generating ftn \""+ 
+      System.out.print( "Instruction.generateCallInst(~) generating ftn \""+ 
 			ftnName+ "\"\n" );;
       TypeInteger retType= basicBlock.currentType();
 
@@ -587,14 +588,13 @@ public class Instruction
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // set up arguments
-      static final int MAX_NUM_ARGS= 3;
-      static Random randomizer= new Random();
+      final int MAX_NUM_ARGS= 3;
 
       // should yield something in range 0...MAX_NUM_ARGS.
       int numArgs= randomizer.nextInt( MAX_NUM_ARGS+1 );
       // TODO: make allAboutArgVector into a simple array.
       Vector<RegWithType> allAboutArgVector= new Vector<RegWithType>(numArgs);
-      TypeInteger argTypeArray[numArgs];
+      TypeInteger argTypeArray[]= new TypeInteger[numArgs];
 
       if ( numArgs >= 1 )  {
 	 RegWithType allAbout1Arg= basicBlock.getPrevRegWithType(1);
@@ -637,22 +637,22 @@ public class Instruction
 		*/
 	       basicBlock.getStartPoison() );
 
-	 if ( newFtnChunk.definitions.matches( ".*%1\D.*%1\D.*" ) )  {
+	 if ( newFtnChunk.definitions.matches( ".*%1\\D.*%1\\D.*" ) )  {
 	    throw new Error( Main.PROGRAM_NAME+
-			     ": internal error 2015apr10_100654 " .
+			     ": internal error 2015apr10_100654 "+
 			     "(two %1s in newFtn defs)" );;
 	 }
-	 if ( newFtnChunk.instructions.matches( ".*%1\D.*%1\D.*" ) )  {
+	 if ( newFtnChunk.instructions.matches( ".*%1\\D.*%1\\D.*" ) )  {
 	    throw new Error( Main.PROGRAM_NAME+
-			     ": internal error 2015apr10_101421 " .
+			     ": internal error 2015apr10_101421 "+
 			     "(two %1s in newFtn insts)" );;
 	 }
 
 	 definitions.append( newFtnChunk.definitions ); 
 	 definitions.append( newFtnChunk.instructions ); 
-	 if ( definitions.toString =~ m/%1\D.*%1\D/ )  {
+	 if ( definitions.toString().matches("%1\\D.*%1\\D") )  {
 	    throw new Error( Main.PROGRAM_NAME+ 
-			     ": internal error 2015apr10_100943 " .
+			     ": internal error 2015apr10_100943 "+
 			     "(two %1s in definitions)" );;
 	 }
       }
@@ -678,8 +678,8 @@ public class Instruction
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // clean up and return
       basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction::generate_call_insts("+ opcode.name+ ")\n" );;
-      System.out.print( "stopping instruction::generate_call_inst(~)\n" );;
+	 "at end of instruction.generate_call_insts("+ opcode.name+ ")\n" );;
+      System.out.print( "stopping instruction.generate_call_inst(~)\n" );;
       return new CodeChunk( definitions, instructions );
    }}
 
