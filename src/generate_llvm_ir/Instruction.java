@@ -68,89 +68,89 @@ public class Instruction
     * =======================================================================
     */
    //Vector<Opcode> opcodes= new Vector<Opcode>();
-   private boolean static initialized= false;
+   private static boolean initialized= false;
    private final static Opcodes[] opcodes= {
       new OpcodeCharacteristics( 
 				"add",  // name
 				"arith", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ "nsw", "nuw" } ), // flags
       new OpcodeCharacteristics( 
 				"sub",  // name
 				"arith", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ "nsw", "nuw" } ), // flags
 //;; TODO: reinstate these opcodes
 //;;      new OpcodeCharacteristics( 
 //;;				"mul",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst" // genFtn
+//;;				"generate_arith_inst", // genFtn
 //;;				{ "nsw", "nuw" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"sdiv",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst" // genFtn
+//;;				"generate_arith_inst", // genFtn
 //;;				{ "exact" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"udiv",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst" // genFtn
+//;;				"generate_arith_inst", // genFtn
 //;;				{ "exact" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"srem",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst" // genFtn
+//;;				"generate_arith_inst", // genFtn
 //;;				{ } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"urem",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst" // genFtn
+//;;				"generate_arith_inst", // genFtn
 //;;				{ } ), // flags
       new OpcodeCharacteristics( 
 				"and",  // name
 				"arith", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ } ), // flags
       new OpcodeCharacteristics( 
 				"or",  // name
 				"arith", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ } ), // flags
       new OpcodeCharacteristics( 
 				"xor",  // name
 				"arith", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ } ), // flags
       new OpcodeCharacteristics( 
 				"shl",  // name
 				"shift", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ "nsw", "nuw" } ), // flags
       new OpcodeCharacteristics( 
 				"lshr",  // name
 				"shift", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ "exact" } ), // flags
       new OpcodeCharacteristics( 
 				"ashr",  // name
 				"shift", // type
-				"generate_arith_inst" // genFtn
+				"generate_arith_inst", // genFtn
 				{ "exact" } ), // flags
       new OpcodeCharacteristics( 
 				"storeload",  // name
 				"storeload", // type
-				"generate_storeload_inst" // genFtn
+				"generate_storeload_inst", // genFtn
 				{ } ), // flags
       new OpcodeCharacteristics( 
 				"call",  // name
 				"call", // type
-				"generate_call_inst" // genFtn
+				"generate_call_inst", // genFtn
 				{ } ), // flags
       // template is 5 lines long
       //new OpcodeCharacteristics( 
       //			  "call",  // name
       //			  "call", // type
-      //			  "generate_call_inst" // genFtn
+      //			  "generate_call_inst", // genFtn
       //			  { } ), // flags
    };
 
