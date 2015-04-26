@@ -82,6 +82,7 @@ public class TypeInteger
     * instance variables
     * =========================================================================
     */
+   int bitWidth;
    long maxVal, minVal;
    String name;
 
@@ -102,7 +103,7 @@ public class TypeInteger
       *
       * <li> Reentrancy: unknown
       *
-      * <li> No inputs.  The bitwidth is chosen at random.
+      * <li> No inputs.  The bitWidth is chosen at random.
       * </ul>
       * 
       * @return - n/a (it's a constructor!)
@@ -134,7 +135,7 @@ public class TypeInteger
       * <li> Reentrancy: unknown
       *
       * </ul>
-      * @param targetWidth - the preferred bitwidth to work with.
+      * @param targetWidth - the preferred bitWidth to work with.
       * 
       * @return - n/a (it's a constructor!)
       *
@@ -144,7 +145,7 @@ public class TypeInteger
    {{
       if ( (targetWidth < MIN_WIDTH) || (targetWidth > MAX_WIDTH) )  {
 	 throw new Error( Main.PROGRAM_NAME+ 
-	       ": internal error 2015apr24_122941, bitwidth out of range. \n" );
+	       ": internal error 2015apr24_122941, bitWidth out of range. \n" );
       }
       bitWidth= targetWidth;
       constructorHelper();
@@ -253,7 +254,7 @@ public class TypeInteger
    // ------------------------------------------------------------------------
    // getRandShiftVal()
    // ------------------------------------------------------------------------
-   /** Returns a random number from 0 to this instance's bitwidth. 
+   /** Returns a random number from 0 to this instance's bitWidth. 
     * This is the legal range that a register may be shifted right or left.
     * 
     * <ul>
@@ -297,7 +298,7 @@ public class TypeInteger
    // ------------------------------------------------------------------------
    /**  Compares this instance to another one.  They are equal iff LLVM IR
     *  considers a register of one instance's type to be of the same type as a
-    *  variable of another instance's type.  This means that the bitwidths are
+    *  variable of another instance's type.  This means that the bitWidths are
     *  equal.
     * 
     * <ul>
@@ -334,13 +335,16 @@ public class TypeInteger
    // Short get subroutines
    // ========================================================================
    /** @return the bitwidth */
-   sub getBitwidth() {{ return bitWidth; }}
+   int getBitWidth() {{ return bitWidth; }}
+
    /** @return the maximum value of this integer type */
-   sub getMaxVal() {{ return maxVal; }}
+   long getMaxVal() {{ return maxVal; }}
+
    /** @return the minimum value of this integer type */
-   sub getMinVal() {{ return minVal; }}
+   long getMinVal() {{ return minVal; }}
+
    /** @return the name of this type */
-   sub getName() {{ return name; }}
+   String getName() {{ return name; }}
 
    // ========================================================================
    // Short set subroutines
