@@ -2,12 +2,16 @@
 
 SRCS= \
 	AddrName.java \
+	BasicBlockSeqInitializer.java \
 	BasicBlockSeq.java \
+	CodeChunk.java \
 	Function.java \
 	Instruction.java \
 	Main.java \
+	OpcodeCharacteristics.java \
 	RegContext.java \
-	TypeInteger.java 
+	RegWithType.java \
+	TypeInteger.java
 
 SRCS_W_PKG=$(addprefix generate_llvm_ir/, $(SRCS) ) 
 
