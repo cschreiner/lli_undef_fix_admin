@@ -147,7 +147,7 @@ public class AddrName
       StringBuffer core= new StringBuffer("");
 
       retVal.append(prefix);
-
+      retVal.append("_");
 
       for ( int safetyCounter= 0; safetyCounter < 1000; safetyCounter++ ) {
 	 for ( int ii= 0; ii < 2; ii++ ) {
