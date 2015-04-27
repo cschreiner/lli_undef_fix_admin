@@ -406,14 +406,14 @@ public class BasicBlockSeq extends RegContext
 	 carpIfRegNumReset(  this,
 	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
 	 if ( cc2.instructions.toString().matches(".*%1\\D.*%1\\D.*")  )  {
-	    throw new Exception( Main.PROGRAM_NAME+ ": "+ 
-				 "internal error 2015apr10_102650 "+ 
-				 "(two %1s in cc2.instructions)" );;
+	    throw new Error( Main.PROGRAM_NAME+ ": "+ 
+			     "internal error 2015apr10_102650 "+ 
+			     "(two %1s in cc2.instructions)" ); //;;
 	 }
 	 if ( instructions.toString().matches(".*%1\\D.*%1\\D.*")  )  {
-	    throw new Exception( Main.PROGRAM_NAME+ ": "+
-				 "internal error 2015apr10_102820 "+ 
-				 "(two %1s in instructions)" );;
+	    throw new Error( Main.PROGRAM_NAME+ ": "+
+			     "internal error 2015apr10_102820 "+ 
+			     "(two %1s in instructions)" ); //;;
 	 }
       }
       

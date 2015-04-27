@@ -400,7 +400,9 @@ public class RegContext
 
       // find all of the registers/arguments with known types
       Vector<String> knownTypeRegVector= new Vector<String>();
-      for( String reg: regTypeHash.keys() ) {
+      for( Enumeration<String> regEnum= regTypeHash.keys(); 
+	    regEnum.hasMoreElements(); ) {
+	 String reg= regEnum.nextElement();
 	 TypeInteger type= regTypeHash.get(reg);
 	 if ( type != null ) {
 	    knownTypeRegVector.add(reg);
@@ -657,7 +659,7 @@ public class RegContext
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr24_120228, codes: \n"+
 			  "   regNum=1, remaining steps= "+
-			  basicBlock.numRemainingSteps()+ ".\n" );;
+			  basicBlock.numRemainingSteps()+ ".\n" ); //;;
       }
       return; 
    }}

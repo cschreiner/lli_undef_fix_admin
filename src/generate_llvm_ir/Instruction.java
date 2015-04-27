@@ -642,12 +642,12 @@ public class Instruction
 	 if ( newFtnChunk.definitions.matches( ".*%1\\D.*%1\\D.*" ) )  {
 	    throw new Error( Main.PROGRAM_NAME+
 			     ": internal error 2015apr10_100654 "+
-			     "(two %1s in newFtn defs)" );;
+			     "(two %1s in newFtn defs)" ); //;;
 	 }
 	 if ( newFtnChunk.instructions.matches( ".*%1\\D.*%1\\D.*" ) )  {
 	    throw new Error( Main.PROGRAM_NAME+
 			     ": internal error 2015apr10_101421 "+
-			     "(two %1s in newFtn insts)" );;
+			     "(two %1s in newFtn insts)" ); //;;
 	 }
 
 	 definitions.append( newFtnChunk.definitions ); 
@@ -655,7 +655,7 @@ public class Instruction
 	 if ( definitions.toString().matches("%1\\D.*%1\\D") )  {
 	    throw new Error( Main.PROGRAM_NAME+ 
 			     ": internal error 2015apr10_100943 "+
-			     "(two %1s in definitions)" );;
+			     "(two %1s in definitions)" ); //;;
 	 }
       }
 

@@ -227,24 +227,24 @@ public class Function
 	 if ( cc.instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
 	    throw new Error( Main.PROGRAM_NAME+ 
 			     ": internal error 2015apr10_101817 "+
-			     "(two %1s in cc.instructions)" );;
+			     "(two %1s in cc.instructions)" ); //;;
 	 }
 	 if ( cc.definitions.matches( ".*%1\\D.*%1\\D.*" ) ) {
 	    throw new Error( Main.PROGRAM_NAME+ 
 			     ": internal error 2015apr10_101506 "+
-			     "(two %1s in cc.definitions)" );;
+			     "(two %1s in cc.definitions)" ); //;;
 	 }
 	 definitions.append( cc.definitions );
 	 instructions.append( cc.instructions );
       }
       if ( instructions.toString().matches( ".*%1\\D.*%1\\D.*" ) ) {
       throw new Error( Main.PROGRAM_NAME+ 
-		       "(two %1s in definitions)" );;
+		       "(two %1s in definitions)" ); //;;
    }
    if ( instructions.toString().matches( ".*%1\\D.*%1\\D.*" ) ) {
       throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr10_100654 "+
-		       "(two %1s in instructions)" );;
+		       "(two %1s in instructions)" ); //;;
    }
 
    // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
