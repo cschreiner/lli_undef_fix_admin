@@ -110,7 +110,7 @@ public class TypeInteger
       *
       * @throws
       */
-   private TypeInteger()
+   public TypeInteger()
    {{
       //System.err.println ( "Internal error: "+
       //   "unexpected call to default constructor for TypeInteger." );
@@ -141,7 +141,7 @@ public class TypeInteger
       *
       * @throws
       */
-   private TypeInteger( int targetWidth )
+   public TypeInteger( int targetWidth )
    {{
       if ( (targetWidth < MIN_WIDTH) || (targetWidth > MAX_WIDTH) )  {
 	 throw new Error( Main.PROGRAM_NAME+ 
