@@ -43,6 +43,7 @@ package generate_llvm_ir;
 //import java.awt.Color.*;
 //import java.awt.geom.*;
 
+import generate_llvm_ir.*;
 
 // ****************************************************************************
 // File's primary class: Function
