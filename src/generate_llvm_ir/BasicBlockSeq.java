@@ -186,7 +186,7 @@ public class BasicBlockSeq extends RegContext
       BasicBlockSeqInitializer options= null;
 
       System.out.println( "starting BasicBlockSeq(~) constructor\n" );;
-      if ( options.ftnName == null ) {
+      if ( paramOptions.ftnName == null ) {
 	 throw new Error( "ftnName may not be null." );
       }
 
