@@ -162,7 +162,7 @@ public class RegContext
       constructorHelper();
 
       if ( prefix != null ) {
-	 this.prefix= prefix;
+	 this.regPrefix= prefix;
       }
    }}
 
@@ -196,7 +196,7 @@ public class RegContext
    private void constructorHelper()
    {{
       regPrefix= "";
-      retNum= 1; // per LLVM IR spec, the first register must be %1.
+      regNum= 1; // per LLVM IR spec, the first register must be %1.
       regNumMayBeOne= false;
       regTypeHash= new Hashtable<String, TypeInteger>();
       numArgs= 0;
@@ -236,7 +236,7 @@ public class RegContext
 			  "(late call to RegContext.setPrefix()" );
       }
       if ( prefix != null ) {
-	 this.prefix= prefix;
+	 this.regPrefix= prefix;
       }
       setupComplete= true;
    }}
@@ -273,7 +273,7 @@ public class RegContext
       regTypeHash.put( retVal, null );
 
       // note that this register hasn't been read yet
-      unreadRegVector.add( retVal );
+      unreadRegVec.add( retVal );
 
       if ( retVal.matches("\\s*") )  {
 	 // why is the register name all whitespace?
@@ -513,6 +513,41 @@ public class RegContext
    {{
       return regTypeHash.get(regName);
    }}
+
+   // ------------------------------------------------------------------------
+   // reportRegRead()
+   // ------------------------------------------------------------------------
+   /**  reports that the given register has been read.  This helps the
+    *  internal mechanism that tries to make sure every register created gets
+    *  used (read) at least once.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    * 
+    * @param reg - the name of the register that is read (includes the % sigil)
+    *
+    * @return - void
+    *
+    * @throws 
+    */
+   public void reportRegRead( String reg )
+   {{
+      for( int ii= 0; ii < unreadRegVec.size(); ii++ ) {
+	 if ( unreadRegVec.get(ii).equals(reg) ) {
+	    unreadRegVec.remove(ii);
+	    return;
+	 }
+      }
+      throw new Error( Main.PROGRAM_NAME+ 
+	    ": internal error 2015apr27_111636, codes: \""+ reg+ "\".\n" );
+   }}
+
 
    // ------------------------------------------------------------------------
    // carpIfRegNumReset()
