@@ -256,13 +256,13 @@ public class Function
       instructions.append( 
 	    "  call i32 (i8*, ...)* @printf(i8* %printf_st_i8, "+
 	    basicBlock.currentType().getName()+ " "+  
-	    basicBlock.getPrevRegName(1)+ ")\n" );
+	    basicBlock.getPrevRegName(0)+ ")\n" );
       // TODO: check if we should be calling getPrevRegName(0).
    }
 
    instructions.append( "\n" );
    instructions.append( "  ; clean up and return \n" );
-   String retRegister= basicBlock.getPrevRegName(1);
+   String retRegister= basicBlock.getPrevRegName(0);
    TypeInteger retRegisterType= basicBlock.getRegType(retRegister);
    if ( basicBlock.stopType().compareTo(retRegisterType) != 0 )  {
       // The return value should be of the intended return type.
