@@ -83,7 +83,7 @@ public class RegContext
    /* TODO2: decide if we need to somehow cripple this type instance.
       so it doesn't compareTo(~) another instance successfully.
     */
-   private static final NULL_TYPE= new TypeInteger();
+   private static final TypeInteger NULL_TYPE= new TypeInteger();
 
 
    /* =========================================================================
