@@ -75,6 +75,7 @@ public class RegContext
    // llvm requires the first register of a function to be %1
    private static final int MIN_REG_NUM= 1;
 
+   // Helps track unexpected switches to a different basic block.
    private static BasicBlockSeq lastBasicBlock= null;
 
    static Random randomizer= new Random();
@@ -332,6 +333,35 @@ public class RegContext
    }}
 
    // ------------------------------------------------------------------------
+   // getPrevRegWithType()
+   // ------------------------------------------------------------------------
+   /**  acts like getPrevRegName, but returns the register's type as well.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    *
+    * @param steps - the number of setps to go back to find the register name.
+    *	Corresponds to the steps parameter to getPrevRegName(int).
+    * 
+    * @return the register's name and type
+    *
+    * @throws 
+    */
+   public RegWithType getPrevRegWithType(int steps)
+   {{
+      String regName= getPrevRegName(steps);
+      TypeInteger type= getRegType(regName);
+      return new RegWithType( regName, type );
+   }}
+
+   // ------------------------------------------------------------------------
    // getRecentRegName()
    // ------------------------------------------------------------------------
    /** Gets the name of a recently issued register or argument.  The
@@ -398,13 +428,39 @@ public class RegContext
 	 for( int ii= 0; ii < knownTypeRegVector.size(); ii++ ) {
 	    System.out.print( "\""+ knownTypeRegVector.get(ii)+ "\"," );
 	 }
-	 System.out.print( "<end> len="+ knowntypeRegVector.size()+ "> \n" );
+	 System.out.print( "<end> len="+ knownTypeRegVector.size()+ "> \n" );
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr09_133530. \n" );
       }
 
       // clean up and return
       return chosenReg;
+   }}
+
+   // ------------------------------------------------------------------------
+   // getRecentRegWithType()
+   // ------------------------------------------------------------------------
+   /**  just like getRecentRegName(), but also returns the register's type.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - a register name and its type info
+    *
+    * @throws 
+    */
+   public RegWithType getRecentRegWithType()
+   {{
+      String regName= getRecentRegName();
+      TypeInteger type= getRegType(regName);
+      return new RegWithType( regName, type );
    }}
 
    // ------------------------------------------------------------------------
@@ -509,7 +565,7 @@ public class RegContext
     *
     * @throws 
     */
-   public TypeInteger getRegType()
+   public TypeInteger getRegType( String regName )
    {{
       return regTypeHash.get(regName);
    }}
@@ -601,7 +657,7 @@ public class RegContext
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr24_120228, codes: \n"+
 			  "   regNum=1, remaining steps= "+
-			  basicBlock.remainingSteps()+ ".\n" );;
+			  basicBlock.numRemainingSteps()+ ".\n" );;
       }
       return; 
    }}
@@ -613,6 +669,10 @@ public class RegContext
    /** @return the number of arguments */
    public int numArgs()
    {{ return numArgs; }}
+
+   /** @return the register prefix */
+   public String regPrefix()
+   {{ return regPrefix; }}
 
    // ========================================================================
    // Short set subroutines
