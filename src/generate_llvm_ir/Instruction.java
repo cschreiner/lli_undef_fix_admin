@@ -594,17 +594,17 @@ public class Instruction
 
       // should yield something in range 0...MAX_NUM_ARGS.
       int numArgs= randomizer.nextInt( MAX_NUM_ARGS+1 );
-      // TODO: make allAboutArgsVector into a simple array.
+      // TODO2: consider making allAboutArgsVector into a simple array.
       Vector<RegWithType> allAboutArgsVector= new Vector<RegWithType>(numArgs);
       TypeInteger argTypeArray[]= new TypeInteger[numArgs];
 
       if ( numArgs >= 1 )  {
-	 RegWithType allAbout1Arg= basicBlock.getPrevRegWithType(1);
-	 allAboutArgsVector.set(0, allAbout1Arg );
+	 RegWithType allAbout1Arg= basicBlock.getPrevRegWithType(0);
+	 allAboutArgsVector.add( allAbout1Arg );
       }
       for ( int ii= 1; ii < numArgs; ii++ )  {
 	 RegWithType allAbout1Arg= basicBlock.getRecentRegWithType();
-	 allAboutArgsVector.set(ii, allAbout1Arg );
+	 allAboutArgsVector.add( allAbout1Arg );
 	 System.out.print( "pushing to allAboutArgsVector("+ ii+ "), "+ 
 			   "type=\""+ allAbout1Arg.type.name+ "\"\n" );;
       }
