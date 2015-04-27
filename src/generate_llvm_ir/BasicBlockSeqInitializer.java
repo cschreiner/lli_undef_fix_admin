@@ -118,7 +118,7 @@ public class BasicBlockSeqInitializer
       *
       * @throws
       */
-   private BasicBlockSeqInitializer()
+   public BasicBlockSeqInitializer()
    {{
       startPoison= false;
       numSteps= NUM_STEPS_DEFAULT;
