@@ -80,7 +80,7 @@ public class Main
    /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       command line arguments 
    */
-   public static String argOutFileName= undef;
+   public static String argOutFileName= null;
 
    // causes choosing a random value, later.
    public static int argBitWidth= BITWIDTH_NULL; 
@@ -184,7 +184,7 @@ public class Main
       // write it out
 
       //   set up output file
-      writer= new PrintWriter( argOutFileName );
+      PrintWriter writer= new PrintWriter( argOutFileName );
       // die $main::scriptname . ": can't open output file for writing, \n" .
       //   "\t" . "file=\"$arg_outfile_name\",\n" .
       //   "\t" . "$!. \n";
