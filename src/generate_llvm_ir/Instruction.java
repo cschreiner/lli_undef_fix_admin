@@ -75,84 +75,84 @@ public class Instruction
       new OpcodeCharacteristics( 
 				"add",  // name
 				"arith", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { "nsw", "nuw" } ), // flags
       new OpcodeCharacteristics( 
 				"sub",  // name
 				"arith", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { "nsw", "nuw" } ), // flags
 //;; TODO: reinstate these opcodes
 //;;      new OpcodeCharacteristics( 
 //;;				"mul",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst", // genFtn
+//;;				"generateArithInst", // genFtn
 //;;				new String[] { "nsw", "nuw" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"sdiv",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst", // genFtn
+//;;				"generateArithInst", // genFtn
 //;;				new String[] { "exact" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"udiv",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst", // genFtn
+//;;				"generateArithInst", // genFtn
 //;;				new String[] { "exact" } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"srem",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst", // genFtn
+//;;				"generateArithInst", // genFtn
 //;;				new String[] { } ), // flags
 //;;      new OpcodeCharacteristics( 
 //;;				"urem",  // name
 //;;				"arith", // type
-//;;				"generate_arith_inst", // genFtn
+//;;				"generateArithInst", // genFtn
 //;;				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"and",  // name
 				"arith", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"or",  // name
 				"arith", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"xor",  // name
 				"arith", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"shl",  // name
 				"shift", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { "nsw", "nuw" } ), // flags
       new OpcodeCharacteristics( 
 				"lshr",  // name
 				"shift", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { "exact" } ), // flags
       new OpcodeCharacteristics( 
 				"ashr",  // name
 				"shift", // type
-				"generate_arith_inst", // genFtn
+				"generateArithInst", // genFtn
 				new String[] { "exact" } ), // flags
       new OpcodeCharacteristics( 
 				"storeload",  // name
 				"storeload", // type
-				"generate_storeload_inst", // genFtn
+				"generateStoreLoadInst", // genFtn
 				new String[] { } ), // flags
       new OpcodeCharacteristics( 
 				"call",  // name
 				"call", // type
-				"generate_call_inst", // genFtn
+				"generateCallInst", // genFtn
 				new String[] { } ), // flags
       // template is 5 lines long
       //new OpcodeCharacteristics( 
       //			  "call",  // name
       //			  "call", // type
-      //			  "generate_call_inst", // genFtn
+      //			  "generateCallInst", // genFtn
       //			  new String[] { } ), // flags
    };
 
@@ -220,9 +220,10 @@ public class Instruction
     *
     * @throws 
     */
-   private void init()
+   private static void init()
    {{
       initialized= true;
+      // TODO2: add stuff here as needed.
    }}
 
    // ------------------------------------------------------------------------
@@ -247,11 +248,11 @@ public class Instruction
     *
     * @throws 
     */
-   public type generateOneInst( BasicBlockSeq basicBlock )
+   public static CodeChunk generateOneInst( BasicBlockSeq basicBlock )
    {{
       init();
 
-      System.out.print( "starting instruction.generate_one_inst(~) \n" );;
+      System.out.print( "starting instruction.generateOneInst(~) \n" );;
 
       OpcodeCharacteristics opcode= null;
       {
@@ -262,8 +263,8 @@ public class Instruction
 	 }
       }
 
-      basicBlock.carpIfRegNumReset( $basicBlock,
-	    "(from beginning of instruction.generate_one_inst)\n" );;
+      basicBlock.carpIfRegNumReset( basicBlock,
+	    "(from beginning of instruction.generateOneInst)\n" );;
 
       CodeChunk cc= null;
       if ( "arith".equals(opcode.type) ) {
@@ -273,7 +274,7 @@ public class Instruction
       } else if ( "storeload".equals(opcode.type) )  {
 	  cc= generateStoreLoadInst( basicBlock, opcode );
       } else if ( "call".equals(opcode.type) )  {
-	  cc= generateCallinst( basicBlock, opcode );
+	  cc= generateCallInst( basicBlock, opcode );
       } else {
 	  throw new Error( Main.PROGRAM_NAME+  
 	       ": don't recognize opcode type for \""+ opcode.name+ "\", \""+ 
@@ -283,7 +284,7 @@ public class Instruction
 
    basicBlock.carpIfRegNumReset( basicBlock,
 	 "last instruction=\""+ opcode.name+ "\"\n" );;
-   System.out.print( "stopping instruction.generate_one_inst(~) \n" );;
+   System.out.print( "stopping instruction.generateOneInst(~) \n" );;
    return cc;
 }}
 
@@ -314,8 +315,8 @@ public class Instruction
     *
     * @throws 
     */
-    public CodeChunk generateStoreLoadInst( BasicBlockSeq basicBlock, 
-					    OpcodeCharacteristics opcode )
+    public static CodeChunk generateStoreLoadInst( BasicBlockSeq basicBlock, 
+	    OpcodeCharacteristics opcode )
    {{           
       init();
 
@@ -346,8 +347,8 @@ public class Instruction
       // recall that flags strings must always end in a space
 
       insts.append( "  "+ "store "+
-	    $storeFlags+ $basicBlock.currentType().getName()+ " "+
-	    $srcReg+ ", "+ 
+	    storeFlags+ basicBlock.currentType().getName()+ " "+
+	    srcReg+ ", "+ 
 	    basicBlock.currentType().getName()+ "* "+ addrName+ "\n" );
       insts.append( "  "+ destReg+ "= load "+
 	    basicBlock.currentType().getName()+
@@ -359,7 +360,7 @@ public class Instruction
    basicBlock.reportType( destReg, basicBlock.currentType() );
    
    basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction.generate_storeload_insts("+ opcode.name+ 
+	 "at end of instruction.generateStoreLoadInsts("+ opcode.name+ 
 	 ")\n" );;
    return new CodeChunk( defs, insts );
 }}
@@ -390,8 +391,8 @@ public class Instruction
     *
     * @throws 
     */
-    public CodeChunk generateShiftInst( BasicBlockSeq basicBlock, 
-					OpcodeCharacteristics opcode )
+    public static CodeChunk generateShiftInst( BasicBlockSeq basicBlock, 
+					       OpcodeCharacteristics opcode )
    {{
       init();
 
@@ -409,7 +410,8 @@ public class Instruction
    String operand1= basicBlock.getPrevRegName(1);
 
    // operand2 is a constant
-   String operand2= basicBlock.currentType().getRandShiftVal();
+   String operand2= Integer.toString( 
+	 basicBlock.currentType().getRandShiftVal() );
    
    StringBuffer inst= new StringBuffer("");
    inst.append( "  "+ destReg+ "= "+ opcode.name+ " "+
@@ -417,9 +419,9 @@ public class Instruction
 	 operand1+ ", "+ operand2+ "\n" );
 
    basicBlock.reportType( destReg, basicBlock.currentType() );
-   $basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction.generate_shift_insts("+ opcode.name+ ")\n" );;
-   return new CodeChunk("", inst );
+   basicBlock.carpIfRegNumReset( basicBlock,
+	 "at end of instruction.generateShiftInst("+ opcode.name+ ")\n" );;
+   return new CodeChunk("", inst.toString() );
 }}
 
    // ------------------------------------------------------------------------
@@ -447,8 +449,8 @@ public class Instruction
     *
     * @throws 
     */
-   public CodeChunk generateArithInst( BasicBlockSeq basicBlock, 
-				       OpcodeCharacteristics opcode )
+   public static CodeChunk generateArithInst( BasicBlockSeq basicBlock, 
+					      OpcodeCharacteristics opcode )
    {{
       init();
 
@@ -466,7 +468,7 @@ public class Instruction
       String operand2= "";
       if ( Math.random() < .5 )  {
 	 // operand will be a constant
-	 operand2= basicBlock.currentType().getRandVal();
+	 operand2= Long.toString( basicBlock.currentType().getRandVal() );
       } else {
 	 operand2= basicBlock.getRecentRegName();
       }
@@ -484,7 +486,7 @@ public class Instruction
 
       basicBlock.reportType( destReg, basicBlock.currentType() );
       basicBlock.carpIfRegNumReset( basicBlock,
-	    "at end of instruction.generate_arith_insts("+ opcode.name+ 
+	    "at end of instruction.generateArithInst("+ opcode.name+ 
 	    ")\n" );;
       return new CodeChunk( "", inst );
    }}
@@ -515,19 +517,19 @@ public class Instruction
     *
     * @throws 
     */
-    public CodeChunk generateConstInst( BasicBlockSeq basicBlock, 
-					OpcodeCharacteristics opcode )
+    public static CodeChunk generateConstInst( BasicBlockSeq basicBlock, 
+					       OpcodeCharacteristics opcode )
    {{
       init();
 
-      retName= basicBlock.getRegName();
+      String regName= basicBlock.getRegName();
       String inst= basicBlock.indent()+
 	    regName+ "= add "+ 
 	    basicBlock.currentType().getName()+ " " + 
 	    basicBlock.currentType().getRandVal() + ", 0 \n";
       basicBlock.reportType( regName, basicBlock.currentType() );
       basicBlock.carpIfRegNumReset( basicBlock,
-	    "at end of instruction.generate_const_insts()\n" );;
+	    "at end of instruction.generateConstInst()\n" );;
       return new CodeChunk("", inst );
    }}
 
@@ -557,12 +559,12 @@ public class Instruction
     *
     * @throws 
     */
-   public CodeChunk generateCallInst( BasicBlockSeq basicBlock, 
-				      OpcodeCharacteristics opcode )
+   public static CodeChunk generateCallInst( BasicBlockSeq basicBlock, 
+					     OpcodeCharacteristics opcode )
    {{
       init();
 
-      System.out.print( "starting instruction.generate_call_inst(~)\n" );;
+      System.out.print( "starting instruction.generateCallInst(~)\n" );;
 
       if ( ! "call".equals(opcode.name) )  {
 	 throw new Error( Main.PROGRAM_NAME+
@@ -592,19 +594,19 @@ public class Instruction
 
       // should yield something in range 0...MAX_NUM_ARGS.
       int numArgs= randomizer.nextInt( MAX_NUM_ARGS+1 );
-      // TODO: make allAboutArgVector into a simple array.
-      Vector<RegWithType> allAboutArgVector= new Vector<RegWithType>(numArgs);
+      // TODO: make allAboutArgsVector into a simple array.
+      Vector<RegWithType> allAboutArgsVector= new Vector<RegWithType>(numArgs);
       TypeInteger argTypeArray[]= new TypeInteger[numArgs];
 
       if ( numArgs >= 1 )  {
 	 RegWithType allAbout1Arg= basicBlock.getPrevRegWithType(1);
-	 allAboutArgVector[0]= allAbout1Arg;
+	 allAboutArgsVector.set(0, allAbout1Arg );
       }
       for ( int ii= 1; ii < numArgs; ii++ )  {
 	 RegWithType allAbout1Arg= basicBlock.getRecentRegWithType();
-	 allAboutArgsArray[ii]= allAbout1Arg;
-	 System.out.print( "pushing to allAboutArgsArray["+ ii+ "], "+ 
-			   "type=\""+ $allAbout1Arg.type.name+ "\"\n" );;
+	 allAboutArgsVector.set(ii, allAbout1Arg );
+	 System.out.print( "pushing to allAboutArgsVector("+ ii+ "), "+ 
+			   "type=\""+ allAbout1Arg.type.name+ "\"\n" );;
       }
 
       // permute the order of the arguments
@@ -612,14 +614,14 @@ public class Instruction
 	 int aa= randomizer.nextInt(numArgs);
 	 int bb= randomizer.nextInt(numArgs);
 	 if ( aa == bb ) { continue; }
-	 RegWithType tmp= allAboutArgsArray[aa];
-	 $allAboutArgsArray[aa]= $allAboutArgsArray[bb];
-	 $allAboutArgsArray[bb]= $tmp;
+	 RegWithType tmp= allAboutArgsVector.get(aa);
+	 allAboutArgsVector.set( aa, allAboutArgsVector.get(bb) );
+	 allAboutArgsVector.set( bb, tmp );
       }
-      for ( ii= 0; ii < numArgs; ii++ )  {
-	 argTypeArray[ii]= $allAboutArgsArray[ii].type;
-	 System.out.print( "allAboutArgsArray["+ ii+ "].type=\""+
-			   $allAboutArgsArray[ii].type+ "\"\n" );;
+      for ( int ii= 0; ii < numArgs; ii++ )  {
+	 argTypeArray[ii]= allAboutArgsVector.get(ii).type;
+	 System.out.print( "allAboutArgsVector.get("+ ii+ ").type=\""+
+			   allAboutArgsVector.get(ii).type+ "\"\n" );;
       }
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -628,7 +630,7 @@ public class Instruction
       StringBuffer instructions= new StringBuffer("");
       {
 	 CodeChunk newFtnChunk= Function.generate( retType, ftnName, 
-	       argtypeArray, numSteps, false, 
+	       argTypeArray, numSteps, false, 
 	       /* TODO: find some way of ensuring a basic block uses ALL of
 		* its args to compute its result, and delete this.  Until
 		* then, we need this to guarantee that poison is not lost when
@@ -666,9 +668,9 @@ public class Instruction
       basicBlock.reportType( destReg, retType );
       instructions.append( basicBlock.indent()+ destReg+ "= "+
 			   "call "+ retType.getName()+ " "+ ftnName+ "( " );
-      for ( ii= 0; ii < numArgs; ii++ )  {
-	 instructions.append( allAboutArgsArray[ii].type.getName()+ " "+  
-			      allAboutArgsArray[ii].regName );
+      for ( int ii= 0; ii < numArgs; ii++ )  {
+	 instructions.append( allAboutArgsVector.get(ii).type.getName()+ " "+  
+			      allAboutArgsVector.get(ii).regName );
 	       if ( ii < (numArgs-1) )  {
 		  instructions.append( ", " );
 	       }
@@ -678,8 +680,8 @@ public class Instruction
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // clean up and return
       basicBlock.carpIfRegNumReset( basicBlock,
-	 "at end of instruction.generate_call_insts("+ opcode.name+ ")\n" );;
-      System.out.print( "stopping instruction.generate_call_inst(~)\n" );;
+	 "at end of instruction.generateCallInsts("+ opcode.name+ ")\n" );;
+      System.out.print( "stopping instruction.generateCallInst(~)\n" );;
       return new CodeChunk( definitions, instructions );
    }}
 
