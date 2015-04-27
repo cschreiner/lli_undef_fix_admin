@@ -152,7 +152,7 @@ public class Main
       *
       * @throws 
       */
-   public static final void main( String[] argv )
+   public static void main( String[] argv )
    {{
       final int expectedNumArgs= 4;
       if ( argv.length != 4 )  {
