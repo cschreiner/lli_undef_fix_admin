@@ -117,7 +117,7 @@ public class TypeInteger
       //System.exit(-127);
 
       bitWidth= randomizer.nextInt(MAX_WIDTH- PREFERRED_MIN_WIDTH)+ 
-	    PREF_MIN_WIDTH;
+	    PREFERRED_MIN_WIDTH;
 
       constructorHelper();
    }}
@@ -241,13 +241,16 @@ public class TypeInteger
    {{
       long range= maxVal- minVal- 2* margin;
 
-      if ( 0 ) {
+      if ( false ) {
 	 System.out.print( "max=\""+ maxVal+ "\", min=\""+ minVal+
 			   "\", margin=\""+ margin+ "\"\n" );
 	 System.out.print( "   range=\""+ range+ "\"\n" );
       }
 
-      long val= randomizer.nextInt( range )+ minVal+ margin;
+      // TODO2: this is trying to implement the following.  Remove the kludge.
+      // long val= randomizer.nextLong( range )+ minVal+ margin;
+      long val= randomizer.nextLong()% range+ minVal+ margin;
+
       return val;
    }}
 
@@ -289,7 +292,7 @@ public class TypeInteger
     */
    public int getRandShiftVal()
    {{
-      int val= randomizer( bitWidth );
+      int val= randomizer.nextInt( bitWidth );
       return val;
    }}
 
