@@ -69,13 +69,13 @@ public class Main
       * =======================================================================
       */
    public static final String PROGRAM_NAME= "generate_llvm_ir";
-   public static final debugFlag= false;
+   public static final boolean debugFlag= false;
 
    /* Signifies that the bitwidth is uninialized and should be chosen at 
       random.
    */
    // -54172 was (also) chosen at random, but it must be negative.
-   private static final BITWIDTH_NULL= -54172; 
+   private static final int BITWIDTH_NULL= -54172; 
 
    /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       command line arguments 
@@ -170,8 +170,6 @@ public class Main
       // .....................................................................
       //   generate instructions
 
-      CodeChunk cc= null;
-
       TypeInteger type= null;
       if ( argBitWidth == BITWIDTH_NULL ) {
 	 type= new TypeInteger();
@@ -179,7 +177,7 @@ public class Main
 	 type= new TypeInteger( argBitWidth );
       }
 
-      cc= Function.generate( type, "@main", TypeInteger[]{}, 
+      CodeChunk cc= Function.generate( type, "@main", new TypeInteger[]{}, 
 	    argNumSteps, true, argStartPoison );
 
       // .....................................................................
@@ -213,7 +211,7 @@ public class Main
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       //   write out end of program and close
-      writer.write( "\n" . "; end of program \n" . "\n" );
+      writer.write( "\n"+ "; end of program \n"+ "\n" );
       writer.close();
       // die $main::scriptname . ": can't close output file after writing, \n".
       //  "\t" . "file=\"$arg_outfile_name\",\n" .
