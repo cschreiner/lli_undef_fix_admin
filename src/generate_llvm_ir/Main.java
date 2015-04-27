@@ -80,7 +80,7 @@ public class Main
    /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       command line arguments 
    */
-   public static String argOutFileName= null;
+   public static String argOutFilename= null;
 
    // causes choosing a random value, later.
    public static int argBitWidth= BITWIDTH_NULL; 
@@ -154,11 +154,20 @@ public class Main
       */
    public static final int main( String[] argv )
    {{
-      /* TODO: add code to parse arguments: 
+      final int expectedNumArgs= 4;
+      if ( argv.length != 4 )  {
+	 throw new Error( Main.PROGRAM_NAME+ ": expected exactly "+ 
+			  expectedNumArgs+ " arguments. \n" ); 
+      }
+      /* Argument parsing is intended to mirror this PERL code:
 	 "bitwidth=i" => \$arg_bitwidth,
          "start-poison" => \$arg_start_poison,
          "num-steps=i" => \$arg_num_steps,
       */
+      argBitWidth= Integer.parseInt( argv[0] );
+      argStartPoison= Boolean.parseBoolean( argv[1] );
+      argNumSteps= Integer.parseInt( argv[2] );
+      argOutFilename= argv[3];
 
       // .....................................................................
       //  set up constants
@@ -186,7 +195,7 @@ public class Main
       //   set up output file
       PrintWriter writer= null;
       try {
-	 writer= new PrintWriter( argOutFileName );
+	 writer= new PrintWriter( argOutFilename );
       } catch ( FileNotFoundException ex) {
 	 System.err.print( Main.PROGRAM_NAME+ 
 			   ": can't open output file for writing, \n"+
