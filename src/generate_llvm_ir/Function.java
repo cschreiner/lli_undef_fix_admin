@@ -270,7 +270,8 @@ public class Function
 		       ": internal error 2015apr09_235615.\n" );
    }
 
-   instructions.append( "  ret "+ retRegisterType+ " "+ retRegister+ " \n" );
+   instructions.append( "  ret "+ retRegisterType.getName()+ " "+ 
+			retRegister+ " \n" );
    instructions.append( "} \n" );
 
    // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
