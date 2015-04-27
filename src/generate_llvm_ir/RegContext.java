@@ -608,8 +608,14 @@ public class RegContext
 	    return;
 	 }
       }
-      throw new Error( Main.PROGRAM_NAME+ 
-	    ": internal error 2015apr27_111636, codes: \""+ reg+ "\".\n" );
+
+      return;
+      /* This is useful when debugging, but it also fires when a register is
+       * read twice, such as when it is used in a printf() call, and then used
+       * again in a return statement.  So enable this with caution.
+       */
+      // throw new Error( Main.PROGRAM_NAME+ 
+      //      ": internal error 2015apr27_111636, codes: \""+ reg+ "\".\n" );
    }}
 
 
