@@ -113,7 +113,7 @@ public class Function
       */
 
    /* TODO3: consider adding a generate() method that replaces as many of
-    * these parameters as possible with a BasicBlockInitializer instance.
+    * these parameters as possible with a BasicBlockSeqInitializer instance.
     */
 
    // ------------------------------------------------------------------------
@@ -152,7 +152,7 @@ public class Function
       *
       * @throws 
       */
-   public static TypeInteger generate( TypeInteger retType,
+   public static CodeChunk generate( TypeInteger retType,
 			  String name,
 			  TypeInteger[] args,
 			  int numSteps,
@@ -175,7 +175,7 @@ public class Function
    
       System.out.print( "creating a basic block for function \"$name\"\n" );;
 
-      BasicBlockSeqInitializer bbi= new BasicBlockInitializer();
+      BasicBlockSeqInitializer bbi= new BasicBlockSeqInitializer();
       bbi.startPoison= startPoison;
       bbi.numSteps= numSteps;
       bbi.startType= startType;
@@ -189,7 +189,7 @@ public class Function
       StringBuffer definitions= new StringBuffer("");
       StringBuffer instructions= new StringBuffer("");
 
-      instructions.append( "define "+ retType.getName()+ " "+ $name+ "( " ); 
+      instructions.append( "define "+ retType.getName()+ " "+ name+ "( " ); 
 
       {
 	 System.out.print( "arg_listref=>[" );  
@@ -237,11 +237,11 @@ public class Function
 	 definitions.append( cc.definitions );
 	 instructions.append( cc.instructions );
       }
-      if ( instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
-      throw new error( Main.PROGRAM_NAME+ 
+      if ( instructions.toString().matches( ".*%1\\D.*%1\\D.*" ) ) {
+      throw new Error( Main.PROGRAM_NAME+ 
 		       "(two %1s in definitions)" );;
    }
-   if ( instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
+   if ( instructions.toString().matches( ".*%1\\D.*%1\\D.*" ) ) {
       throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr10_100654 "+
 		       "(two %1s in instructions)" );;
@@ -256,14 +256,15 @@ public class Function
       instructions.append( 
 	    "  call i32 (i8*, ...)* @printf(i8* %printf_st_i8, "+
 	    basicBlock.currentType().getName()+ " "+  
-	    basicBlock.getPrevRegName()+ ")\n" );
+	    basicBlock.getPrevRegName(1)+ ")\n" );
+      // TODO: check if we should be calling getPrevRegName(0).
    }
 
    instructions.append( "\n" );
    instructions.append( "  ; clean up and return \n" );
    String retRegister= basicBlock.getPrevRegName(1);
    TypeInteger retRegisterType= basicBlock.getRegType(retRegister);
-   if ( basicBlock.getStopType().compareTo(retRegisterType) != 0 )  {
+   if ( basicBlock.stopType().compareTo(retRegisterType) != 0 )  {
       // The return value should be of the intended return type.
       throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr09_235615.\n" );
