@@ -152,7 +152,7 @@ public class Main
       *
       * @throws 
       */
-   public static final int main( String[] argv )
+   public static final void main( String[] argv )
    {{
       final int expectedNumArgs= 4;
       if ( argv.length != 4 )  {
@@ -235,7 +235,6 @@ public class Main
       // .....................................................................
       //   clean up and exit
       System.exit( 0 );
-      return 0;
    }}
 
 
