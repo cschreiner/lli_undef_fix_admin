@@ -574,8 +574,8 @@ public class Instruction
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // set up everything but the arguments
-      String ftnName= AddrName.get("ftn"); // TODO: finish fixing this
-					  // CAS: what is there still to fix?
+      String ftnName= AddrName.get("ftn"); 
+					  
       System.out.print( "Instruction.generateCallInst(~) generating ftn \""+ 
 			ftnName+ "\"\n" );;
       TypeInteger retType= basicBlock.currentType();
