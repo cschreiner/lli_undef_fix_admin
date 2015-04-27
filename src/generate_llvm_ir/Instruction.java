@@ -650,6 +650,7 @@ public class Instruction
 			     "(two %1s in newFtn insts)" ); //;;
 	 }
 
+         definitions.append( "\n" );
 	 definitions.append( newFtnChunk.definitions ); 
 	 definitions.append( newFtnChunk.instructions ); 
 	 if ( definitions.toString().matches("%1\\D.*%1\\D") )  {
