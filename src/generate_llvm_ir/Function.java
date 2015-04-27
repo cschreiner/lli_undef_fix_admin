@@ -173,7 +173,8 @@ public class Function
 	 startType= args[ 0 ];
       }
    
-      System.out.print( "creating a basic block for function \"$name\"\n" );;
+      System.out.print( "creating a basic block for function \""+ name+ 
+			"\"\n" );;
 
       BasicBlockSeqInitializer bbi= new BasicBlockSeqInitializer();
       bbi.startPoison= startPoison;

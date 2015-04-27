@@ -199,7 +199,7 @@ public class Main
       } catch ( FileNotFoundException ex) {
 	 System.err.print( Main.PROGRAM_NAME+ 
 			   ": can't open output file for writing, \n"+
-			   "\t"+ "file=\"$arg_outfile_name\",\n"+
+			   "\t"+ "file=\""+ argOutFilename+ "\",\n"+
 			   "\t"+ ex.getMessage()+ ". \n" );
 	 System.exit( -1 );
       }
