@@ -20,7 +20,7 @@ OBJS=$(subst .java,.class, $(SRCS) )
 
 default: .build_complete
 
-.build_complete:
+.build_complete: $(SRCS)
 	cd ..; javac $(SRCS_W_PKG)
 	@touch $@
 
