@@ -115,7 +115,7 @@ public class SeededRandom
 	 Random randomizer= new Random();
 	 seed= randomizer.nextInt();
       } else {
-	 seed= Integer.ParseInt( envSeed );
+	 seed= Integer.parseInt( envSeed );
       }
       currentVal= seed;
 
@@ -150,7 +150,7 @@ public class SeededRandom
    private void next()
    {{
       long tmp= currentVal* 260726541+ 1195963154;
-      currentVal= tmp & 0xffffffff;
+      currentVal= (int)(tmp & (long)0xffffffff);
    }}
 
    // ------------------------------------------------------------------------
@@ -178,7 +178,7 @@ public class SeededRandom
       next();
 
       // TODO2: make this more uniform, in case currentVal+ max > INT_MAX
-      return currentVal % max; 
+      return (int)( currentVal % max );  
    }}
 
    // ------------------------------------------------------------------------
@@ -210,7 +210,7 @@ public class SeededRandom
       long longVal= (upper << 32)+ lower;
 
       // TODO2: make this more uniform, in case currentVal+ max > INT_MAX
-      return longVal % max; 
+      return (int)( longVal % max );  
    }}
 
    // ------------------------------------------------------------------------
