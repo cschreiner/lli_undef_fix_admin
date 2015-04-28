@@ -150,7 +150,7 @@ public class SeededRandom
    private void next()
    {{
       long tmp= currentVal* 260726541+ 1195963154;
-      currentVal= (int)(tmp & (long)0xffffffff);
+      currentVal= (int)(tmp & (long)0x7fffffff);
    }}
 
    // ------------------------------------------------------------------------
@@ -248,7 +248,12 @@ public class SeededRandom
       return retVal;
    }}
 
-
+   // ------------------------------------------------------------------------
+   // quick getter methods
+   // ------------------------------------------------------------------------
+   /** returns the original seed  */
+   public int getSeed()
+   {{ return seed; }}
 
 /* ############################################################################
    * trivially simple subclasses
