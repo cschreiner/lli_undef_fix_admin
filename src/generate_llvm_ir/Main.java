@@ -174,7 +174,8 @@ public class Main
 
       // .....................................................................
       //   set up for this run
-
+      System.out.print( "Using random seed= "+ SeededRandom.x.getSeed()+ 
+	    ".\n" );
 
       // .....................................................................
       //   generate instructions
