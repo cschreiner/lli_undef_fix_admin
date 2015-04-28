@@ -12,6 +12,7 @@ SRCS= \
 	RegContext.java \
 	RegWithType.java \
 	SeededRandom.java \
+	TestSeededRandom.java \
 	TypeInteger.java
 
 SRCS_W_PKG=$(addprefix generate_llvm_ir/, $(SRCS) ) 
