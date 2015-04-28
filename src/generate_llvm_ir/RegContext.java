@@ -80,12 +80,6 @@ public class RegContext
 
    private static Random randomizer= new Random();
 
-   /* TODO2: decide if we need to somehow cripple this type instance.
-      so it doesn't compareTo(~) another instance successfully.
-    */
-   private static final TypeInteger NULL_TYPE= new TypeInteger();
-
-
    /* =========================================================================
       * instance variables
       * =======================================================================
@@ -277,7 +271,7 @@ public class RegContext
       regNumMayBeOne= false;
 
       // note that the register exists, but we don't know its type yet.
-      regTypeHash.put( retVal, NULL_TYPE );
+      regTypeHash.put( retVal, TypeInteger.NULL );
 
       // note that this register hasn't been read yet
       unreadRegVec.add( retVal );
@@ -394,7 +388,7 @@ public class RegContext
       if ( unreadRegVec.size() > 0 ) {
          for( int ii= 0; ii < unreadRegVec.size(); ii++ ) {
 	    String reg= unreadRegVec.get(ii);
-	    if ( regTypeHash.get(reg) != NULL_TYPE ) {
+	    if ( regTypeHash.get(reg) != TypeInteger.NULL ) {
 	       // this register meets our criteria
 	       unreadRegVec.remove(ii);
 	       return reg;
@@ -410,7 +404,7 @@ public class RegContext
 	    regEnum.hasMoreElements(); ) {
 	 String reg= regEnum.nextElement();
 	 TypeInteger type= regTypeHash.get(reg);
-	 if ( type != NULL_TYPE ) {
+	 if ( type != TypeInteger.NULL ) {
 	    knownTypeRegVector.add(reg);
 	 }
       }
@@ -550,7 +544,7 @@ public class RegContext
 			  ": internal error 2015apr09_112208, code=\""+ 
 			  regName+ "\". \n" );
       }
-      if ( regTypeHash.get(regName) != NULL_TYPE ) {
+      if ( regTypeHash.get(regName) != TypeInteger.NULL ) {
 	 // the register already had its type reported 
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr09_112337, code=\""+ 
