@@ -153,6 +153,38 @@ public class CodeChunk
       instructions= ii;
    }}
 	
+   // -------------------------------------------------------------------------
+   // CodeChunk( StringBuffer, StringBuffer )
+   // -------------------------------------------------------------------------
+   /*** alternate constructor
+      *
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * <li> No inputs.
+      * </ul>
+      *
+      * @param dd - the definitions (copied to the definitions field)
+      *
+      * @param ii - the main code (copied to the instructons field)
+      * 
+      * @return - n/a (it's a constructor!)
+      *
+      * @throws
+      */
+   public CodeChunk( StringBuffer dd, StringBuffer ii )
+   {{
+      //System.err.println ( "Internal error: "+
+      //	    "unexpected call to default constructor for CodeChunk." );
+      //System.exit(-127);
+      definitions= dd.toString();
+      instructions= ii.toString();
+   }}
+	
 
    /* =========================================================================
       * methods

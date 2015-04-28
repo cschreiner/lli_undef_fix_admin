@@ -47,7 +47,7 @@ import generate_llvm_ir.*;
 // TODO2: see if this can be made more specific:
 //import generate_llvm_ir.RegContext;
 //import generate_llvm_ir.TypeInteger;
-//import generate_llvm_ir.instruction;
+//import generate_llvm_ir.Instruction;
 //import generate_llvm_ir.BasicBlockSeqInitializer;
 //import generate_llvm_ir.CodeChunk;
 
@@ -88,11 +88,12 @@ public class BasicBlockSeq extends RegContext
     */
    String indent;
 
-   /** the prefix to apply to this block's register names */
-   String regPrefix;
+   /* Note: the superclass, RegContext, maintains the prefix for register
+    * names. 
+    */
 
    /** the prefix to apply to this block's label names */
-   StringlabelPrefix;
+   String labelPrefix;
 
    /** the basic block that called this one.  Is null if this is the initial
 	basic block for a function.
@@ -185,7 +186,7 @@ public class BasicBlockSeq extends RegContext
       BasicBlockSeqInitializer options= null;
 
       System.out.println( "starting BasicBlockSeq(~) constructor\n" );;
-      if ( options.ftnName == null ) {
+      if ( paramOptions.ftnName == null ) {
 	 throw new Error( "ftnName may not be null." );
       }
 
@@ -234,13 +235,13 @@ public class BasicBlockSeq extends RegContext
 	    prefix.  For consistency, other registers in this block don't have
 	    a prefix, either.
 	 */
-	 regPrefix= "";
+	 super.setPrefix(""); 
 	 
 	 labelPrefix= "l_";
       } else {
 	 /* we DO have a parent basic block */
 	 parentBasicBlock= paramParentBasicBlock;
-         parentBasicBlock->incrementSubBlock();
+         parentBasicBlock.incrementSubBlock();
 
 	 if ( options.numSteps == BasicBlockSeqInitializer.NUM_STEPS_DEFAULT ) {
 	    numSteps= parentBasicBlock.numSteps/ 3;
@@ -252,24 +253,22 @@ public class BasicBlockSeq extends RegContext
 	 if ( startType == null ) {
 	    startType= parentBasicBlock.startType;
 	 }
-	 regPrefix= parentBasicBlock.regPrefix+ parentBasicBlock.subBlock;
-	 labelPrefix= parentBasicBlock.labelPrefix+ parentBasicBlock.subBlock;
+	 super.setPrefix( parentBasicBlock.regPrefix()+ 
+			  parentBasicBlock.childBlock );
+	 labelPrefix= parentBasicBlock.labelPrefix+ 
+	       parentBasicBlock.childBlock;
       }
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // other main initialization 
-      subBlockNum= 0;
-      subBlock= "-";
+      childBlockNum= 0;
+      childBlock= "-";
       currentType= startType;
       if ( stopType== null ) {
 	 stopType= startType;
       }
       if ( numSteps < 1 ) { numSteps= 1; }
       remainingSteps= numSteps;
-
-      // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-      // initialize superclass with stuff derived from the above
-      super.init();
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // check values
@@ -316,15 +315,15 @@ public class BasicBlockSeq extends RegContext
       */
    private void incrementSubBlock()
    {{
-      static final String DIGITS= "abcdefghijklmnopqrstuvwxyz";
-      static final int BASE= DIGITS.length();
+      final String DIGITS= "abcdefghijklmnopqrstuvwxyz";
+      final int BASE= DIGITS.length();
       int rest= 0;
 
       // the reverse of the String we're trying to build
       StringBuffer revSt= new StringBuffer(""); 
 
-      subBlockNum++;
-      rest= subBlockNum;
+      childBlockNum++;
+      rest= childBlockNum;
       
       while ( rest > 0 )  {
 	 revSt.append( DIGITS.charAt(rest % BASE ) );
@@ -335,10 +334,10 @@ public class BasicBlockSeq extends RegContext
       {
 	 int lastCharIdx= revSt.length()- 1;
 	 revSt.replace( lastCharIdx, lastCharIdx,
-			revSt.substring(lastCharIdx).toUpper() );
+			revSt.substring(lastCharIdx).toUpperCase() );
       }
 
-      subBlock= revSt.reverse();
+      childBlock= revSt.reverse().toString();
    }}
 
    // ------------------------------------------------------------------------
@@ -364,78 +363,80 @@ public class BasicBlockSeq extends RegContext
    {{
       StringBuffer definitions= new StringBuffer( "" );
       StringBuffer instructions= new StringBuffer( "" );
-      System.out.print( "starting BasicBlockSeq::generate(~)\n" );;
+      System.out.print( "starting BasicBlockSeq.generate(~)\n" );;
 
-   if ( parentBasicBlock == null ) )  {
-      /* A basic block beginning a function must initially set at least
-         2 registers, so later opcodes requiring 2 operands will have
-         them available.  If there aren't enough arguments provided, create
-         enough registers to compensate.
-      */
-      for ( ii= numArgs(); ii < 2; ii++ )  {
-	 CodeChunk cc= instruction::generate_const_inst( $this );
-	 definitions.append( cc.definitions );
-	 instructions.append( cc.instructions );
+      if ( parentBasicBlock == null )  {
+	 /* A basic block beginning a function must initially set at least
+	    2 registers, so later opcodes requiring 2 operands will have
+	    them available.  If there aren't enough arguments provided, create
+	    enough registers to compensate.
+	 */
+	 for ( int ii= numArgs(); ii < 2; ii++ )  {
+	    CodeChunk cc= Instruction.generateConstInst( this, null );
+	    definitions.append( cc.definitions );
+	    instructions.append( cc.instructions );
+	 }
       }
-   }
-
-   if ( startPoison )  {
-     instructions.append( "  "+ getRegName()+
-	   "= sub nuw "+ currentType().getName()+ 
-	    " 0, 1 ; generates POISON \n" );
-     // TODO2: replace the above operands with random numbers
-   }
-
-   while ( remainingSteps > 0 )  {
-      System.out.print( "remainingSteps="+ remainingSteps+ ".\n" );;
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      new CodeChunk cc2= instruction::generate_one_inst( this );
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      definitions.append( cc2.definitions );
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      {
-	 // TODO: maybe move this to a method called by the instr. generator
-	 remainingSteps--;
-	 $instructions.append( indent+ "; step \n" );
+      
+      if ( startPoison )  {
+	 String regName= getRegName();
+	 instructions.append( "  "+ regName+
+			      "= sub nuw "+ currentType().getName()+ 
+			      " 0, 1 ; generates POISON \n" );
+	 // TODO2: consider replacing the above operands with random numbers
+         reportType( regName, currentType() );
       }
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      instructions.append( cc2.instructions ); 
-      carpIfRegNumReset(  this,
-	    "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
-      if ( cc2.instructions.toString().matches(".*%1\D.*%1\D.*")  )  {
-         throw new CarpException( Main.PROGRAM_NAME+ ": "+ 
-	       "internal error 2015apr10_102650 "+ 
-	       "(two %1s in cc2.instructions)" );;
+      
+      while ( remainingSteps > 0 )  {
+	 System.out.print( "remainingSteps="+ remainingSteps+ ".\n" );;
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 CodeChunk cc2= Instruction.generateOneInst( this );
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 definitions.append( cc2.definitions );
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 {
+	    // TODO: maybe move this to a method called by the instr. generator
+	    remainingSteps--;
+	    instructions.append( indent+ "; step \n" );
+	 }
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 instructions.append( cc2.instructions ); 
+	 carpIfRegNumReset(  this,
+	       "recent instructions= <<EOF \n"+ instructions+ "\nEOF\n" );
+	 if ( cc2.instructions.toString().matches(".*%1\\D.*%1\\D.*")  )  {
+	    throw new Error( Main.PROGRAM_NAME+ ": "+ 
+			     "internal error 2015apr10_102650 "+ 
+			     "(two %1s in cc2.instructions)" ); //;;
+	 }
+	 if ( instructions.toString().matches(".*%1\\D.*%1\\D.*")  )  {
+	    throw new Error( Main.PROGRAM_NAME+ ": "+
+			     "internal error 2015apr10_102820 "+ 
+			     "(two %1s in instructions)" ); //;;
+	 }
       }
-      if ( $instructions.toString().matches(".*%1\D.*%1\D.*")  )  {
-         throw new CarpException( Main.PROGRAM_NAME+ ": "+
-	       "internal error 2015apr10_102820 "+ 
-	       "(two %1s in instructions)" );;
+      
+      if ( currentType.compareTo( stopType ) != 0 )  {
+	 /* TODO2: add code here to convert the last 1 or 2 registers to
+	    the stop type.  Until then, we have to give up.
+	 */
+	 throw new Error( Main.PROGRAM_NAME+ 
+			  ": internal error 2015apr09_114820.\n" );
       }
-   }
-
-   if ( currentType.compareTo( stopType ) != 0 )  {
-      /* TODO2: add code here to convert the last 1 or 2 registers to
-         the stop type.  Until then, we have to give up.
-      */
-      throw new Error( Main.PROGRAM_NAME+ 
-		       ": internal error 2015apr09_114820.\n" );
-   }
- 
-   // clean up and return
-   System.out.print( "stopping BasicBlockSeq::generate(~)\n";;
-   return new Codechunk ( $definitions, $instructions );
-}}
+      
+      // clean up and return
+      System.out.print( "stopping BasicBlockSeq.generate(~)\n" );;
+      return new CodeChunk ( definitions, instructions );
+   }}
 
 // ------------------------------------------------------------------------
 // short getter/setter routines
 // ------------------------------------------------------------------------
 /** @return the type to have in use at the end of this basic block */
-TypeInteger getStopType()
+TypeInteger stopType()
 {{ return stopType; }}
 
 /** @return the whitespace to prefix to a line for proper indentation */
@@ -451,8 +452,16 @@ int numRemainingSteps()
 {{ return remainingSteps; }}
 
 /** @return the data type this block is currently using */
-TypeInteger currentType
+TypeInteger currentType()
 {{ return currentType; }}
+
+/** @return the name of the function in which this this block will reside */
+String ftnName()
+{{ return ftnName; }}
+
+/** @return the name of the subblock, should this block create one now */
+String childBlock()
+{{ return childBlock; }}
 
 
 /* ############################################################################

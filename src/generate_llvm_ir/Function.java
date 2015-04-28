@@ -43,6 +43,7 @@ package generate_llvm_ir;
 //import java.awt.Color.*;
 //import java.awt.geom.*;
 
+import generate_llvm_ir.*;
 
 // ****************************************************************************
 // File's primary class: Function
@@ -112,7 +113,7 @@ public class Function
       */
 
    /* TODO3: consider adding a generate() method that replaces as many of
-    * these parameters as possible with a BasicBlockInitializer instance.
+    * these parameters as possible with a BasicBlockSeqInitializer instance.
     */
 
    // ------------------------------------------------------------------------
@@ -151,7 +152,7 @@ public class Function
       *
       * @throws 
       */
-   public static TypeInteger generate( TypeInteger retType,
+   public static CodeChunk generate( TypeInteger retType,
 			  String name,
 			  TypeInteger[] args,
 			  int numSteps,
@@ -172,23 +173,24 @@ public class Function
 	 startType= args[ 0 ];
       }
    
-      System.out.print( "creating a basic block for function \"$name\"\n" );;
+      System.out.print( "creating a basic block for function \""+ name+ 
+			"\"\n" );;
 
-      BasicBlockSeqInitializer bbi();
+      BasicBlockSeqInitializer bbi= new BasicBlockSeqInitializer();
       bbi.startPoison= startPoison;
       bbi.numSteps= numSteps;
       bbi.startType= startType;
       bbi.stopType= retType;
       bbi.ftnName= name;
 
-      BasicBlockSeq basicBlock( null, bbi );
+      BasicBlockSeq basicBlock= new BasicBlockSeq( null, bbi );
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
       // generate function heading
       StringBuffer definitions= new StringBuffer("");
       StringBuffer instructions= new StringBuffer("");
 
-      instructions.append( "define "+ retType.getName()+ ' '+ $name+ '( ' ); 
+      instructions.append( "define "+ retType.getName()+ " "+ name+ "( " ); 
 
       {
 	 System.out.print( "arg_listref=>[" );  
@@ -205,7 +207,7 @@ public class Function
       for ( int ii= 0; ii < args.length; ii++ ) {
 	 String argName= "%arg"+ (ii+ 1);
 	 System.out.print( "   "+ ii+ "\n" );;
-	 instructions.append( args[ii]->getName()+ " "+ argName );
+	 instructions.append( args[ii].getName()+ " "+ argName );
 	 basicBlock.registerArg( argName, args[ii] );
 	 if ( ii < (args.length-1) ) {
 	    instructions.append( ", " );
@@ -213,9 +215,9 @@ public class Function
       }
 
       instructions.append( " ) { \n" ); 
-      instructions.append( "  ; \%convert [? x i8]* to i8* \n" );
+      instructions.append( "  ; %convert [? x i8]* to i8* \n" );
       instructions.append( 
-	    "  \%printf_st_i8 = getelementptr [37 x i8]* \@printf_st, " . 
+	    "  %printf_st_i8 = getelementptr [37 x i8]* @printf_st, "+
 	    "i64 0, i64 0\n" );
       instructions.append( "\n" );
 
@@ -223,27 +225,27 @@ public class Function
       // generate instructions
       {
 	 CodeChunk cc= basicBlock.generate();
-	 if ( cc.instructions.matches( ".*%1\D.*%1\D.*" ) ) {
+	 if ( cc.instructions.matches( ".*%1\\D.*%1\\D.*" ) ) {
 	    throw new Error( Main.PROGRAM_NAME+ 
-			     ": internal error 2015apr10_101817 " .
-			     "(two %1s in cc.instructions)" );;
+			     ": internal error 2015apr10_101817 "+
+			     "(two %1s in cc.instructions)" ); //;;
 	 }
-	 if ( cc.definitions.matches( ".*%1\D.*%1\D.*" ) ) {
+	 if ( cc.definitions.matches( ".*%1\\D.*%1\\D.*" ) ) {
 	    throw new Error( Main.PROGRAM_NAME+ 
-			     ": internal error 2015apr10_101506 " .
-			     "(two %1s in cc.definitions)" );;
+			     ": internal error 2015apr10_101506 "+
+			     "(two %1s in cc.definitions)" ); //;;
 	 }
 	 definitions.append( cc.definitions );
 	 instructions.append( cc.instructions );
       }
-      if ( instructions.matches( ".*%1\D.*%1\D.*" ) ) {
-      throw new error( Main.PROGRAM_NAME+ 
-		       "(two %1s in definitions)" );;
+      if ( instructions.toString().matches( ".*%1\\D.*%1\\D.*" ) ) {
+      throw new Error( Main.PROGRAM_NAME+ 
+		       "(two %1s in definitions)" ); //;;
    }
-   if ( instructions.matches( ".*%1\D.*%1\D.*" ) ) {
+   if ( instructions.toString().matches( ".*%1\\D.*%1\\D.*" ) ) {
       throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr10_100654 "+
-		       "(two %1s in instructions)" );;
+		       "(two %1s in instructions)" ); //;;
    }
 
    // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -253,22 +255,24 @@ public class Function
 
    if ( printRetVal ) {
       instructions.append( 
-	    "  call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, "+
+	    "  call i32 (i8*, ...)* @printf(i8* %printf_st_i8, "+
 	    basicBlock.currentType().getName()+ " "+  
-	    basicBlock.getPrevRegName()+ ")\n" );
+	    basicBlock.getPrevRegName(0)+ ")\n" );
+      // TODO: check if we should be calling getPrevRegName(0).
    }
 
-   instructions+ "\n";
-   instructions+ "  ; clean up and return \n";
-   String retRegister= basicBlock.getPrevRegName(1);
+   instructions.append( "\n" );
+   instructions.append( "  ; clean up and return \n" );
+   String retRegister= basicBlock.getPrevRegName(0);
    TypeInteger retRegisterType= basicBlock.getRegType(retRegister);
-   if ( basicBlock.getStopType().compareTo(retRegisterType) != 0 )  {
+   if ( basicBlock.stopType().compareTo(retRegisterType) != 0 )  {
       // The return value should be of the intended return type.
       throw new Error( Main.PROGRAM_NAME+ 
 		       ": internal error 2015apr09_235615.\n" );
    }
 
-   instructions.append( "  ret "+ retRegisterType+ " "+ retRegister+ " \n" );
+   instructions.append( "  ret "+ retRegisterType.getName()+ " "+ 
+			retRegister+ " \n" );
    instructions.append( "} \n" );
 
    // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 

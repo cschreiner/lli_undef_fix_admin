@@ -44,7 +44,6 @@ package generate_llvm_ir;
 //import java.awt.geom.*;
 
 import java.util.HashMap;
-import java.util.Random;
 
 // ****************************************************************************
 // File's primary class: AddrName
@@ -71,7 +70,6 @@ public class AddrName
       */
    private static HashMap<String,Object> addrsUsed= 
 	 new HashMap<String,Object>();
-   private static Random rand= new Random();
 
    /* =========================================================================
       * instance variables
@@ -147,7 +145,7 @@ public class AddrName
       StringBuffer core= new StringBuffer("");
 
       retVal.append(prefix);
-
+      retVal.append("_");
 
       for ( int safetyCounter= 0; safetyCounter < 1000; safetyCounter++ ) {
 	 for ( int ii= 0; ii < 2; ii++ ) {
@@ -178,9 +176,8 @@ public class AddrName
     */
    private static char getLetter( String letters )
    {{
-       Random rand= new Random();
       int length= letters.length();
-      int ii= rand.nextInt(length);
+      int ii= SeededRandom.x.nextInt(length); 
       char retVal= letters.charAt(ii);
       return retVal;
    }}

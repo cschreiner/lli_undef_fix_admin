@@ -1,9 +1,9 @@
 /*.. 
    * Project Name: lli_undef_fix
    *
-   * File Name: OpcodeCharacteristics.java
+   * File Name: SeededRandom.java
    *
-   * File Description: class OpcodeCharacteristics
+   * File Description: class SeededRandom
    *	(list here the package-scope classes in this file)
    *
    * lli_undef_fix was written by Christian A. Schreiner at University of
@@ -36,7 +36,7 @@ package generate_llvm_ir;
    *   imports
    * **************************************************************************
    */
-//import java.util.*;
+import java.util.*;
 //import java.applet.Applet;
 //import java.awt.*;
 //import java.awt.event.*;
@@ -45,16 +45,18 @@ package generate_llvm_ir;
 
 
 // ****************************************************************************
-// File's primary class: OpcodeCharacteristics
+// File's primary class: SeededRandom
 // ****************************************************************************
-/** holds information about an opcode
+/*** creates random numbers from a seed
+ *
  * <ul>
  * <li> Description: 
  *
- * <li> Algorithm: 
+ * <li> Algorithm: nextVal= current * a constant + a constant.
+ *	The implementation could use some tightening up.
  * </ul>
  */
-public class OpcodeCharacteristics 
+public class SeededRandom 
 {
 
 /* ############################################################################
@@ -66,17 +68,17 @@ public class OpcodeCharacteristics
       * class variables
       * =======================================================================
       */
+   // instance for everyone to use
+   public static SeededRandom x= new SeededRandom();  
+
 
    /* =========================================================================
       * instance variables
       * =======================================================================
       */
+   private int seed;
+   private int currentVal;
 
-   /* see constructor comments for info on each of these fields */
-   String name; 
-   String type; 
-   String genName; 
-   String[] flags;
 
    /* =========================================================================
       * constructors
@@ -84,10 +86,53 @@ public class OpcodeCharacteristics
       */
 
    // -------------------------------------------------------------------------
-   // OpcodeCharacteristics()
+   // SeededRandom()
    // -------------------------------------------------------------------------
-   /** default constructor
-    *
+   /*** default constructor
+      *
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * <li> No inputs.
+      * </ul>
+      * 
+      * @return - n/a (it's a constructor!)
+      *
+      * @throws
+      */
+   public SeededRandom()
+   {{
+      //System.err.println ( "Internal error: "+
+      //   "unexpected call to default constructor for SeededRandom." );
+      //System.exit(-127);
+
+      String envSeed= System.getenv( "SEED" );
+      if ( envSeed == null ) {
+	 Random randomizer= new Random();
+	 seed= randomizer.nextInt();
+      } else {
+	 seed= Integer.parseInt( envSeed );
+      }
+      currentVal= seed;
+
+      next();
+   }}
+
+
+   /* =========================================================================
+      * methods
+      * =======================================================================
+      */
+
+   // ------------------------------------------------------------------------
+   // next()
+   // ------------------------------------------------------------------------
+   /**  computes the next random number
+    * 
     * <ul>
     * <li> Detailed Description: 
     *
@@ -98,21 +143,28 @@ public class OpcodeCharacteristics
     * <li> No inputs.
     * </ul>
     * 
-    * @return - n/a (it's a constructor!)
+    * @return - void
     *
-    * @throws
+    * @throws 
     */
-   private OpcodeCharacteristics()
+   private void next()
    {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for OpcodeCharacteristics." );
-      System.exit(-127);
+      long tmp= currentVal* 260726541+ 1195963154;
+
+      /* This breaks up patterns of all even numbers or all odd numbers,
+       * depending on the evenness of the original seed.
+       */
+      long evenness= (tmp & 0x80000000) >> 31;
+      tmp+= evenness;
+
+      // clean up and return
+      currentVal= (int)(tmp & (long)0x7fffffff);
    }}
 
    // ------------------------------------------------------------------------
-   // OpcodeCharacteristics()
+   // nextInt()
    // ------------------------------------------------------------------------
-   /**  commonly used constructor
+   /**  gets the next integer from this random number generator
     * 
     * <ul>
     * <li> Detailed Description: 
@@ -122,32 +174,94 @@ public class OpcodeCharacteristics
     * <li> Reentrancy: unknown
     *
     * </ul>
+    *
+    * @param max - the (max value+1) for the random number
     * 
-    * @param name - the name of the opcode e.g. "add"
-    * @param type - the category the opcode is in e.g. 'arith'
-    * @param genName - the name of the "generator" function to call to 
-    * 		generate the instruction
-    * 		TODO2: change this to the name of some instance whose
-    * 		interface has a standard generate(~) method for this
-    * 		instruction.
-    * @param flags - an array of flags that the instruction may use. 
+    * @return a random integer such that 0 <= n < max 
     *
     * @throws 
     */
-   public OpcodeCharacteristics( String name, String type, String genName, 
-	 String[] flags )
+   public int nextInt( int max )
    {{
-      this.name= name;
-      this.type= type;
-      this.genName= genName;
-      this.flags= flags;
+      next();
+
+      // TODO2: make this more uniform, in case currentVal+ max > INT_MAX
+      return (int)( currentVal % max );  
    }}
 
-   /* =========================================================================
-      * methods
-      * =======================================================================
-      */
+   // ------------------------------------------------------------------------
+   // nextLong()
+   // ------------------------------------------------------------------------
+   /**  gets the next integer from this random number generator
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param max - the (max value+1) for the random number
+    * 
+    * @return a random integer such that 0 <= n < max 
+    *
+    * @throws 
+    */
+   public int nextLong( long max )
+   {{
+      next();
+      long upper= currentVal;
+      next();
+      long lower= currentVal;
+      long longVal= (upper << 32)+ lower;
 
+      // TODO2: make this more uniform, in case currentVal+ max > INT_MAX
+      return (int)( longVal % max );  
+   }}
+
+   // ------------------------------------------------------------------------
+   // nextDouble()
+   // ------------------------------------------------------------------------
+   /** generates a random double between 0 and 1 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return a double d such that 0 <= d < 1
+    *
+    * @throws 
+    */
+   public double nextDouble()
+   {{
+      next();
+
+      // TODO2: see if there is a way to do this with longs for more
+      // "randomness".
+      double retVal= currentVal / Integer.MAX_VALUE;
+      while ( retVal < 0 ) {
+	 retVal+= 1.0;
+      }
+      while ( retVal > 0 ) {
+	 retVal-= 1.0;
+      }
+      return retVal;
+   }}
+
+   // ------------------------------------------------------------------------
+   // quick getter methods
+   // ------------------------------------------------------------------------
+   /** returns the original seed  */
+   public int getSeed()
+   {{ return seed; }}
 
 /* ############################################################################
    * trivially simple subclasses
@@ -158,7 +272,7 @@ public class OpcodeCharacteristics
    * end of primary class
    * **************************************************************************
    */
-} // end class OpcodeCharacteristics
+} // end class SeededRandom
 
 
 /* ****************************************************************************
@@ -170,16 +284,16 @@ public class OpcodeCharacteristics
 // ############################################################################
 // class_name()
 // ############################################################################
-/**  
- * 
- * <ul>
- * 
- * <li> Detailed Description: 
- * 
- * <li> Algorithm: 
- * </ul>
- * 
- */
+/***  
+   * 
+   * <ul>
+   * 
+   * <li> Detailed Description: 
+   * 
+   * <li> Algorithm: 
+   * </ul>
+   * 
+   */
 //private class class_name
 //{
 //   /* variables */

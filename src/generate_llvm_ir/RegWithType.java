@@ -72,7 +72,7 @@ public class RegWithType
       * instance variables
       * =======================================================================
       */
-   public String name;
+   public String regName;
    public TypeInteger type;
 
    /* =========================================================================
@@ -129,8 +129,17 @@ public class RegWithType
       */
    public RegWithType( String name, TypeInteger type )
    {{
-      this.name= name;
+      this.regName= name;
       this.type= type;
+
+      if ( name == null || "".equals(name) )  {;;
+         throw new Error( Main.PROGRAM_NAME+ 
+	       ": found a null register at 2015apr9_194003.\n" );
+      }
+      if ( type == null )  {
+         throw new Error( Main.PROGRAM_NAME+ 
+	       ": internal warning 2015apr09_170526 (null TypeInteger)\n" );
+      }
    }}
 
 
