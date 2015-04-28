@@ -76,8 +76,6 @@ public class TypeInteger
    public static final int MIN_WIDTH= 1;
    public static final int PREFERRED_MIN_WIDTH= 6;
 
-   private static Random randomizer= new Random();
-
    public static final TypeInteger NULL= constructNull();
 
    /* =========================================================================
@@ -118,7 +116,7 @@ public class TypeInteger
       //   "unexpected call to default constructor for TypeInteger." );
       //System.exit(-127);
 
-      bitWidth= randomizer.nextInt(MAX_WIDTH- PREFERRED_MIN_WIDTH)+ 
+      bitWidth=SeededRandom.x.nextInt(MAX_WIDTH- PREFERRED_MIN_WIDTH)+
 	    PREFERRED_MIN_WIDTH;
 
       constructorHelper();
@@ -282,8 +280,8 @@ public class TypeInteger
       }
 
       // TODO2: this is trying to implement the following.  Remove the kludge.
-      // long val= randomizer.nextLong( range )+ minVal+ margin;
-      long val= randomizer.nextLong()% range+ minVal+ margin;
+      // long val= randomNumGenerator.nextLong( range )+ minVal+ margin;
+      long val= SeededRandom.x.nextInt(range)+ minVal+ margin;
 
       return val;
    }}
@@ -326,7 +324,7 @@ public class TypeInteger
     */
    public int getRandShiftVal()
    {{
-      int val= randomizer.nextInt( bitWidth );
+      int val= SeededRandom.x.nextInt( bitWidth ); 
       return val;
    }}
 

@@ -67,7 +67,6 @@ public class Instruction
     * class variables
     * =======================================================================
     */
-   static Random randomizer= new Random();
 
    //Vector<Opcode> opcodes= new Vector<Opcode>();
    private static boolean initialized= false;
@@ -256,7 +255,7 @@ public class Instruction
 
       OpcodeCharacteristics opcode= null;
       {
-	 int opcodeIdx= randomizer.nextInt(opcodes.length);
+	 int opcodeIdx= SeededRandom.x.nextInt(opcodes.length); 
          opcode= opcodes[opcodeIdx];
 	 if ( Main.debugFlag )  {
 	    System.out.print( "selected opcode=\""+ opcode.name+ "\"\n" );
@@ -341,7 +340,7 @@ public class Instruction
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       String storeFlags= " ";
-      if ( Math.random() < .5 )  {
+      if ( SeededRandom.x.nextInt(2); < 1 )  {
 	  storeFlags= "volatile ";
       }
       // recall that flags strings must always end in a space
@@ -401,7 +400,7 @@ public class Instruction
 
 
    for ( int ii= 0; ii < opcode.flags.length; ii++ )  {
-      if ( Math.random() < .5 )  {
+      if ( SeededRandom.x.nextInt(2)l < 1 )  {
 	 // a flag must ALWAYS end in a space. 
 	 flags.append( opcode.flags[ii]+ " " );
       }
@@ -458,7 +457,7 @@ public class Instruction
       StringBuffer flags= new StringBuffer("");
 
       for( int ii= 0; ii < opcode.flags.length; ii++ )  {
-	 if ( Math.random() < .5 )  {
+	 if ( SeededRandom.x.nextInt(2) < 1 )  {
 	     flags.append( opcode.flags[ii]+ " " );
 	 }
       }
@@ -466,7 +465,7 @@ public class Instruction
       String operand1= basicBlock.getPrevRegName(1);
 
       String operand2= "";
-      if ( Math.random() < .5 )  {
+      if ( SeededRandom.x.nextInt(2) < 1 )  {
 	 // operand will be a constant
 	 operand2= Long.toString( basicBlock.currentType().getRandVal() );
       } else {
@@ -474,7 +473,7 @@ public class Instruction
       }
    
       // maybe swap operands
-      if ( Math.random() < .5 )  {
+      if ( SeededRandom.x.nextInt(2) < 1 )  {
 	  String tmp= operand1;  
 	  operand1= operand2;
 	  operand2= tmp;
@@ -593,7 +592,7 @@ public class Instruction
       final int MAX_NUM_ARGS= 3;
 
       // should yield something in range 0...MAX_NUM_ARGS.
-      int numArgs= randomizer.nextInt( MAX_NUM_ARGS+1 );
+      int numArgs= SeededRandom.x.nextInt(MAX_NUM_ARGS+1);  
       // TODO2: consider making allAboutArgsVector into a simple array.
       Vector<RegWithType> allAboutArgsVector= new Vector<RegWithType>(numArgs);
       TypeInteger argTypeArray[]= new TypeInteger[numArgs];
@@ -611,8 +610,8 @@ public class Instruction
 
       // permute the order of the arguments
       for ( int ii= 0; ii < (2*numArgs); ii++ )  {
-	 int aa= randomizer.nextInt(numArgs);
-	 int bb= randomizer.nextInt(numArgs);
+	 int aa= SeededRandom.x.nextInt(numArgs);
+	 int bb= SeededRandom.x.nextInt(numArgs);
 	 if ( aa == bb ) { continue; }
 	 RegWithType tmp= allAboutArgsVector.get(aa);
 	 allAboutArgsVector.set( aa, allAboutArgsVector.get(bb) );
