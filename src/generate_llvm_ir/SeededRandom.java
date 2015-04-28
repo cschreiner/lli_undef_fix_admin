@@ -150,6 +150,14 @@ public class SeededRandom
    private void next()
    {{
       long tmp= currentVal* 260726541+ 1195963154;
+
+      /* This breaks up patterns of all even numbers or all odd numbers,
+       * depending on the evenness of the original seed.
+       */
+      long evenness= (tmp & 0x80000000) >> 31;
+      tmp+= evenness;
+
+      // clean up and return
       currentVal= (int)(tmp & (long)0x7fffffff);
    }}
 
