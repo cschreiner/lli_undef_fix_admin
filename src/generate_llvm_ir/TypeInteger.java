@@ -78,6 +78,8 @@ public class TypeInteger
 
    private static Random randomizer= new Random();
 
+   public static final TypeInteger NULL= constructNull();
+
    /* =========================================================================
     * instance variables
     * =========================================================================
@@ -149,6 +151,38 @@ public class TypeInteger
       }
       bitWidth= targetWidth;
       constructorHelper();
+   }}
+
+   // ------------------------------------------------------------------------
+   // constructNull()
+   // ------------------------------------------------------------------------
+   /** factory method to create the NULL instance 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - a NULL instance
+    *
+    * @throws 
+    */
+   private static TypeInteger constructNull()
+   {{
+      TypeInteger retVal= new TypeInteger();
+
+      /* set these to nonsensical values */
+      retVal.bitWidth= -1;
+      retVal.maxVal= -1;
+      retVal.minVal= -1;
+      retVal.name= "null_TypeInteger";
+
+      return retVal;
    }}
 
 
