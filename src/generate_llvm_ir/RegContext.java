@@ -422,11 +422,12 @@ public class RegContext
 	 */
          System.err.print( "Error coming: "+
 	       "can't find any registers with known types. \n"+
-	       "The "+ regTypeHash.size()+ " known registers are: \n" );
+	       "The "+ regTypeHash.size()+ " known registers & types are: \n" );
          for( Enumeration<String> reg_enum= regTypeHash.keys();
 	      reg_enum.hasMoreElements(); ) {
 	    String reg= reg_enum.nextElement();
-            System.err.print( "\t\""+ reg+ "\"\n" );
+            System.err.print( "\t\""+ reg+ "\" of type \""+ 
+			      regTypeHash.get(reg)+ "\"\n" );
 	 }
 	 throw new Error( Main.PROGRAM_NAME+ 
 			  ": internal error 2015apr09_135003. \n" );
@@ -442,7 +443,7 @@ public class RegContext
 	       "Warning: Why is chosenReg a whitespace string?\n" );
 	 System.out.print( "knownTypeRegVector= < " );
 	 for( int ii= 0; ii < knownTypeRegVector.size(); ii++ ) {
-	    System.out.print( "\""+ knownTypeRegVector.get(ii)+ "\"," );
+	    System.out.print( "\""+ knownTypeRegVector.get(ii)+ "\", " );
 	 }
 	 System.out.print( "<end> len="+ knownTypeRegVector.size()+ "> \n" );
 	 throw new Error( Main.PROGRAM_NAME+ 
