@@ -380,7 +380,7 @@ public class BasicBlockSeq extends RegContext
       
       if ( startPoison )  {
 	 String regName= getRegName();
-	 instructions.append( "  "+ regName()+
+	 instructions.append( "  "+ regName+
 			      "= sub nuw "+ currentType().getName()+ 
 			      " 0, 1 ; generates POISON \n" );
 	 // TODO2: consider replacing the above operands with random numbers
