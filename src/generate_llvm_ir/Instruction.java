@@ -340,7 +340,7 @@ public class Instruction
 
       // . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       String storeFlags= " ";
-      if ( SeededRandom.x.nextInt(2); < 1 )  {
+      if ( SeededRandom.x.nextInt(2) < 1 )  {
 	  storeFlags= "volatile ";
       }
       // recall that flags strings must always end in a space
@@ -400,7 +400,7 @@ public class Instruction
 
 
    for ( int ii= 0; ii < opcode.flags.length; ii++ )  {
-      if ( SeededRandom.x.nextInt(2)l < 1 )  {
+      if ( SeededRandom.x.nextInt(2) < 1 )  {
 	 // a flag must ALWAYS end in a space. 
 	 flags.append( opcode.flags[ii]+ " " );
       }

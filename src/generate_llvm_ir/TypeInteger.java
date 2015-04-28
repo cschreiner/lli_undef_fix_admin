@@ -281,7 +281,7 @@ public class TypeInteger
 
       // TODO2: this is trying to implement the following.  Remove the kludge.
       // long val= randomNumGenerator.nextLong( range )+ minVal+ margin;
-      long val= SeededRandom.x.nextInt(range)+ minVal+ margin;
+      long val= SeededRandom.x.nextLong(range)+ minVal+ margin;
 
       return val;
    }}
