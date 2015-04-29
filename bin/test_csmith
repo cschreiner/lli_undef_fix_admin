@@ -35,10 +35,10 @@ function test_one_round()
    fi
    mv $file_stem.ll $opt3_ll
 
-   ( ulimit -t 60; lli -force-interpreter $opt0_ll ) > \
+   ( ulimit -t 60; llifi $opt0_ll ) > \
          $opt0_ll.stdout 2> $opt0_ll.stderr
    opt0_status=$?
-   ( ulimit -t 60; lli -force-interpreter $opt3_ll ) > \
+   ( ulimit -t 60; llifi $opt3_ll ) > \
          $opt3_ll.stdout 2> $opt3_ll.stderr
    opt3_status=$?
    diff -q $opt0_ll.stdout $opt3_ll.stdout
