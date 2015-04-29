@@ -35,14 +35,22 @@ function test_one_round()
    fi
    mv $file_stem.ll $opt3_ll
 
-   ( ulimit -t 60; llifi $opt0_ll ) > \
+   # run
+   ( ulimit -t 60; stdbuf -o 0 -e 0 llifi $opt0_ll ) > \
          $opt0_ll.stdout 2> $opt0_ll.stderr
    opt0_status=$?
-   ( ulimit -t 60; llifi $opt3_ll ) > \
+   ( ulimit -t 60; stdbuf -o 0 -e 0 llifi $opt3_ll ) > \
          $opt3_ll.stdout 2> $opt3_ll.stderr
    opt3_status=$?
+
+   # compute differences
    diff -q $opt0_ll.stdout $opt3_ll.stdout
    diff_status=$?
+
+   grep '^checksum = ' $opt0_ll.stdout > $opt0_ll.checksum
+   grep '^checksum = ' $opt3_ll.stdout > $opt3_ll.checksum
+   diff -q $opt0_ll.checksum $opt3_ll.checksum
+   checksum_diff_status=$?  
    
    # print the meat of the report
    cleanup_flag="true"
@@ -55,6 +63,11 @@ function test_one_round()
 	 echo "  " opt3 status=$opt3_status
       ) | tee -a $report_file
       cleanup_flag="false"
+   fi
+   if [ $checksum_diff_status -eq 0 ]; then
+      echo checksums agree >> $report_file
+   else
+      echo checksums differ >> $report_file
    fi
    if [ $diff_status -eq 0 ]; then
       (
