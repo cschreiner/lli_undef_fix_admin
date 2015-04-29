@@ -159,10 +159,27 @@ while true; do
    echo round ${round}:
    test_one_round $round
    echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-   round=$(( $round + 1 ))
   
+   # prepare for next round
+   round=$(( $round + 1 ))
+
+   # see if it is time to stop
    if [ $round -ge $arg_max_rounds -a $arg_max_rounds -gt 0 ]; then
       echo completed $arg_max_rounds rounds.   
+      exit 0
+   fi
+   if [ -e STOP ]; then
+      # A STOP file allows one to stop this script cleanly at the end of a
+      # round, as opposed to pressing CTL-C, which stops the script in the
+      # middle of a round.
+      round=$(( $round - 1 ))
+      echo completed $round rounds before finding a STOP file.
+      if [ -z STOP ]; then
+         rm STOP
+      else 
+	 echo ${scriptname}: stop file has contents, and so must be removed 
+	 echo manually.
+      fi
       exit 0
    fi
 done
