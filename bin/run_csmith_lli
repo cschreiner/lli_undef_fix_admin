@@ -1,6 +1,6 @@
 #!/bin/bash
 
-scriptname=test_csmith
+scriptname=run_csmith_lli
 
 # ============================================================================
 function test_one_round()
