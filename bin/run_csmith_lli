@@ -66,8 +66,10 @@ function test_one_round()
    fi
    if [ $checksum_diff_status -eq 0 ]; then
       echo checksums agree >> $report_file
+      rm $opt0_ll.checksum $opt3_ll.checksum
    else
       echo checksums differ >> $report_file
+      # TODO2: consider removing the checksum files in this case, too.
    fi
    if [ $diff_status -eq 0 ]; then
       (
