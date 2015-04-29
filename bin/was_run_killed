@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# nn is the number of the test round
+if [ -n "$1" ]; then
+   nn="$1"
+else
+   echo no test round number found on command line
+   exit 255
+fi
+
+opt0_ll=run${nn}_o0.ll
+opt3_ll=run${nn}_o3.ll
+
+if false; then 
+   echo premature 
+elif grep -qEi '\bkilled\b' $opt0_ll.stderr && \
+      grep -qEi '\bkilled\b' $opt3_ll.stderr; then
+   echo yes 
+else 
+   echo no
+fi
+
