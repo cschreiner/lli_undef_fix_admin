@@ -37,7 +37,7 @@ function test_one_round()
 
    # set up report
    (
-      echo " " >> 
+      echo " " 
       echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
       echo "next round:" 
    ) >> $report_file
