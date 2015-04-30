@@ -1,37 +1,59 @@
 #!/bin/bash
 
-scriptname=run_csmith_lli
+# Compmiles a csmith-generated .c file using clang at -O0 and -O3 optimization
+# levels.  If the two compilations produce different csmith checksums, this is
+# interesting to us and the script exits with 0 ("success').
+
+# The current directory is assumed to be empty and free for use.  Each round
+# will leave behind a .report file with any news or hopefully useful
+# information.
+
+# This program is intended for use as a "test of interestingness" script for
+# creduce.  Because creduce insists on invoking this file without any
+# parameters, the .c filename is passed in via the environment variable
+# CREDUCE_COMPARE_O_DOTC.
+
+scriptname=creduce_compare_o
 
 # ============================================================================
 function test_one_round()
 # ============================================================================
+# TODO2: find some way to merge this with the "test_one_round" function in
+# "run_csmith_lli".  Perhaps that program should have a function to generate
+# the .c file and maybe do some supporting housekeeping, and use this function
+# to do compiling, testing, and logging.  Hmmm... -- CAS 2015apr29
 {
-   arg_round=$1
-
-   file_stem=run${arg_round}
+   cfile=$1
+   
+   # set up files
+   file_stem=`basename .c`
    report_file=${file_stem}.report
-   cfile=${file_stem}.c
    opt0_ll=${file_stem}_o0.ll
    opt3_ll=${file_stem}_o3.ll
 
-   # prepare report
-   (
-     echo report for source file ${cfile}: 
-     echo date=`date`
-   ) | tee $report_file
+   # remove files from previous rounds
+   rm -f $opt0_ll $opt0_ll.stdout $opt0_ll.stderr
+   rm -f $opt3_ll $opt3_ll.stdout $opt3_ll.stderr
 
-   csmith > $cfile
+   # set up report
+   (
+      echo " " >> 
+      echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+      echo "next round:" 
+   ) >> $report_file
+   
+
    clang -I$TUUT/all/include/csmith-2.2.0 -S -O0 -emit-llvm $cfile
    clang_status=$?
    if [ "$clang_status" -ne 0 ]; then
       echo clang exited with status \"$clang_status\" at -O0 >> $report_file
-      return 1
+      exit 1
    fi
    mv $file_stem.ll $opt0_ll
    clang -I$TUUT/all/include/csmith-2.2.0 -S -O3 -emit-llvm $cfile
    if [ "$clang_status" -ne 0 ]; then
       echo clang exited with status \"$clang_status\" at -O3 >> $report_file
-      return 1
+      exit 1
    fi
    mv $file_stem.ll $opt3_ll
 
@@ -44,6 +66,7 @@ function test_one_round()
    opt3_status=$?
 
    # compute differences
+   exit_value=1
    diff -q $opt0_ll.stdout $opt3_ll.stdout
    diff_status=$?
 
@@ -63,6 +86,7 @@ function test_one_round()
 	 echo "  " opt3 status=$opt3_status
       ) | tee -a $report_file
       cleanup_flag="false"
+      exit_value= 0 # this is "interesting"
    fi
    if [ $checksum_diff_status -eq 0 ]; then
       echo checksums agree >> $report_file
@@ -70,6 +94,7 @@ function test_one_round()
    else
       echo checksums differ >> $report_file
       # TODO2: consider removing the checksum files in this case, too.
+      exit_value=0
    fi
    if [ $diff_status -eq 0 ]; then
       (
@@ -93,6 +118,7 @@ function test_one_round()
 	 echo " "
       ) | tee -a $report_file
       cleanup_flag="false"
+      exit_value= 0
    fi
    if [ -s $opt0_ll.stderr ]; then
       (
@@ -107,83 +133,33 @@ function test_one_round()
       cleanup_flag="false"
    fi
       
-   # clean up runs that were consistently killed
-   if grep -qEi '\bkilled\b' $opt0_ll.stderr && \
-	 grep -qEi '\bkilled\b' $opt3_ll.stderr; then 
-      # The program was killed , presumably because it had an infinite loop
-      # and exceeded its time limit.
-      mv $cfile $report_file KILLED
-      for ii in $opt0_ll $opt3_ll; do
-         mv $ii $ii.stdout $ii.stderr KILLED
-      done
-   fi
-   echo cleanup_flag=$cleanup_flag
-   # clean up runs that passed
-   if [ "$cleanup_flag" = "true" ]; then 
-      if [ ! -d PASSED ]; then
-         echo ${scriptname}: ERROR: can not find PASSED directory
-         exit 255
-      fi
-      mv $cfile $report_file PASSED
-      for ii in $opt0_ll $opt3_ll; do
-         rm $ii $ii.stdout $ii.stderr
-      done
-   fi
    return 0
 } 
 
 # ============================================================================
 # main program
 
-# process command-line args
-arg_max_rounds=$1
-if [ -z "$arg_max_rounds" ]; then
-   arg_max_rounds=0
+if [ -z "$CREDUCE_COMPARE_O_DOTC" ]; then
+   echo ${scriptname}: no environment variable CREDUCE_COMPARE_O_DOTC found.
+   exit -1
 fi
 
-# set up
-date_dir=`date +%Y%b%d_%H%M%S`
-if [ -d "$date_dir" ]; then
-   echo ${scriptname}: ERROR: the dir for the current date+time stamp exists.
-   echo date_dir=\"$date_dir\"
-   exit 255
-fi   
-mkdir -p $date_dir/PASSED 
-mkdir -p $date_dir/KILLED
-cd $date_dir
+if [ ! -e "$CREDUCE_COMPARE_O_DOTC" ]; then
+   echo ${scriptname}: .c file \"$CREDUCE_COMPARE_O_DOTC\" does not exist.
+   exit -1
+fi
+   
+if [ ! -f "$CREDUCE_COMPARE_O_DOTC" ]; then
+   echo ${scriptname}: .c file \"$CREDUCE_COMPARE_O_DOTC\" is not a file.
+   exit -1
+fi
 
-# run
-round=0
-while true; do
-   echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-   echo round ${round}:
-   test_one_round $round
-   echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  
-   # prepare for next round
-   round=$(( $round + 1 ))
+# TODO: add the regehr test from 
+# data/trunk/test_csmith/2014Dec04_014428/INTERESTING/interest_o0_vs_o3.sh
 
-   # see if it is time to stop
-   if [ $round -ge $arg_max_rounds -a $arg_max_rounds -gt 0 ]; then
-      echo completed $arg_max_rounds rounds.   
-      exit 0
-   fi
-   if [ -e STOP ]; then
-      # A STOP file allows one to stop this script cleanly at the end of a
-      # round, as opposed to pressing CTL-C, which stops the script in the
-      # middle of a round.
-      round=$(( $round - 1 ))
-      echo completed $round rounds before finding a STOP file.
-      if [ -z STOP ]; then
-         rm STOP
-      else 
-	 echo ${scriptname}: stop file has contents, and so must be removed 
-	 echo manually.
-      fi
-      exit 0
-   fi
-done
-
+test_one_round $CREDUCE_COMPARE_O_DOTC
+   
 
 # ============================================================================
-# end of file 
+# end of script
+
