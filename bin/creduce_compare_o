@@ -26,7 +26,7 @@ function test_one_round()
    cfile=$1
    
    # set up files
-   file_stem=`basename .c`
+   file_stem=`basename $cfile .c`
    report_file=${file_stem}.report
    opt0_ll=${file_stem}_o0.ll
    opt3_ll=${file_stem}_o3.ll
