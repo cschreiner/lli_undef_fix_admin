@@ -6,9 +6,11 @@
 
 scriptname=creduce_interest_o0vso3
 
-CFILE="$1"
+arg_cfile="$1"
 
-BASENAME=`basename $CFILE .c`
+CFILE=`basename $CFILE .c`
+
+BASENAME=$CFILE
 
 # obsolete:
 #CFILE=$BASENAME.creduce
@@ -103,7 +105,7 @@ fi
 regehr_test
 status=$?
 if [ $status -ne 0 ]; then 
-   echo regehr-test failed
+   echo regehr_test failed
    exit 1
 fi
 
