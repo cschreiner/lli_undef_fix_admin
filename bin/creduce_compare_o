@@ -9,9 +9,9 @@
 # information.
 
 # This program is intended for use as a "test of interestingness" script for
-# creduce.  Because creduce insists on invoking this file without any
-# parameters, the .c filename is passed in via the environment variable
-# CREDUCE_COMPARE_O_DOTC.
+# creduce.  It is usually invoked via a one-liner script that calls this
+# script with an appropriate file name on its command line, and the one-liner
+# script is specified to creduce.
 
 scriptname=creduce_compare_o
 
@@ -139,25 +139,10 @@ function test_one_round()
 # ============================================================================
 # main program
 
-if [ -z "$CREDUCE_COMPARE_O_DOTC" ]; then
-   echo ${scriptname}: no environment variable CREDUCE_COMPARE_O_DOTC found.
-   exit -1
-fi
-
-if [ ! -e "$CREDUCE_COMPARE_O_DOTC" ]; then
-   echo ${scriptname}: .c file \"$CREDUCE_COMPARE_O_DOTC\" does not exist.
-   exit -1
-fi
-   
-if [ ! -f "$CREDUCE_COMPARE_O_DOTC" ]; then
-   echo ${scriptname}: .c file \"$CREDUCE_COMPARE_O_DOTC\" is not a file.
-   exit -1
-fi
-
 # TODO: add the regehr test from 
 # data/trunk/test_csmith/2014Dec04_014428/INTERESTING/interest_o0_vs_o3.sh
 
-test_one_round $CREDUCE_COMPARE_O_DOTC
+test_one_round "$1"
    
 
 # ============================================================================
