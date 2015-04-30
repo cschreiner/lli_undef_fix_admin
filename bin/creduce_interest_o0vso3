@@ -1,14 +1,32 @@
 #!/bin/sh
+# This is an "is it interesting" test script for creduce.  Usually one runs
+# creduce in a special work directory only containing the .c file to reduce,
+# and a very short script that invokes this one with the name of the .c file
+# given as an argument.
 
-BASENAME=run44
+scriptname=creduce_interest_o0vso3
 
-CFILE=$BASENAME.creduce
+CFILE="$1"
+
+BASENAME=`basename $CFILE .c`
+
+# obsolete:
+#CFILE=$BASENAME.creduce
 
 CLANG_ll="clang -emit-llvm -c -I/uusoc/scratch/dyson/cas/tuut/x86_64/all/include/csmith-2.2.0 -S" 
 
-INCLUDE_DIR=/uusoc/scratch/dyson/cas/tuut/x86_64/all/include/csmith-2.2.0 
+# INCLUDE_DIR is an environment variable specifying the directory where the
+# csmith header files are.
+if [ -z "$INCLUDE_DIR" ]; then
+   # set to needed include dir on my machine
+   INCLUDE_DIR=$TUUT/x86_64/all/include/csmith-2.2.0 
+fi
+if [ ! -d "$INCLUDE_DIR" ]; then
+   echo ${scriptname}: error: include directory does not seem to exist.
+   echo "  " dir=\"$INCLUDE_DIR\"
+   exit 127
+fi
 
-START_DIR=/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/data/trunk/test_csmith/2014Dec04_014428/INTERESTING
 
 # ---------------------------------------------------------------------------
 regehr_test()
