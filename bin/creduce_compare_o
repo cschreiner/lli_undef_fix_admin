@@ -1,0 +1,162 @@
+#!/bin/bash
+
+# Compmiles a csmith-generated .c file using clang at -O0 and -O3 optimization
+# levels.  If the two compilations produce different csmith checksums, this is
+# interesting to us and the script exits with 0 ("success').
+
+# The current directory is assumed to be empty and free for use.  Each round
+# will leave behind a .report file with any news or hopefully useful
+# information.
+
+# This program is intended for use as a "test of interestingness" script for
+# creduce.  Because creduce insists on invoking this file without any
+# parameters, the .c filename is passed in via the environment variable
+# CREDUCE_COMPARE_O_DOTC.
+
+scriptname=creduce_compare_o
+
+# ============================================================================
+function test_one_round()
+# ============================================================================
+# TODO2: find some way to merge this with the "test_one_round" function in
+# "run_csmith_lli".  Perhaps that program should have a function to generate
+# the .c file and maybe do some supporting housekeeping, and use this function
+# to do compiling, testing, and logging.  Hmmm... -- CAS 2015apr29
+{
+   cfile=$1
+   
+   # set up files
+   file_stem=`basename .c`
+   report_file=${file_stem}.report
+   opt0_ll=${file_stem}_o0.ll
+   opt3_ll=${file_stem}_o3.ll
+
+   # remove files from previous rounds
+   rm -f $opt0_ll $opt0_ll.stdout $opt0_ll.stderr
+   rm -f $opt3_ll $opt3_ll.stdout $opt3_ll.stderr
+
+   # set up report
+   (
+      echo " " >> 
+      echo @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
+      echo "next round:" 
+   ) >> $report_file
+   
+
+   clang -I$TUUT/all/include/csmith-2.2.0 -S -O0 -emit-llvm $cfile
+   clang_status=$?
+   if [ "$clang_status" -ne 0 ]; then
+      echo clang exited with status \"$clang_status\" at -O0 >> $report_file
+      exit 1
+   fi
+   mv $file_stem.ll $opt0_ll
+   clang -I$TUUT/all/include/csmith-2.2.0 -S -O3 -emit-llvm $cfile
+   if [ "$clang_status" -ne 0 ]; then
+      echo clang exited with status \"$clang_status\" at -O3 >> $report_file
+      exit 1
+   fi
+   mv $file_stem.ll $opt3_ll
+
+   # run
+   ( ulimit -t 60; stdbuf -o 0 -e 0 llifi $opt0_ll ) > \
+         $opt0_ll.stdout 2> $opt0_ll.stderr
+   opt0_status=$?
+   ( ulimit -t 60; stdbuf -o 0 -e 0 llifi $opt3_ll ) > \
+         $opt3_ll.stdout 2> $opt3_ll.stderr
+   opt3_status=$?
+
+   # compute differences
+   exit_value=1
+   diff -q $opt0_ll.stdout $opt3_ll.stdout
+   diff_status=$?
+
+   grep '^checksum = ' $opt0_ll.stdout > $opt0_ll.checksum
+   grep '^checksum = ' $opt3_ll.stdout > $opt3_ll.checksum
+   diff -q $opt0_ll.checksum $opt3_ll.checksum
+   checksum_diff_status=$?  
+   
+   # print the meat of the report
+   cleanup_flag="true"
+   if [ $opt0_status -eq $opt3_status ]; then
+      echo statuses agree: $opt0_status  >> $report_file
+   else
+      (
+	 echo statuses differ for opt0 and opt3  
+	 echo "  " opt0 status=$opt0_status
+	 echo "  " opt3 status=$opt3_status
+      ) | tee -a $report_file
+      cleanup_flag="false"
+      exit_value= 0 # this is "interesting"
+   fi
+   if [ $checksum_diff_status -eq 0 ]; then
+      echo checksums agree >> $report_file
+      rm $opt0_ll.checksum $opt3_ll.checksum
+   else
+      echo checksums differ >> $report_file
+      # TODO2: consider removing the checksum files in this case, too.
+      exit_value=0
+   fi
+   if [ $diff_status -eq 0 ]; then
+      (
+	 echo outputs agree:
+	 echo ==========
+	 echo opt0 and opt3: 
+	 cat $opt0_ll.stdout
+	 echo ==========
+	 echo " "
+      ) | tee -a $report_file
+   else
+      (
+	 echo output differs 
+	 echo ==========
+	 echo opt0: 
+	 cat $opt0_ll.stdout
+	 echo ==========
+	 echo opt3: 
+	 cat $opt3_ll.stdout
+	 echo ==========
+	 echo " "
+      ) | tee -a $report_file
+      cleanup_flag="false"
+      exit_value= 0
+   fi
+   if [ -s $opt0_ll.stderr ]; then
+      (
+         echo stderr appeared for o0
+      ) | tee -a $report_file
+      cleanup_flag="false"
+   fi
+   if [ -s $opt3_ll.stderr ]; then
+      (
+         echo stderr appeared for o3
+      ) | tee -a $report_file
+      cleanup_flag="false"
+   fi
+      
+   return 0
+} 
+
+# ============================================================================
+# main program
+
+if [ -z "$CREDUCE_COMPARE_O_DOTC" ]; then
+   echo ${scriptname}: no environment variable CREDUCE_COMPARE_O_DOTC found.
+   exit -1
+fi
+
+if [ ! -e "$CREDUCE_COMPARE_O_DOTC" ]; then
+   echo ${scriptname}: .c file \"$CREDUCE_COMPARE_O_DOTC\" does not exist.
+   exit -1
+fi
+   
+if [ ! -f "$CREDUCE_COMPARE_O_DOTC" ]; then
+   echo ${scriptname}: .c file \"$CREDUCE_COMPARE_O_DOTC\" is not a file.
+   exit -1
+fi
+
+test_one_round $CREDUCE_COMPARE_O_DOTC
+   
+
+# ============================================================================
+# end of script
+
