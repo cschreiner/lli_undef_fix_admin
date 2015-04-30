@@ -19,7 +19,7 @@ CLANG_ll="clang -emit-llvm -c -I/uusoc/scratch/dyson/cas/tuut/x86_64/all/include
 # csmith header files are.
 if [ -z "$INCLUDE_DIR" ]; then
    # set to needed include dir on my machine
-   INCLUDE_DIR=$TUUT/x86_64/all/include/csmith-2.2.0 
+   INCLUDE_DIR=$TUUT/all/include/csmith-2.2.0 
 fi
 if [ ! -d "$INCLUDE_DIR" ]; then
    echo ${scriptname}: error: include directory does not seem to exist.
