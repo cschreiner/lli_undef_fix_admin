@@ -1,0 +1,180 @@
+#!/bin/sh
+
+BASENAME=run44
+
+CFILE=$BASENAME.creduce
+
+CLANG_ll="clang -emit-llvm -c -I/uusoc/scratch/dyson/cas/tuut/x86_64/all/include/csmith-2.2.0 -S" 
+
+INCLUDE_DIR=/uusoc/scratch/dyson/cas/tuut/x86_64/all/include/csmith-2.2.0 
+
+START_DIR=/uusoc/scratch/dyson/cas/edu/uut/lli_undef_fix3/data/trunk/test_csmith/2014Dec04_014428/INTERESTING
+
+# ---------------------------------------------------------------------------
+regehr_test()
+{
+   rm -f out*.txt
+   if 
+     (
+        # Unfortunately, the -fsanitize requires llvm-3.5.0; for some reason 
+        # a relevant feature didn't get installed with our 3.6.0 installation.
+	export PATH=/uusoc/scratch/dyson/cas/tuut/once/llvm-3.5.0.live/bin:$PATH
+	clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
+	      -fsanitize=undefined,integer,signed-integer-overflow \
+	      $CFILE.c -o $CFILE.fsanitize.bin >$BASENAME.fsanitize.out 2>&1 
+     ) && \
+     ! grep 'conversions than data arguments' $BASENAME.fsanitize.out &&\
+     ! grep 'incompatible redeclaration' $BASENAME.fsanitize.out &&\
+     ! grep 'ordered comparison between pointer' $BASENAME.fsanitize.out &&\
+     ! grep 'eliding middle term' $BASENAME.fsanitize.out &&\
+     ! grep 'end of non-void function' $BASENAME.fsanitize.out &&\
+     ! grep 'invalid in C99' $BASENAME.fsanitize.out &&\
+     ! grep 'specifies type' $BASENAME.fsanitize.out &&\
+     ! grep 'should return a value' $BASENAME.fsanitize.out &&\
+     ! grep 'uninitialized' $BASENAME.fsanitize.out &&\
+     ! grep 'incompatible pointer to' $BASENAME.fsanitize.out &&\
+     ! grep 'incompatible integer to' $BASENAME.fsanitize.out &&\
+     ! grep 'type specifier missing' $BASENAME.fsanitize.out &&\
+     gcc -I$INCLUDE_DIR -Wall -Wextra -O2 $CFILE.c -o $CFILE.gcc.bin \
+         >$BASENAME.gcc.out 2>&1 &&\
+     ! grep uninitialized $BASENAME.gcc.out &&\
+     ! grep 'without a cast' $BASENAME.gcc.out &&\
+     ! grep 'control reaches end' $BASENAME.gcc.out &&\
+     ! grep 'return type defaults' $BASENAME.gcc.out &&\
+     ! grep 'cast from pointer to integer' $BASENAME.gcc.out &&\
+     ! grep 'useless type name in empty declaration' $BASENAME.gcc.out &&\
+     ! grep 'no semicolon at end' $BASENAME.gcc.out &&\
+     ! grep 'type defaults to' $BASENAME.gcc.out &&\
+     ! grep 'too few arguments for format' $BASENAME.gcc.out &&\
+     ! grep 'incompatible pointer' $BASENAME.gcc.out &&\
+     ! grep 'ordered comparison of pointer with integer' $BASENAME.gcc.out &&\
+     ! grep 'declaration does not declare anything' $BASENAME.gcc.out &&\
+     ! grep 'expects type' $BASENAME.gcc.out &&\
+     ! grep 'pointer from integer' $BASENAME.gcc.out &&\
+     ! grep 'incompatible implicit' $BASENAME.gcc.out &&\
+     ! grep 'excess elements in struct initializer' $BASENAME.gcc.out &&\
+     ! grep 'comparison between pointer and integer' $BASENAME.gcc.out &&\
+     # Disable gcc-- we aren't looking for execution differences between
+     # different gcc optimization levels:
+     #gcc -I$INCLUDE_DIR -O1 $CFILE.c -o small1 > cc_out1.txt 2>&1 &&\
+     #./small1 >out1.txt 2>&1 &&\
+     #gcc -I$INCLUDE_DIR -O2 $CFILE.c -o small2 > cc_out2.txt 2>&1 &&\
+     #./small2 >out2.txt 2>&1 &&\
+     #! diff out1.txt out2.txt &&\
+     cp $CFILE.c $BASENAME-framac.c &&
+     perl -pi.bak -e 's/int main \(int argc, char\* argv\[\]\)/int argc; char **argv; int main (void)/' $BASENAME-framac.c &&\
+     frama-c -cpp-command "gcc -C -Dvolatile= -E -I. -I$INCLUDE_DIR" -val-signed-overflow-alarms -val -stop-at-first-alarm -no-val-show-progress -machdep x86_64 -obviously-terminates -precise-unions $BASENAME-framac.c >${BASENAME}_framac.out 2>&1 &&\
+     ! egrep -i '(user error|assert)' ${BASENAME}_framac.out >/dev/null 2>&1
+   then
+     return 0
+   else
+     return 1
+   fi
+}
+
+
+# ---------------------------------------------------------------------------
+# clean up after the last run
+
+if ls ${CFILE}_* 1>>/dev/null 2>> /dev/null; then
+   rm ${CFILE}_*
+fi
+
+# ---------------------------------------------------------------------------
+# check with John's test
+regehr_test
+status=$?
+if [ $status -ne 0 ]; then 
+   echo regehr-test failed
+   exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# sanity check with clang's -fsanitize=undefined
+
+# it is already built; run it
+(ulimit -t 5; ./$CFILE.fsanitize.bin 1> $CFILE.fsanitize.stdout 2> \
+      $CFILE.fsanitize.stderr )   
+status=$?
+if [ $status -ne 0 ]; then 
+   echo running fsanitize=undefined version failed
+   exit 1
+fi
+if [ ! -e $CFILE.fsanitize.stderr -o -s $CFILE.fsanitize.stderr ]; then
+   echo fsanitize=undefined version wrote to stderr
+   exit -1 # either stderr file got lost, or program emitted error messages
+fi
+
+# ---------------------------------------------------------------------------
+# compile
+$CLANG_ll -O0 $CFILE.c > ${CFILE}.clang_ll_o0.out 2>&1 
+status=$?
+if [ $status -ne 0 ]; then 
+   echo clang o0 failed
+   exit 1
+fi
+mv $CFILE.ll ${CFILE}_o0.ll
+
+$CLANG_ll -O3 $CFILE.c > ${CFILE}.clang_ll_o0.out 2>&1 
+status=$?
+if [ $status -ne 0 ]; then 
+   echo clang o3 failed
+   exit 1
+fi
+mv $CFILE.ll ${CFILE}_o3.ll
+
+# ---------------------------------------------------------------------------
+# run
+(ulimit -t 15; lli ${CFILE}_o0.ll > \
+      ${CFILE}_o0.ll.stdout 2> ${CFILE}_o0.ll.stderr )
+status=$?
+if [ $status -ne 0 ]; then 
+   echo running o0 failed
+   exit 1
+fi
+if [ ! -e ${CFILE}_o0.ll.stderr -o \
+      -s ${CFILE}_o0.ll.stderr ]; then
+   echo running o0 wrote to stderr
+   exit -1 # either stderr file got lost, or program emitted error messages
+fi
+
+(ulimit -t 15; lli ${CFILE}_o3.ll > \
+      ${CFILE}_o3.ll.stdout 2> ${CFILE}_o3.ll.stderr )
+status=$?
+if [ $status -ne 0 ]; then 
+   echo running o3 failed
+   exit 1
+fi
+if [ ! -e ${CFILE}_o3.ll.stderr -o \
+      -s ${CFILE}_o3.ll.stderr ]; then
+   echo running o3 wrote to stderr
+   exit -1 # either stderr file got lost, or program emitted error messages
+fi
+
+# ---------------------------------------------------------------------------
+# compare output
+echo pwd=`pwd` #;;
+
+# make sure both output files are present
+if [ ! -s ${CFILE}_o0.ll.stdout ]; then
+   echo o0 stdout missing
+   exit 1
+fi
+if [ ! -s ${CFILE}_o3.ll.stdout ]; then
+   echo o3 stdout missing
+   exit 1
+fi
+
+# compare the output files
+diff ${CFILE}_o0.ll.stdout ${CFILE}_o3.ll.stdout 
+status=$?
+if [ $status -eq 0 ]; then 
+   echo o0 and o3 produce the same output
+   exit 1 # they are the same
+fi
+
+# ---------------------------------------------------------------------------
+#
+echo passed
+exit 0
+
