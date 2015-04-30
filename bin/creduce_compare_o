@@ -154,6 +154,9 @@ if [ ! -f "$CREDUCE_COMPARE_O_DOTC" ]; then
    exit -1
 fi
 
+# TODO: add the regehr test from 
+# data/trunk/test_csmith/2014Dec04_014428/INTERESTING/interest_o0_vs_o3.sh
+
 test_one_round $CREDUCE_COMPARE_O_DOTC
    
 
