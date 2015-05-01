@@ -168,7 +168,7 @@ echo pwd=`pwd` #;;
 if [ $o0_status -eq $o3_status ]; then
    exit 0 # they are the different, therefore interesting
 else
-   echo o0 and o3 had the same exit status
+   echo o0 and o3 had the same exit status of \"$o0_status\"
 fi
 
 # make sure both stdout files are present
