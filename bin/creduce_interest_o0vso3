@@ -39,7 +39,6 @@ regehr_test()
      (
         # Unfortunately, the -fsanitize requires llvm-3.5.0; for some reason 
         # a relevant feature didn't get installed with our 3.6.0 installation.
-	#;;export PATH=/uusoc/scratch/dyson/cas/tuut/once/llvm-3.5.0.live/bin:$PATH
 	clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
 	      -fsanitize=undefined,integer,signed-integer-overflow \
 	      $CFILE.c -o $CFILE.fsanitize.bin >$BASENAME.fsanitize.out 2>&1 
@@ -155,54 +154,71 @@ mv $CFILE.ll ${CFILE}_o3.ll
 # run
 (ulimit -t 15; llifi ${CFILE}_o0.ll > \
       ${CFILE}_o0.ll.stdout 2> ${CFILE}_o0.ll.stderr )
-status=$?
-if [ $status -ne 0 ]; then 
-   echo running o0 failed
-   exit 1
-fi
-if [ ! -e ${CFILE}_o0.ll.stderr -o \
-      -s ${CFILE}_o0.ll.stderr ]; then
-   echo running o0 wrote to stderr
-   exit -1 # either stderr file got lost, or program emitted error messages
-fi
+o0_status=$?
 
 (ulimit -t 15; llifi ${CFILE}_o3.ll > \
       ${CFILE}_o3.ll.stdout 2> ${CFILE}_o3.ll.stderr )
-status=$?
-if [ $status -ne 0 ]; then 
-   echo running o3 failed
-   exit 1
-fi
-if [ ! -e ${CFILE}_o3.ll.stderr -o \
-      -s ${CFILE}_o3.ll.stderr ]; then
-   echo running o3 wrote to stderr
-   exit -1 # either stderr file got lost, or program emitted error messages
-fi
+o3_status=$?
 
 # ---------------------------------------------------------------------------
 # compare output
 echo pwd=`pwd` #;;
 
-# make sure both output files are present
-if [ ! -s ${CFILE}_o0.ll.stdout ]; then
-   echo o0 stdout missing
-   exit 1
-fi
-if [ ! -s ${CFILE}_o3.ll.stdout ]; then
-   echo o3 stdout missing
-   exit 1
+# compare the exit statuses
+if [ $o0_status -eq $o3_status ]; then
+   exit 0 # they are the different, therefore interesting
+else
+   echo o0 and o3 had the same exit status
 fi
 
-# compare the output files
-diff ${CFILE}_o0.ll.stdout ${CFILE}_o3.ll.stdout 
-status=$?
-if [ $status -eq 0 ]; then 
-   echo o0 and o3 produce the same output
-   exit 1 # they are the same
+# make sure both stdout files are present
+if [ ! -s ${CFILE}_o0.ll.stdout -a -s ${CFILE}_o3.ll.stdout ]; then 
+   # one file is has contents, but not the other, therefore interesting
+   exit 0
+fi
+if [ -s ${CFILE}_o0.ll.stdout -a ! -s ${CFILE}_o3.ll.stdout ]; then 
+   # one file is has contents, but not the other, therefore interesting
+   exit 0
+fi
+
+# compare the stdout files
+if [ -e ${CFILE}_o0.ll.stdout -a -e ${CFILE}_o3.ll.stdout ]; then 
+   diff ${CFILE}_o0.ll.stdout ${CFILE}_o3.ll.stdout 
+   status=$?
+   if [ $status -ne 0 ]; then 
+      exit 0 # they are the different, therefore interesting
+   else
+      echo o0 and o3 produce the same stdout
+   fi
+fi
+
+# make sure both stderr files are present
+if [ ! -s ${CFILE}_o0.ll.stderr -a -s ${CFILE}_o3.ll.stderr ]; then 
+   # one file is has contents, but not the other, therefore interesting
+   exit 0
+fi
+if [ -s ${CFILE}_o0.ll.stderr -a ! -s ${CFILE}_o3.ll.stderr ]; then 
+   # one file is has contents, but not the other, therefore interesting
+   exit 0
+fi
+
+# compare the stderr files
+if [ -e ${CFILE}_o0.ll.stderr -a -e ${CFILE}_o3.ll.stderr ]; then 
+   diff ${CFILE}_o0.ll.stderr ${CFILE}_o3.ll.stderr 
+   status=$?
+   if [ $status -ne 0 ]; then 
+      exit 0 # they are the different, therefore interesting
+   else
+      echo o0 and o3 produce the same stderr
+   fi
 fi
 
 # ---------------------------------------------------------------------------
-#
-echo passed
-exit 0
+# clean up and exit
+
+echo everything appears the same, therefore not interesting
+exit 1
+
+# ---------------------------------------------------------------------------
+# end of script
 
