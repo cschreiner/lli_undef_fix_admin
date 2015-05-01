@@ -113,7 +113,7 @@ regehr_test
 status=$?
 if [ $status -ne 0 ]; then 
    echo regehr_test failed
-   exit 1
+   exit 1 # not interesting
 fi
 
 # ---------------------------------------------------------------------------
@@ -165,19 +165,19 @@ o3_status=$?
 echo pwd=`pwd` #;;
 
 # compare the exit statuses
-if [ $o0_status -eq $o3_status ]; then
-   exit 0 # they are the different, therefore interesting
+if [ $o0_status -ne $o3_status ]; then
+   exit 0 # they are different, therefore interesting
 else
    echo o0 and o3 had the same exit status of \"$o0_status\"
 fi
 
 # make sure both stdout files are present
 if [ ! -s ${CFILE}_o0.ll.stdout -a -s ${CFILE}_o3.ll.stdout ]; then 
-   # one file is has contents, but not the other, therefore interesting
+   # one file has contents, but not the other, therefore interesting
    exit 0
 fi
 if [ -s ${CFILE}_o0.ll.stdout -a ! -s ${CFILE}_o3.ll.stdout ]; then 
-   # one file is has contents, but not the other, therefore interesting
+   # one file has contents, but not the other, therefore interesting
    exit 0
 fi
 
@@ -186,7 +186,7 @@ if [ -e ${CFILE}_o0.ll.stdout -a -e ${CFILE}_o3.ll.stdout ]; then
    diff ${CFILE}_o0.ll.stdout ${CFILE}_o3.ll.stdout 
    status=$?
    if [ $status -ne 0 ]; then 
-      exit 0 # they are the different, therefore interesting
+      exit 0 # they are different, therefore interesting
    else
       echo o0 and o3 produce the same stdout
    fi
@@ -194,11 +194,11 @@ fi
 
 # make sure both stderr files are present
 if [ ! -s ${CFILE}_o0.ll.stderr -a -s ${CFILE}_o3.ll.stderr ]; then 
-   # one file is has contents, but not the other, therefore interesting
+   # one file has contents, but not the other, therefore interesting
    exit 0
 fi
 if [ -s ${CFILE}_o0.ll.stderr -a ! -s ${CFILE}_o3.ll.stderr ]; then 
-   # one file is has contents, but not the other, therefore interesting
+   # one file has contents, but not the other, therefore interesting
    exit 0
 fi
 
@@ -207,7 +207,7 @@ if [ -e ${CFILE}_o0.ll.stderr -a -e ${CFILE}_o3.ll.stderr ]; then
    diff ${CFILE}_o0.ll.stderr ${CFILE}_o3.ll.stderr 
    status=$?
    if [ $status -ne 0 ]; then 
-      exit 0 # they are the different, therefore interesting
+      exit 0 # they are different, therefore interesting
    else
       echo o0 and o3 produce the same stderr
    fi
