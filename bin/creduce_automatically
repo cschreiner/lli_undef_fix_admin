@@ -1,0 +1,22 @@
+#!/bin/sh
+
+arg_cfile="$1"
+basename=`basename $arg_cfile .c`
+work_dir=$basename.creduce
+
+mkdir $work_dir
+
+cp $arg_cfile $workdir
+
+echo '#!/bin/sh' > $workdir/interesting
+echo '$PROJ_ROOT/admin/bin/creduce_interest_o0vs03 $arg_cfile' > \
+      $workdir/interesting
+chmod ugo+x $workdir/interesting
+
+cd $workdir
+creduce ./interesting $arg_cfile
+
+echo "creduce returned" $?
+
+# end of script
+
