@@ -93,6 +93,13 @@ regehr_test()
    fi
 }
 
+# Note: frama-c command used to be:
+#
+# frama-c -cpp-command "gcc -C -Dvolatile= -E -I. -I$INCLUDE_DIR"
+#      -val-signed-overflow-alarms -val -stop-at-first-alarm 
+#      -no-val-show-progress -machdep x86_64 -obviously-terminates 
+#      -precise-unions $BASENAME-framac.c 
+
 
 # ---------------------------------------------------------------------------
 # clean up after the last run
