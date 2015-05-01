@@ -8,7 +8,7 @@ scriptname=creduce_interest_o0vso3
 
 arg_cfile="$1"
 
-CFILE=`basename $CFILE .c`
+CFILE=`basename $arg_cfile .c`
 
 BASENAME=$CFILE
 
@@ -34,11 +34,12 @@ fi
 regehr_test()
 {
    rm -f out*.txt
+   echo BASENAME=\"$BASENAME\" #;;
    if 
      (
         # Unfortunately, the -fsanitize requires llvm-3.5.0; for some reason 
         # a relevant feature didn't get installed with our 3.6.0 installation.
-	export PATH=/uusoc/scratch/dyson/cas/tuut/once/llvm-3.5.0.live/bin:$PATH
+	#;;export PATH=/uusoc/scratch/dyson/cas/tuut/once/llvm-3.5.0.live/bin:$PATH
 	clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
 	      -fsanitize=undefined,integer,signed-integer-overflow \
 	      $CFILE.c -o $CFILE.fsanitize.bin >$BASENAME.fsanitize.out 2>&1 
