@@ -1,8 +1,18 @@
 #!/bin/sh
+# automatically create a workdir for creduce and fire it off.
+# This is currently quickly written for homing in on the poison=undef
+# question, a different "interestingness" script may be appropriate for
+# other questions.
+
+# TODO2: generalize this script to make it useful for questions other than
+# the poison=undef.  Perhaps this could be done by specifying the
+# "interestingness" script on the command line along with the .c file, of
+# course in the same order one specifies them to creduce.   
 
 arg_cfile="$1"
+cfile_dir=`dirname $arg_cfile`
 basename=`basename $arg_cfile .c`
-work_dir=$basename.creduce
+work_dir=$cfile_dir/$basename.creduce
 
 mkdir $work_dir
 
