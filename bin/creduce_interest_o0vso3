@@ -129,7 +129,7 @@ if [ $status -ne 0 ]; then
 fi
 if [ ! -e $CFILE.fsanitize.stderr -o -s $CFILE.fsanitize.stderr ]; then
    echo fsanitize=undefined version wrote to stderr
-   exit -1 # either stderr file got lost, or program emitted error messages
+   exit 127 # either stderr file got lost, or program emitted error messages
 fi
 
 # ---------------------------------------------------------------------------
