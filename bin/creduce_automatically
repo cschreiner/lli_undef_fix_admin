@@ -12,14 +12,15 @@
 arg_cfile="$1"
 cfile_dir=`dirname $arg_cfile`
 basename=`basename $arg_cfile .c`
-work_dir=$cfile_dir/$basename.creduce
+workdir=$cfile_dir/$basename.creduce
 
-mkdir $work_dir
+mkdir $workdir
 
 cp $arg_cfile $workdir
 
-echo '#!/bin/sh' > $workdir/interesting
-echo '$PROJ_ROOT/admin/bin/creduce_interest_o0vs03 $arg_cfile' > \
+touch $workdir/interesting
+echo '#!/bin/sh' >> $workdir/interesting
+echo '$PROJ_ROOT/admin/bin/creduce_interest_o0vso3' $arg_cfile >> \
       $workdir/interesting
 chmod ugo+x $workdir/interesting
 
