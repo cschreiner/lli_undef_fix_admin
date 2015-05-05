@@ -37,8 +37,6 @@ regehr_test()
    echo BASENAME=\"$BASENAME\" #;;
    if 
      (
-        # Unfortunately, the -fsanitize requires llvm-3.5.0; for some reason 
-        # a relevant feature didn't get installed with our 3.6.0 installation.
 	clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
 	      -fsanitize=undefined,integer,signed-integer-overflow \
 	      $CFILE.c -o $CFILE.fsanitize.bin >$BASENAME.fsanitize.out 2>&1 
@@ -123,7 +121,9 @@ fi
 (ulimit -t 5; ./$CFILE.fsanitize.bin 1> $CFILE.fsanitize.stdout 2> \
       $CFILE.fsanitize.stderr )   
 status=$?
-if [ $status -ne 0 ]; then 
+if [ $status -ne 0 -a $status -ne 137 ]; then 
+   # exit 0 means success, 
+   # exit 137 is 128 (exited due to signal)+ 9 (signal=sigkill)
    echo running fsanitize=undefined version failed
    exit 1
 fi
