@@ -161,8 +161,10 @@ if [ -d "$date_dir" ]; then
    echo date_dir=\"$date_dir\"
    exit 255
 fi   
-mkdir -p $date_dir/PASSED 
-mkdir -p $date_dir/KILLED
+for ii in INTERESTING UNINTERESTING TOOL_ISSUE PASSED KILLED; do
+   mkdir -p $date_dir/$ii 
+done
+mkdir -p $date_dir/TOOL_ISSUE/DUP
 cd $date_dir
 
 # run
