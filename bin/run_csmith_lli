@@ -45,12 +45,10 @@ function test_one_round()
 
    # compute differences
    diff -q $opt0_ll.stdout $opt3_ll.stdout
-   diff_status=$?
+   stdout_diff_status=$?
 
-   grep '^checksum = ' $opt0_ll.stdout > $opt0_ll.checksum
-   grep '^checksum = ' $opt3_ll.stdout > $opt3_ll.checksum
-   diff -q $opt0_ll.checksum $opt3_ll.checksum
-   checksum_diff_status=$?  
+   opt0_checksum=`grep '^checksum = ' $opt0_ll.stdout` 
+   opt3_checksum=`grep '^checksum = ' $opt3_ll.stdout` 
    
    # print the meat of the report
    cleanup_flag="true"
@@ -64,14 +62,29 @@ function test_one_round()
       ) | tee -a $report_file
       cleanup_flag="false"
    fi
-   if [ $checksum_diff_status -eq 0 ]; then
+   if [ -z "$opt0_checksum" -a -z "$opt3_checksum" ]; then
+      echo checksums agree '(actually, both are missing)' >> $report_file
+   elif [ -n "$opt0_checksum" -a -z "$opt3_checksum" ]; then
+      (
+	 echo checksums differ '(O3 had no checksum)' 
+	 echo "  " O0 sum=\"$opt0_checksum\" 
+      ) >> $report_file
+   elif [ -z "$opt0_checksum" -a -n "$opt3_checksum" ]; then
+      (
+	 echo checksums differ '(O0 had no checksum)' 
+	 echo "  " O3 sum=\"$opt3_checksum\" 
+      ) >> $report_file
+   elif [ "$opt0_checksum" = "$opt3_checksum" ]; then
       echo checksums agree >> $report_file
-      rm $opt0_ll.checksum $opt3_ll.checksum
    else
-      echo checksums differ >> $report_file
-      # TODO2: consider removing the checksum files in this case, too.
+      (
+	 echo checksums differ 
+	 echo "  " O0 sum=\"$opt0_checksum\" 
+	 echo "  " O3 sum=\"$opt3_checksum\" 
+      ) >> $report_file
    fi
-   if [ $diff_status -eq 0 ]; then
+
+   if [ $stdout_diff_status -eq 0 ]; then
       (
 	 echo outputs agree:
 	 echo ==========
