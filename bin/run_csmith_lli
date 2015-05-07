@@ -189,11 +189,11 @@ while true; do
       # middle of a round.
       round=$(( $round - 1 ))
       echo completed $round rounds before finding a STOP file.
-      if [ -z STOP ]; then
-         rm STOP
-      else 
+      if [ -s STOP ]; then
 	 echo ${scriptname}: stop file has contents, and so must be removed 
 	 echo manually.
+      else 
+         rm STOP
       fi
       exit 0
    fi
