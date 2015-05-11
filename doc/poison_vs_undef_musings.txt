@@ -12,6 +12,23 @@ coupled with a requirement that it never be output.  (In effect,
 poison requires the optimizer to do enough static analysis to
 guarantee that a poison value can not be output.) 
 
+[ ] In LLVM LangRef, why do they say
+
+	%B= undef
+	%C= or %B, %B
+
+	can safely fold to:
+
+	%C= undef
+
+Does the compiler have the option of assuming that %B= -1, therefore %C=-1?
+If not, this seems like a singularity in the undef-handling rules; what is the
+rationale, and why is it not explained in the LangRef?
+
+[ ] David and Nuno's proposal seems to require different undef arithmetic than
+the current undef standard.  For example, they say, "if either operand is
+undef, then the result is undef."  
+
 
 (end of file)
 
