@@ -34,6 +34,10 @@ operand is undef, then the result is undef."  Do they indend to keep the
 current undef handling rules (which seem superficially compatible with their
 proposal), or do they see any differences in how undef is handled?
 
+[ ] The current standard says, "poison values behave like undef values...".
+Since the undef handling rules imply short-circuit handling for undef, is
+applying short-circuit propogation of poison merely a clarification of the
+existing rules?
 
 (end of file)
 
