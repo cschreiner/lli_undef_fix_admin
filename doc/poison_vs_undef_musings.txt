@@ -21,13 +21,18 @@ guarantee that a poison value can not be output.)
 
 	%C= undef
 
-Does the compiler have the option of assuming that %B= -1, therefore %C=-1?
-If not, this seems like a singularity in the undef-handling rules; what is the
-rationale, and why is it not explained in the LangRef?
+It is unclear if it _must_ safely fold to %C= undef, or does the compiler have
+the _option_ of assuming that %B= -1, therefore %C=-1?  I know the manual says
+a variable with an undef value can have a different value every time it is
+read.  But it still seems like a singularity in the rules that the compiler is
+_forbidden_ to assume that 2 undef values are the same when this would produce a
+very useful optimization, such as the above %C.
 
-[ ] David and Nuno's proposal seems to require different undef arithmetic than
-the current undef standard.  For example, they say, "if either operand is
-undef, then the result is undef."  
+[ ] David and Nuno's proposal seems like a highly simplified explanation of
+the current LangRef's undef handling rules.  For example, they say, "if either
+operand is undef, then the result is undef."  Do they indend to keep the
+current undef handling rules (which seem superficially compatible with their
+proposal), or do they see any differences in how undef is handled?
 
 
 (end of file)
