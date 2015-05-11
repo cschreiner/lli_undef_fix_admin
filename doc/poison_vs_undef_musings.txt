@@ -1,0 +1,17 @@
+Tradeoffs between poison and undef:
+
+[ ] ANY proposal that uses short-circuit evaluation to remove overflow
+taint (regardless of whether it is called poison, undef, or whatever)
+appears to avoid the current problems with
+simplify-the-control-flow-graph optimization.
+
+[ ] As currently defined, the difference between poison and undef is
+that an undef value, when read, may be assumed to be any value convenient for
+optimization, while a poisoned value has a definite bit pattern
+coupled with a requirement that it never be output.  (In effect,
+poison requires the optimizer to do enough static analysis to
+guarantee that a poison value can not be output.) 
+
+
+(end of file)
+
