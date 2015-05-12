@@ -1,0 +1,169 @@
+Fragments of llvm code whose behavior should be understood when defining
+handling of nsw:
+
+Notes:
+These fragments were often used in nsw and poison discussions.
+
+
+==============================================================================
+Fragment 1:
+From: http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html
+
+  br i1 %overflow_check, label %no_overflow, label %end
+
+no_overflow:
+  %t0 = add nsw i32 %a, %b
+  %t1 = sext i32 %t0 to i64
+  %t2 = ashr i64 %t1, 31
+  %t3 = add i64 %t2, 1
+  %t5 = icmp ult %t3, 2
+  %t6 = udiv i1 1, %t5
+
+Derived fragment 1a:
+
+  %t0 = add nsw i32 %a, %b
+  %t1 = sext i32 %t0 to i64
+  %t2 = ashr i64 %t1, 31
+  %t3 = add i64 %t2, 1
+  %t5 = icmp ult %t3, 2
+  %t6 = udiv i1 1, %t5
+  br i1 %overflow_check, label %no_overflow, label %end
+
+no_overflow:
+
+---
+Derived fragment 1b:
+
+  %s0 = sext i32 %a to i64
+  %s1 = sext i32 %b to i64
+  %t0 = add nsw i64 %s0, %s1
+  %t2 = ashr i64 %t0, 31
+  %t3 = add i64 %t2, 1
+  %t5 = icmp ult %t3, 2
+  %t6 = udiv i1 1, %t5
+  br i1 %overflow_check, label %no_overflow, label %end
+
+no_overflow:
+
+==============================================================================
+Fragment 2 "Poison and select":
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076945.html
+
+define i32 @f(i32 %a) {
+  %cmp = icmp sgt i32 %a, 0
+  %sub = sub nsw i32 2147483647, %a
+  %sel = select i1 %cmp, i32 %sub, i32 0
+  ret i32 %sel
+}
+
+especially consider if %a=-1
+
+
+==============================================================================
+Fragment 3 "Poison and select":
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076945.html
+
+%add = add nsw i32 %a, 1
+%cmp1 = icmp eq i32 %a, 0
+%cmp2 = icmp slt i32 %add, 0
+%sel = select i1 %cmp1, i1 %cmp2, i1 false
+
+consider case where %a=2147483647
+
+---
+Derived fragment 3a:
+
+%add = add nsw i32 %a, 1
+%cmp1 = icmp eq i32 %a, 0
+%cmp2 = icmp slt i32 %add, 0
+%and = and i1 %cmp1, %cmp2
+
+Note that %add is poisoned INT32_MIN, %cmp1 is false, %cmp2 is poisoned false,
+%sel is unpoisoned false, and %and is poisoned false.  Oops.
+
+CAS: this is resolved if we require short-circuit poison elimination for the
+and opcode, in which case %and becomes unpoisoned false.  Phew.
+
+==============================================================================
+Fragment 4 "Poison and select":
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076592.html
+
+int printf(const char *, ...);
+int foo(int x0) {
+   int x3 = x0 >> 27;
+   int x4 = x3 - 27;
+   int x2 = x4 ? x4 : (1 >> x4);
+   int x1 = x2 != 0;
+   return x1;
+}
+int arg;
+int main (void) {
+   int x1 = foo(arg);
+   printf("%x\n", x1);
+   return 0;
+}
+
+this program should print "1", with no undefined behavior.
+
+---
+Derived fragment 4a:
+
+define i32 @foo(i32 %x0) #0 {
+entry:
+   %shr = ashr i32 %x0, 27
+   %sub = add nsw i32 %shr, -27
+   %tobool = icmp ne i32 %sub, 0
+   %shr1 = lshr i32 1, %sub
+   %cond = select i1 %tobool, i32 %sub, i32 %shr1
+   %cmp = icmp ne i32 %cond, 0
+   %conv = zext i1 %cmp to i32
+   ret i32 %conv
+}
+
+Under current rules, %shr1 gets poisoned, and in turn poisons the return
+value.
+
+==============================================================================
+Fragment 5 "poison and select"
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
+
+select(a,b,c) should be fully equivalent to (with appropriate bitcasting) 
+
+(sext(a) & b) | (~sext(a) & c)
+
+TODO2: translate this into llvm assembler
+
+==============================================================================
+Fragment 6 "poison and select"
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
+
+select should be semantically equivalent to its intuitive translation as a
+branch and phi (the current poison concept violates this)
+
+==============================================================================
+Fragment 7 "poison and select"
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
+
+Branch should be semantically equivalent to its intuitive translation as a
+switch, and as an indirect branch.
+
+CAS TODO: clarify.  I'm confused on this one.  An indirect branch is a jump to
+location specified by pointer, right?  What does such a branch have to do with
+a switch?
+
+==============================================================================
+Fragment 8 "poison and select"
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
+
+Constant folding, mem2reg, and reg2mem should always be safe _and_
+optimization-opportunity-preserving.
+
+CAS TODO: clarify.  These seem to be optimization passes, right?  How to
+convert these into clear properties that can be tested?
+
+==============================================================================
+Other sources of possible fragments:
+
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076391.html
+	and its replies
+
