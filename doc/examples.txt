@@ -218,6 +218,18 @@ if.end:                                           ; preds = %if.then, %lor.end
   ret i32 0
 }
 
+CAS results under current rules:
+%0= -1
+%cmp= false
+%sub= poisoned INT32_MIN
+%cmp1= poisoned true
+%or.cond= poisoned false 
+	# note that this goes away under short-circuit poison elimination
+branch to lor.end
+%tobool= true
+%lor.ext= 1
+branch to if.then
+branch to if.end
 
 ==============================================================================
 Other sources of possible fragments:
@@ -225,3 +237,8 @@ Other sources of possible fragments:
 http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076391.html
 	and its replies
 
+see also
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/
+and November and September, also for 2014.  Look for all instances of these
+keywords:
+	poison	nsw	nuw
