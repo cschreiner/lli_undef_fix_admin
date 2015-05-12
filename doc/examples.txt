@@ -232,6 +232,42 @@ branch to if.then
 branch to if.end
 
 ==============================================================================
+Fragment 10:
+From Sanjoy Das's 11/14/14 comments at
+https://groups.google.com/forum/#!topic/llvm-dev/eQ7Fw2C_O9Q
+
+CAS note: there is an interesting description there.
+
+  %a = maybe poison
+  br i1 %a, label %left, label %right
+left:
+  %l = 42
+  br label %merge
+right:
+  %r = < unknown load > can be speculated
+  br label %merge
+merge:
+  %m = phi %l %r
+  store %m to heap 
+
+CAS run results:
+if %a then
+   %1= 42
+else
+   %r= anything
+fi
+   %m= 42 or anything
+
+---
+Derived fragment 10a:
+
+   %m= select %a, %l, %r
+
+Sanjoy claims that iff %l==%r, then %m does not depend on %a, and therefore
+can not inherit poison from it.
+
+
+==============================================================================
 Other sources of possible fragments:
 
 http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076391.html

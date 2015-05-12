@@ -56,6 +56,21 @@ like phi.  What are these inconsistencies?
 
 http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html
 
+[ ] Sanjoy notes some interesting ideas in his 11/14/14 comments at
+https://groups.google.com/forum/#!topic/llvm-dev/eQ7Fw2C_O9Q
+
+In particular, undef requires _some_ valid bitpattern for the specified data
+type, even though we don't necessarily know which one.  But poison does not==
+thereby allowing optimizations like
+
+	%a= INT_MAX;
+	if ( %a < (%a+1) )  then { ... }
+
+into
+
+	%a= INT_MAX
+	if ( true ) then { ... }
+
 
 
 (end of file)
