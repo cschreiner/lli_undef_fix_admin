@@ -48,6 +48,7 @@ no_overflow:
 ==============================================================================
 Fragment 2 "Poison and select":
 From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076945.html
+and 
 
 define i32 @f(i32 %a) {
   %cmp = icmp sgt i32 %a, 0
@@ -57,6 +58,13 @@ define i32 @f(i32 %a) {
 }
 
 especially consider if %a=-1
+
+Note: under current rules, %a=-1 yields
+      %cmp= false
+      %sub= poisoned -INT32_MIN
+      %sel= poisoned 0
+but if select can only be poisoned by the branch chosen, then %sel= unpoisoned
+0, which is ok.
 
 
 ==============================================================================
@@ -124,7 +132,7 @@ Under current rules, %shr1 gets poisoned, and in turn poisons the return
 value.
 
 ==============================================================================
-Fragment 5 "poison and select"
+Fragment 5 "poison and select":
 From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
 
 select(a,b,c) should be fully equivalent to (with appropriate bitcasting) 
@@ -134,14 +142,14 @@ select(a,b,c) should be fully equivalent to (with appropriate bitcasting)
 TODO2: translate this into llvm assembler
 
 ==============================================================================
-Fragment 6 "poison and select"
+Fragment 6 "poison and select":
 From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
 
 select should be semantically equivalent to its intuitive translation as a
 branch and phi (the current poison concept violates this)
 
 ==============================================================================
-Fragment 7 "poison and select"
+Fragment 7 "poison and select":
 From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
 
 Branch should be semantically equivalent to its intuitive translation as a
@@ -152,7 +160,7 @@ location specified by pointer, right?  What does such a branch have to do with
 a switch?
 
 ==============================================================================
-Fragment 8 "poison and select"
+Fragment 8 "poison and select":
 From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076749.html
 
 Constant folding, mem2reg, and reg2mem should always be safe _and_
@@ -160,6 +168,56 @@ optimization-opportunity-preserving.
 
 CAS TODO: clarify.  These seem to be optimization passes, right?  How to
 convert these into clear properties that can be tested?
+
+==============================================================================
+Fragment 9:
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-September/076942.html
+and https://llvm.org/bugs/show_bug.cgi?id=20997
+
+Basically, SimplifyCFG wants to take
+
+   expr1 && expr2
+
+and flatten it into
+
+   x = expr1
+   y = expr2
+   x&y
+
+Specific example:
+TODO: simpify it.
+
+@x0 = global i32 -1, align 4
+@x1 = common global i32 0, align 4
+
+; Function Attrs: nounwind uwtable
+define i32 @main() #0 {
+entry:
+  %0 = load i32* @x0, align 4, !tbaa !1
+  %cmp = icmp sgt i32 %0, 0
+  %sub = sub nsw i32 2147483647, %0
+  %cmp1 = icmp slt i32 %sub, 1
+  %or.cond = and i1 %cmp, %cmp1
+  br i1 %or.cond, label %lor.end.thread, label %lor.end
+
+lor.end.thread:                                   ; preds = %entry
+  store i32 1, i32* @x1, align 4, !tbaa !1
+  br label %if.then
+
+lor.end:                                          ; preds = %entry
+  %tobool = icmp ne i32 %0, -1
+  %lor.ext = zext i1 %tobool to i32
+  store i32 %lor.ext, i32* @x1, align 4, !tbaa !1
+  br i1 %tobool, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end.thread, %lor.end
+  %putchar = tail call i32 @putchar(i32 120) #1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  ret i32 0
+}
+
 
 ==============================================================================
 Other sources of possible fragments:
