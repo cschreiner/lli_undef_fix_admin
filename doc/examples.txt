@@ -264,8 +264,41 @@ Derived fragment 10a:
    %m= select %a, %l, %r
 
 Sanjoy claims that iff %l==%r, then %m does not depend on %a, and therefore
-can not inherit poison from it.
+can not inherit poison from it.  
 
+==============================================================================
+Fragment 11:
+From Sanjoy Das's 11/14/14 comments at
+https://groups.google.com/forum/#!topic/llvm-dev/eQ7Fw2C_O9Q
+
+%a= sub nsw i32 INT32_MAX, i32 -1 ; generates poison
+%b= shl %a, 31
+%c= and %b, 255
+
+CAS: arguably %c doesn't depend on any of the poisoned bits in %a, but by
+current rules and by both the short-circuit-poison-removal and the
+poison=undef proposals, %c would be poison.  I only see these ways of taking
+advantage of this:
+
+we either track poison on a per-bit level, 
+or 
+we apply Sanjoy's "if %c's value is the same regardless of the bit pattern in
+%a, then %c can't inherit %a's poison" rule.  
+
+I'm not sure which would be more complicated.  The per-bit statement would
+require less reasoning to implement, but Sanjoy's statement would explain the
+spirit better, and might cover additional situations.  Is it possible that
+these two statements are equivalent? -- CAS 2015may12
+
+==============================================================================
+Fragment 12:
+From Sanjoy Das's 11/14/14 comments at
+https://groups.google.com/forum/#!topic/llvm-dev/eQ7Fw2C_O9Q
+
+%a= add nuw UNSIGNED_MAX, 2 ; %a is poisoned
+%x= select %a, %arg1, %arg1
+
+Sanjoy argues %x should not be poisoned.  I, CAS, agree.
 
 ==============================================================================
 Other sources of possible fragments:
@@ -278,3 +311,6 @@ http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/
 and November and September, also for 2014.  Look for all instances of these
 keywords:
 	poison	nsw	nuw
+
+==============================================================================
+(end of file)

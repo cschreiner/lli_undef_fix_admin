@@ -71,7 +71,13 @@ into
 	%a= INT_MAX
 	if ( true ) then { ... }
 
+[ ] In his 23nov2014 post at
+https://groups.google.com/forum/#!topic/llvm-dev/eQ7Fw2C_O9Q, 
 
+David proposes having a 'vile' attribute to the select instruction, which
+specifies if an unselected operand can propogate poison.  I don't see what we
+gain from that in view of the opportunities afforded by
+short-circuit-poison-removal in and and or operations.  
 
 (end of file)
 
