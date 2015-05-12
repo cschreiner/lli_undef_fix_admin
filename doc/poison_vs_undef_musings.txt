@@ -25,8 +25,11 @@ It is unclear if it _must_ safely fold to %C= undef, or does the compiler have
 the _option_ of assuming that %B= -1, therefore %C=-1?  I know the manual says
 a variable with an undef value can have a different value every time it is
 read.  But it still seems like a singularity in the rules that the compiler is
-_forbidden_ to assume that 2 undef values are the same when this would produce a
-very useful optimization, such as the above %C.
+_forbidden_ to assume that 2 undef values are the same when this would produce
+a very useful optimization, such as the above %C.  There may be some value in
+David and Nuno's suggestion that each time an undef value is generated, it is
+a _different_ undef value, so the above '%C= undef' holds because both
+operands of the or are the same undef value.  
 
 [ ] David and Nuno's proposal seems like a highly simplified explanation of
 the current LangRef's undef handling rules.  For example, they say, "if either
@@ -38,6 +41,22 @@ proposal), or do they see any differences in how undef is handled?
 Since the undef handling rules imply short-circuit handling for undef, is
 applying short-circuit propogation of poison merely a clarification of the
 existing rules?
+
+[ ] This article by Dan Gohman notes that undef was not sufficiently
+expressive to permit optimizations after overflow, and is "inconsistent", but
+does not give any specific examples:
+
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-November/045730.html
+
+[ ] The above 2011-November llvm-dev article by Dan also warns of
+inconsistencies if select is considered to be like phi.  We need select to be
+like phi.  What are these inconsistencies?
+
+[ ] Dan noted a general inconsistency in optimization around nsw here:
+
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046152.html
+
+
 
 (end of file)
 
