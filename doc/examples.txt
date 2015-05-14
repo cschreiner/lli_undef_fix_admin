@@ -4,6 +4,9 @@ handling of nsw:
 Notes:
 These fragments were often used in nsw and poison discussions.
 
+Months covered from LLVM Mailing list:
+URLS are of form http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/
+
 
 ==============================================================================
 Fragment 1:
@@ -299,6 +302,45 @@ https://groups.google.com/forum/#!topic/llvm-dev/eQ7Fw2C_O9Q
 %x= select %a, %arg1, %arg1
 
 Sanjoy argues %x should not be poisoned.  I, CAS, agree.
+
+==============================================================================
+Fragment 13:
+From http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/045780.html
+and http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/045789.html
+
+Dan Gohmann says that "the main sign-extension elimination optimization" is
+not valid under making poison equivalent to undef.  
+sign-extension elimination optimization"? 
+
+int a = INT_MAX, b = 1;
+long c = (long)(a + b);
+
+What is the value of c, on an LP64 target?
+
+By standard C rules, the add overflow invokes immediate undefined behavior of course.
+
+If a and b are promoted to 64-bit, c is 0x0000000080000000.
+
+In a world where signed add overflow returns undef, c could be any of
+  0x0000000000000000
+  0x0000000000000001
+  0x0000000000000002
+  ...
+  0x000000007fffffff
+or
+  0xffffffff80000000
+  0xffffffff80000001
+  0xffffffff80000002
+  ...
+  0xffffffffffffffff
+however it can't ever be 0x0000000080000000, because there's no 32-bit value
+the undef could take which sign-extends into that 64-bit value.
+
+Therefore, if signed add overflow returns undef, promoting such 32-bit
+variables to 64-bit variables is not a behavior-preserving transformation.
+
+Note: CAS: this holds anytime sizeof(long) > sizeof(int).
+
 
 ==============================================================================
 Other sources of possible fragments:

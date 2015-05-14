@@ -79,5 +79,11 @@ specifies if an unselected operand can propogate poison.  I don't see what we
 gain from that in view of the opportunities afforded by
 short-circuit-poison-removal in and and or operations.  
 
+[ ] Andy Trick feels that speculative execution cannot be safely done on
+operations with side effects (e.g. udiv).  I'm not sure how to evaluate his
+claim right now. -- CAS 2015may14
+
+http://lists.cs.uiuc.edu/pipermail/llvmdev/2011-December/046269.html
+
 (end of file)
 
