@@ -1,7 +1,7 @@
 #!/bin/bash
-# script to install llvm compiler suite, and its clang C-compiler utility
+# script to build+install llvm with code tweaks to make clang produce more speculation
 
-scriptname=tuut-install-llvm
+scriptname=install_llvm_w_xtra_speculation
 workdir=/tmp/${scriptname}_`date +%Y%b%d_%H%M%S`_$$
 mkdir -p $workdir
 start_time=`date +%s`
@@ -33,21 +33,19 @@ fi
 echo ${scriptname}: will try to run make with \"$NUM_JOBS\" jobs.
 
 # ===========================================================================
-# basic TUUT setup
-
-export TUUT=/uusoc/scratch/dyson/cas/tuut/once
-
-# make sure all of the TUUT directories exist
-if [ ! -d "$TUUT" ]; then
-   echo ${scriptname}: error: \$TUUT directory does not exist.
-   echo "  " TUUT=\"$TUUT\"
-   exit -1
-fi
+# basic directory setup
 
 #BASE_DIR=$TUUT/llvm~r236558
 BASE_DIR=$PROJ_ROOT/llvm_w_xtra_speculation
 if [ "$arg_dry_run" = "true" ]; then
    BASE_DIR=${BASE_DIR}~dry_run
+fi
+
+# make sure the BASE_DIR exists
+if [ ! -d "$BASE_DIR" ]; then
+   echo ${scriptname}: error: \$BASE_DIR directory does not exist.
+   echo "  " BASE_DIR=\"$BASE_DIR\"
+   exit -1
 fi
 
 separator='===================================='
@@ -116,12 +114,6 @@ svn_flags=-r236558 # latest version as of 5may2015 18:29 MDT
 # see also: 
 #   Building LLVM with CMAKE: http://llvm.org/docs/CMake.html
 #   Clang - Getting Started: http://clang.llvm.org/get_started.html
-
-# download
-#pushd $TUUT/admin/download
-#wget $download_url
-#chmod ug+x $download_file
-#popd
 
 cd $workdir
 
