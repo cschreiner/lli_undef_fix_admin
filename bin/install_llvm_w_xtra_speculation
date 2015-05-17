@@ -152,11 +152,14 @@ svn co $svn_flags http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
 cd ../..
 
 # . . . . . . . . . . . . . . . . . . . .
-# and make the patches
+# and make the patches for extra speculation
+
+cd llvm
 curl -o lib/Transforms/Utils/SimplifyCFG.cpp \
       http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/Utils/SimplifyCFG.cpp?revision=235771&view=markup#l56
 curl -o lib/Transforms/Scalar/SimplifyCFGPass.cpp \
       http://llvm.org/viewvc/llvm-project/llvm/trunk/lib/Transforms/Scalar/SimplifyCFGPass.cpp?revision=231740&view=markup#l45
+cd ..
 
 
 # ===========================================================================
