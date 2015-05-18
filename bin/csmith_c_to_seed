@@ -16,7 +16,7 @@ handle_one_file()
    tmp_filename=$TMPDIR/`basename $arg_filename`
    head -n$CRITICAL_LINES $arg_filename > $tmp_filename
 
-   if grep 'Generator:.*csmith' $tmp_filename; then
+   if grep -q 'Generator:.*csmith' $tmp_filename; then
       # good, this appears to be a csmith generated file
       dummy=""
    else
@@ -27,7 +27,7 @@ handle_one_file()
       return 127
    fi
 
-   if grep 'Seed:' $tmp_filename; then
+   if grep -q 'Seed:' $tmp_filename; then
       # good, this appears to be a csmith generated file
       dummy=""
    else
@@ -47,7 +47,7 @@ handle_one_file()
 mkdir -p $TMPDIR
 
 for file in "$@"; do
-   case "$file"; in
+   case "$file" in
       *.c)
 	 handle_one_file $file
          ;;
