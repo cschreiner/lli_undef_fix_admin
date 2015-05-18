@@ -1,9 +1,12 @@
 #!/bin/sh
 # reduce a csmith-generated .c file to just the seed information needed to
 # regenerate the file.
+# 
+# Correct use:
+#   csmith_c_to_seed file1.c...
 
 scriptname=csmith_c_to_seed
-CRITICAL_LINES=8
+CRITICAL_LINES=9
 TMPDIR=/tmp/${scriptname}_`date +%Y%b%d_%H%M%S`_$$
 
 handle_one_file()
@@ -40,12 +43,24 @@ handle_one_file()
    return 0
 }
 
+# set up
 mkdir -p $TMPDIR
 
 for file in "$@"; do
-   handle_one_file $file
+   case "$file"; in
+      *.c)
+	 handle_one_file $file
+         ;;
+      *)
+         echo ${scriptname}: this does not appear to be a .c file:
+         echo "  " file=\"$file\"
+         exit 127
+         ;;
+   esac
 done
 
+# clean up and exit
 rm -rf $TMPDIR
 
-
+# ==============================================================================
+# end of script
