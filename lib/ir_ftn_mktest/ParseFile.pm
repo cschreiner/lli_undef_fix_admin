@@ -89,7 +89,7 @@ package ir_ftn_mktest::ParseFile;
 # Warnings: 
 #
 # Inputs: 
-#   $pkgInfo: information about the package (provided by PERL)
+#   $perlPkg: information about the package (provided by PERL)
 #   $filename: the name of the file to read
 # 
 # Outputs: 
@@ -99,7 +99,7 @@ package ir_ftn_mktest::ParseFile;
 # ============================================================================
 sub new
 {{
-   my( $pkgInfo, $filename )= @_;
+   my( $perlPkg, $filename )= @_;
 
    my $this= {};
    $this->{'filename'}= $filename;
@@ -112,6 +112,7 @@ sub new
             "\t" . "file=\"$filename\", \n" .
             "\t" . "$!. \n";
 
+   bless $this, $perlPkg;
    return $this;
 }}
 
@@ -147,7 +148,7 @@ sub parseFtn
 
    $ftnTxt.= $this->{'lastLineRead'};
 
-   while ( $line= < $this->{'fh'} > )  {
+   while ( $line= $this->{'fh'}->getline() )  {
       if ( $line =~ m/^ \s* define \s+/x )  {
          last;
       }
@@ -159,7 +160,7 @@ sub parseFtn
 
    $ftnTxt.= $line;
 
-   while ( $line= < $this->{'fh'} > )  {
+   while ( $line= $this->{'fh'}->getline() )  {
       if ( $line =~ m/^ \s* define \s+/x )  {
          last;
       }
@@ -201,9 +202,9 @@ sub close
 
    $this->{'fh'}->close() or
       die $main::scriptname . ": can't close LLVM IR file after reading, \n" .
-            "\t" . "file=\"$filename\", \n" .
+            "\t" . "file=\"" . $this->{'filename'} . "\", \n" .
             "\t" . "$!. \n";
-   $this-{'isClosed'}= $main::TRUE;
+   $this->{'isClosed'}= $main::TRUE;
    return $main::PERL_SUCCESS;
 }}
 
