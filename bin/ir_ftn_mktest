@@ -140,6 +140,8 @@ $need_to_exit= $FALSE;
 ## -----------------------------------------------------------------------
 ##   set up defaults
 
+use vars qw ( $arg_ir_filename );
+
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -194,6 +196,8 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOptions left behind
+
+$arg_ir_filename= shift @ARGV;
 
 ## -----------------------------------------------------------------------
 ##   check arguments
@@ -455,11 +459,7 @@ __END__
 
 =head1 NAME - ir_ftn_mktest.pl
 
-=cut
-
-#put a short (one line) description here
-
-=pod
+Create test cases for each function specified in an LLVM IR file.
 
 =head1 SYNOPSIS
 
@@ -470,9 +470,9 @@ __END__
 
 =pod
 
- ir_ftn_mktest.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
- ir_ftn_mktest.pl [debug] ? 
+ir_ftn_mktest.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
 
+ir_ftn_mktest.pl [debug] F<irfile>
 
 =head1 DESCRIPTION
 
