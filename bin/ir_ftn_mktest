@@ -108,6 +108,8 @@ use FileHandle;
    # require's and use's needed by the rest of the program
    # =========================================================================
 
+   use ir_ftn_mktest::ParseFile;
+
    # =========================================================================
    # subroutine END
    # =========================================================================
@@ -213,7 +215,9 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
-##   
+##   parse out the file, handling each function as it arrives
+
+our $file_parser= new ir_ftn_mktest::FileParser( $arg_ir_filename );
 
 ## ===========================================================================
 ##   
