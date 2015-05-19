@@ -217,7 +217,14 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   parse out the file, handling each function as it arrives
 
-our $file_parser= new ir_ftn_mktest::ParseFile( $arg_ir_filename );
+our $fileParser= new ir_ftn_mktest::ParseFile( $arg_ir_filename );
+
+while( $main::TRUE )  {
+   my $ftnTxt= $fileParser->parseFtn();
+   if ( !defined($ftnTxt) )  { last; }
+   print "x"x 70 . "\n";
+   print "ftn: <<EOF\n" . $ftnTxt . "\nEOF\n\n";
+} 
 
 ## ===========================================================================
 ##   
