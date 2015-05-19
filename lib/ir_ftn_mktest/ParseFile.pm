@@ -104,6 +104,7 @@ sub new
    my $this= {};
    $this->{'filename'}= $filename;
    $this->{'lastLineRead'}= undef;
+   $this->{'isClosed'}= $main::FALSE;
 
    $this->{'fh'}= new FileHandle;
    $this->{'fh'}->open( "<$filename" ) or
@@ -131,12 +132,15 @@ sub new
 # Outputs: none
 #   
 # Return Value: 
-#   string containing the function parsed
+#   string containing the function parsed, or 
+#   undef if further reads are not possible (e.g. EOF has been reached).
 #
 # ============================================================================
 sub parseFtn
 {{
    my( $this )= @_;
+
+   if ( $this->{'isClosed'} )  { return undef; }
 
    my $ftnTxt= "";
    my $line= undef;
@@ -199,6 +203,7 @@ sub close
       die $main::scriptname . ": can't close LLVM IR file after reading, \n" .
             "\t" . "file=\"$filename\", \n" .
             "\t" . "$!. \n";
+   $this-{'isClosed'}= $main::TRUE;
    return $main::PERL_SUCCESS;
 }}
 
