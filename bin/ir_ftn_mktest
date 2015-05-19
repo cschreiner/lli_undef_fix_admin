@@ -143,7 +143,8 @@ $need_to_exit= $FALSE;
 ##   set up defaults
 
 use vars qw ( $arg_ir_filename );
-
+use vars qw ( $arg_verbosity );
+$arg_verbosity= 0;
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -178,6 +179,7 @@ if ( scalar(@ARGV) > 0 )  {
    GetOptions ( "help|h" => \$arg_help, 
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
+	 "v+" => \$arg_verbosity,
 	 );
 
    if ( $arg_help )  {
@@ -222,8 +224,10 @@ our $fileParser= new ir_ftn_mktest::ParseFile( $arg_ir_filename );
 while( $main::TRUE )  {
    my $ftnTxt= $fileParser->parseFtn();
    if ( !defined($ftnTxt) )  { last; }
-   print "x"x 70 . "\n";
-   print "ftn: <<EOF\n" . $ftnTxt . "\nEOF\n\n";
+   if ( $arg_verbosity > 0 )  {
+      print "x"x 70 . "\n";
+      print "ftn: <<EOF\n" . $ftnTxt . "\nEOF\n\n";
+   }
 } 
 
 ## ===========================================================================
