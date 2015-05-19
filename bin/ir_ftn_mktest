@@ -217,7 +217,7 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   parse out the file, handling each function as it arrives
 
-our $file_parser= new ir_ftn_mktest::FileParser( $arg_ir_filename );
+our $file_parser= new ir_ftn_mktest::ParseFile( $arg_ir_filename );
 
 ## ===========================================================================
 ##   
