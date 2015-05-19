@@ -2,9 +2,9 @@
 #
 ## ****************************************************************************
 ## Project Name: lli_undef_fix
-## Module Name: ParseFile.pm
+## Module Name: ir_ftn_mktest::ParseFile.pm
 ##
-## Description: 
+## Description: parses an IR file into individual functions
 ##
 ## ****************************************************************************
 
@@ -32,36 +32,11 @@ use strict;
 ## ****************************************************************************
 ## package identification
 
-package ParseFile;
+package ir_ftn_mktest::ParseFile;
 
 
 ## ****************************************************************************
 ## public package BEGIN and END functions
-
-   # =========================================================================
-   # subroutine BEGIN
-   # =========================================================================
-   sub BEGIN
-   {{
-      # Note: we check for basic constants in ParseFile::private::BEGIN
-
-      # ----------------------------------------------------------------------
-      # package prerequisites (use's and require's)
-
-      # ----------------------------------------------------------------------
-      # package-specific constants
-      use vars qw( $pkgname );
-      $pkgname= "ParseFile";
-
-      # ----------------------------------------------------------------------
-      # other stuff
-
-   }}
-
-## ****************************************************************************
-## private package BEGIN and END functions
-
-package ParseFile::private;
 
    # =========================================================================
    # subroutine BEGIN
@@ -83,7 +58,7 @@ package ParseFile::private;
       # ----------------------------------------------------------------------
       # package-specific constants
       use vars qw( $pkgname );
-      $pkgname= "ParseFile";
+      $pkgname= "ir_ftn_mktest::ParseFile";
 
       # ----------------------------------------------------------------------
       # other stuff
@@ -103,9 +78,9 @@ package ParseFile::private;
 
 
 ## ===========================================================================
-## Subroutine name()
+## Subroutine new()
 ## ===========================================================================
-# Description: 
+# Description: creates a new parser instance
 #
 # Method: 
 #
@@ -114,19 +89,118 @@ package ParseFile::private;
 # Warnings: 
 #
 # Inputs: 
-#   
+#   $pkgInfo: information about the package (provided by PERL)
+#   $filename: the name of the file to read
 # 
 # Outputs: 
 #   
-#
-# Return Value: 
+# Return Value: the new instance
 #   
+# ============================================================================
+sub new
+{{
+   my( $pkgInfo, $filename )= @_;
+
+   my $this= {};
+   $this->{'filename'}= $filename;
+   $this->{'lastLineRead'}= undef;
+
+   $this->{'fh'}= new FileHandle;
+   $this->{'fh'}->open( "<$filename" ) or
+      die $main::scriptname . ": can't open LLVM IR file for reading, \n" .
+            "\t" . "file=\"$filename\", \n" .
+            "\t" . "$!. \n";
+
+   return $this;
+}}
+
+## ===========================================================================
+## Subroutine parseFtn()
+## ===========================================================================
+# Description: parses the next function out of the file
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to act on
+# 
+# Outputs: none
+#   
+# Return Value: 
+#   string containing the function parsed
 #
 # ============================================================================
-#sub name
-#{{
-#   my( )= @_;
-#}}
+sub parseFtn
+{{
+   my( $this )= @_;
+
+   my $ftnTxt= "";
+   my $line= undef;
+
+   $ftnTxt.= $this->{'lastLineRead'};
+
+   while ( $line= < $this->{'fh'} > )  {
+      if ( $line =~ m/^ \s* define \s+/x )  {
+         last;
+      }
+   }
+   if ( $this->{'fh'}->eof )  {
+      $this->close();
+      return $ftnTxt;
+   }
+
+   $ftnTxt.= $line;
+
+   while ( $line= < $this->{'fh'} > )  {
+      if ( $line =~ m/^ \s* define \s+/x )  {
+         last;
+      }
+      $ftnTxt.= $line;
+   }
+   if ( $this->{'fh'}->eof )  {
+      $this->close();
+      return $ftnTxt;
+   }
+
+   $this->{'lastLineRead'}= $line;
+
+   return $ftnTxt;
+}}
+
+
+## ===========================================================================
+## Subroutine close()
+## ===========================================================================
+# Description: closes the file being read
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $this: the instance to act on (provided by PERL)
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub close
+{{
+   my( $this )= @_;
+
+   $this->{'fh'}->close() or
+      die $main::scriptname . ": can't close LLVM IR file after reading, \n" .
+            "\t" . "file=\"$filename\", \n" .
+            "\t" . "$!. \n";
+   return $main::PERL_SUCCESS;
+}}
 
 
 #template is 25 lines long
