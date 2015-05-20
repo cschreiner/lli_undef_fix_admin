@@ -68,6 +68,7 @@ public class Main
     * class variables
     * =========================================================================
     */
+   public final static String PROGRAM_NAME= "ir_ftn_mktest";
    static String arg_ir_filename= "";
    static int arg_verbosity= 0;
 
@@ -139,6 +140,10 @@ public class Main
    {{
       final int EXPECTED_NUM_ARGS= 2;
 
+      /* ..............................................................
+	 set up command line arguments
+       */
+
       if ( args.length != EXPECTED_NUM_ARGS ) {
          System.err.print( "expected "+ EXPECTED_NUM_ARGS+ 
 			   " arguments, but found "+ args.length+ ".\n" );
@@ -147,6 +152,11 @@ public class Main
 
       arg_verbosity= Integer.parseInt( args[0] );
       arg_ir_filename= args[1];
+
+      /* ..............................................................
+	 set up globals
+       */
+      IRTxtLib.programName= PROGRAM_NAME;
 
       /* ..............................................................
        */
