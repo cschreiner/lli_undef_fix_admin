@@ -174,26 +174,135 @@ public class FtnParts
     */
    private void parse()
    {{
-      // TODO2: create a better tokenizer than this
-      String tokens[]= tokenize();
+      // TODO2: create a full-fledged tokenizer
+
+      // ............................................................
+      // set up
+      String chunks[]= ftnSt.split( "\\b" );
 
       if ( IRTxtLib.arg_verbosity >= 2 ) {
-	 for( int ii= 0; ii < tokens.length; ii++ ) {
-	    System.out.println( "token=\""+ tokens[ii]+ "\"" );
+	 for( int ii= 0; ii < chunks.length; ii++ ) {
+	    System.out.println( "chunk=\""+ chunks[ii]+ "\"" );
 	 }
       } else {
 	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
       }
 
-      // TODO: add more code here
-      int currentToken= 0;
+      Vector<RegWithType> argVec= new Vector<RegWithType>();
+      int argNum= 1;
 
-      currentToken= 0; // TODO: make this meaningful
+      currentChunk= 0; 
 
+      // ............................................................
+      // begin parsing
+      currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
+      if ( !chunks[currentChunk].equals("define") ) {
+	 throw new Exception( "expected \"define\", found \""+ currentChunk+ 
+			      "\"" );
+      }
+      currentChunk++;
+
+      currentChunk= skipWhitespaceChunks( chunks, currentChunk );
+
+      String retTypeName= chunks[currentChunk];
+      retType= new TypeInteger( retTypeName );
+      currentChunk++;
+
+      currentChunk= skipWhitespaceChunks( chunks, currentChunk );
+
+      if ( !chunks[currentChunk].matches("\s*@") ) {
+	 throw new Exception( "expected \" @\", found \""+ currentChunk+ 
+			      "\"" );
+      }
+      currentChunk++;
+
+      currentChunk= skipWhitespaceChunks( chunks, currentChunk );
+
+      if ( !chunks[currentChunk].matches("\w*") ) {
+	 throw new Exception( "expected \"<ftn_name>\", found \""+ 
+			      currentChunk+ "\"" );
+      }
+      StringBuffer ftnNameBuffer= new StringBuffer( "@" );
+      ftnNameBuffer.append( chunks[currentChunk] );
+      name= ftnNameBuffer.toString();
+      currentChunk++;
+
+      currentChunk= skipWhitespaceChunks( chunks, currentChunk );
+
+      if ( !chunks[currentChunk].equals( "(" ) ) {
+	 throw new Exception( "expected \"(\", found \""+ 
+			      currentChunk+ "\"" );
+      }
+      currentChunk++;
+
+      while ( !chunks[currentChunk].equals( ")" ) ) {
+	 currentChunk= skipWhitespaceChunks( chunks, currentChunk );
+
+	 String argTypeName= chunks[currentChunk];
+	 String argName= "%"+ argNum;
+	 argNum++;
+	 argVec.add( new RegWithType( argName, 
+				      new TypeInteger(argTypeName) ) );
+	 currentChunk++;
+
+	 currentChunk= skipWhitespaceChunks( chunks, currentChunk );
+
+	 if (  chunks[currentChunk].matches( "\s*,\s*" ) ) {
+	    currentChunk++;
+	    continue; 
+	 } else if ( chunks[currentChunk].matches( "\s*)\s*" ) ) {
+	    break;
+	 } else {
+	    throw new Exception( "expected \",\" or \")\", found \""+ 
+				 currentChunk+ "\"" );
+	 }
+
+      }
+
+      // we can discard the rest of the chunks
+
+      // ............................................................
+      // store what we've parsed out
+      args= argVec.toArray();
+
+      // ............................................................
       // clean up and return
       return;
    }}
+
+   // ------------------------------------------------------------------------
+   // skipWhitespaceChunks()
+   // ------------------------------------------------------------------------
+   /**  helps parse() by finding the next non-whitespace chunk 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @param chunks - array of the chunks under examination
+    * @param idx - index of the chunk where testing for whitespace should begin
+    *
+    * @return - index of the next non-whitespace chunk
+    *
+    * @throws 
+    */
+   private int skipWhitespaceChunks( String[] chunks, int start )
+   {{
+      int ii= start;
+      while ( chunks[ii].matches("\\s*") ) {
+         ii++;
+      }
+      return ii;
+   }}
+
+
 
    // ------------------------------------------------------------------------
    // tokenize()
