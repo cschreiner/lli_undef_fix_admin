@@ -3,10 +3,12 @@
 SRCS= \
 	FileToFtnParser.java \
 	FtnParts.java \
+	IRToken.java \
+	IRTokenType.java \
 	IRTxtLib.java \
 	RegWithType.java \
 	SeededRandom.java \
-	TypeInteger.java 
+	TypeInteger.java
 
 SRCS_W_PKG=$(addprefix IRTxtLib/, $(SRCS) ) 
 
