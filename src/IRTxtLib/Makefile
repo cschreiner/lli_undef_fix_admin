@@ -1,7 +1,10 @@
 # Makefile for the IRTxtLib (LLVM IR Textual Format Processing Library) project.
 
 SRCS= \
-	FileToFtnParser.java
+	FileToFtnParser.java \
+	FtnParts.java \
+	RegWithType.java \
+	TypeInteger.java 
 
 SRCS_W_PKG=$(addprefix IRTxtLib/, $(SRCS) ) 
 
