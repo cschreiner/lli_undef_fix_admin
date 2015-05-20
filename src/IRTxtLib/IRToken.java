@@ -99,7 +99,7 @@ public class IRToken
       //System.err.println ( "Internal error: "+
       //   "unexpected call to default constructor for IRToken." );
       // System.exit(-127);
-      type= IRTokenType.TOK_UNKNOWN;
+      type= IRTokenType.UNKNOWN;
       txt= "";
    }}
 
