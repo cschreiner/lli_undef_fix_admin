@@ -43,7 +43,7 @@ package IRTxtLib;
 //import java.awt.Color.*;
 //import java.awt.geom.*;
 
-import generate_llvm_ir.*;
+import IRTxtLib.*;
 
 // ****************************************************************************
 // File's primary class: RegWithType

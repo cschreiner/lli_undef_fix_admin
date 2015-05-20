@@ -43,6 +43,7 @@ import java.util.*;
 //import java.awt.Color.*;
 //import java.awt.geom.*;
 
+import IRTxtLib.*;
 
 // ****************************************************************************
 // File's primary class: TypeInteger
