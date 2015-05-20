@@ -3,7 +3,7 @@
 SRCS= \
 	FileToFtnParser.java
 
-SRCS_W_PKG=$(addprefix generate_llvm_ir/, $(SRCS) ) 
+SRCS_W_PKG=$(addprefix IRTxtLib/, $(SRCS) ) 
 
 OBJS=$(subst .java,.class, $(SRCS) )
 
