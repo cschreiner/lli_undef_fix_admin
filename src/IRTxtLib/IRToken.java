@@ -38,6 +38,7 @@ package IRTxtLib;
 
 //import java.util.*;
 
+import IRTxtLib.*;
 
 // ****************************************************************************
 // File's primary class: IRToken
@@ -61,31 +62,13 @@ public class IRToken
     * class variables
     * =========================================================================
     */
-   /** any valid token constant i must make TOK_MIN <= i true */
-   public static final int TOK_MIN= 214303595;
-   /** it is not yet known what this token is */
-   public static final int TOK_UNKNOWN= TOK_MIN+ 0;
-   /* string literals, delimited by "s at the ends */
-   public static final int TOK_STRING= TOK_MIN+ 1;
-   /** register names, like %33 and %addr */
-   public static final int TOK_REG= TOK_MIN+ 2;
-   public static final int TOK_ADDR= TOK_MIN+ 3;
-   /** numeric literals, like 5 and -327 */
-   public static final int TOK_NUM= TOK_MIN+ 4;
-   /** punctuation is things like (, ), commas, and such. */
-   public static final int TOK_PUNCT= TOK_MIN+ 5;
-   /** all sequences of whitespace */
-   public static final int TOK_SPACE= TOK_MIN+ 6;
-   /** all comments */
-   public static final int TOK_COMMENT= TOK_MIN+ 7;
-   /** any valid token constant i must make i < TOK_MAX true */
-   public static final int TOK_MAX= TOK_MIN+ 8;
 
    /* =========================================================================
     * instance variables
     * =========================================================================
     */
-   int type;
+   public IRTokenType type;
+   public String txt;
 
    /* =========================================================================
     * constructors
@@ -111,11 +94,13 @@ public class IRToken
     *
     * @throws
     */
-   private IRToken()
+   public IRToken()
    {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for IRToken." );
-      System.exit(-127);
+      //System.err.println ( "Internal error: "+
+      //   "unexpected call to default constructor for IRToken." );
+      // System.exit(-127);
+      type= IRTokenType.TOK_UNKNOWN;
+      txt= "";
    }}
 
 
