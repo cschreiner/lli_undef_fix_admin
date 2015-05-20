@@ -46,136 +46,34 @@ package IRTxtLib;
 // ****************************************************************************
 // File's primary class: IRTokenType
 // ****************************************************************************
-/** 
+/** enumeration defining different types of tokens
  * <ul>
  * <li> Description: 
  *
  * <li> Algorithm: 
  * </ul>
  */
-public class IRTokenType 
-{
-
-/* ############################################################################
- * primary class' direct contents
- * ############################################################################
- */
-   
-   /* =========================================================================
-    * class variables
-    * =========================================================================
-    */
-
-   /* =========================================================================
-    * instance variables
-    * =========================================================================
-    */
-
-
-   /* =========================================================================
-    * constructors
-    * =========================================================================
-    */
-
-   // -------------------------------------------------------------------------
-   // IRTokenType()
-   // -------------------------------------------------------------------------
-   /** default constructor
-    *
-    * <ul>
-    * <li> Detailed Description: 
-    *
-    * <li> Algorithm: 
-    *
-    * <li> Reentrancy: unknown
-    *
-    * <li> No inputs.
-    * </ul>
-    * 
-    * @return - n/a (it's a constructor!)
-    *
-    * @throws
-    */
-   private IRTokenType()
-   {{
-      System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for IRTokenType." );
-      System.exit(-127);
-   }}
-
-
-   /* =========================================================================
-    * methods
-    * =========================================================================
-    */
-
-
-/* ############################################################################
- * trivially simple subclasses
- * ############################################################################
- */
-
-/* ****************************************************************************
- * end of primary class
- * ****************************************************************************
- */
-} // end class IRTokenType
-
-
-/* ****************************************************************************
- * templates 
- * ****************************************************************************
- */
-
-/* template is 22 lines long */
-// ############################################################################
-// class_name()
-// ############################################################################
-/**  
- * 
- * <ul>
- * 
- * <li> Detailed Description: 
- * 
- * <li> Algorithm: 
- * </ul>
- * 
- */
-//private class class_name
-//{
-//   /* variables */
-//
-//   /* constructors */
-//   class_name() { }
-//
-//   /* methods */
-//} // end nestedclass class_name
-
-
-   /* template is 22 lines long */
-   /* Note: change the initial dots to stars for public functions */
-   // ------------------------------------------------------------------------
-   // fname()
-   // ------------------------------------------------------------------------
-   /**  
-    * 
-    * <ul>
-    * <li> Detailed Description: 
-    *
-    * <li> Algorithm: 
-    *
-    * <li> Reentrancy: unknown
-    *
-    * <li> No inputs.
-    * </ul>
-    * 
-    * @return - 
-    *
-    * @throws 
-    */
-   //private type fname()
-   //{{
-   //}}
+public enum IRTokenType {
+   /** any valid token constant i must make TOK_MIN <= i true */
+   TOK_MIN, 
+   /** it is not yet known what this token is */
+   TOK_UNKNOWN, 
+   /** string literals, delimited by "s at the ends */
+   TOK_STRING, 
+   /** register names, like %33 and %sub */
+   TOK_REG, 
+   /** address names, like @ftn1 and @MAX_LENGTH */
+   TO_ADDR, 
+   /** numeric literals, like 5 and -327 */
+   TOK_NUM, 
+   /** punctuation is things like (, ), commas, and such. */
+   TOK_PUNCT, 
+   /** all sequences of whitespace */
+   TOK_SPACE, 
+   /** all comments */
+   TOK_COMMENT, 
+   /** any valid token constant i must make i < TOK_MAX true */
+   TOK_MAX };
 
 
 
