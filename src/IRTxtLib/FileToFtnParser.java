@@ -181,11 +181,13 @@ public class FileToFtnParser
 	       }
 	       if ( isFtnHeader(line) ) { 
 		  ftnTxt.append( line );
+		  ftnTxt.append( "\n" );
 		  break; 
 	       }
 	    }
 	 } else {
 	    ftnTxt.append( lastLineRead );
+	    ftnTxt.append( "\n" );
 	 }
 
 	 while( true ) {
@@ -197,6 +199,7 @@ public class FileToFtnParser
 	    }
 	    if ( isFtnHeader(line) )  { break; }
 	    ftnTxt.append( line );
+	    ftnTxt.append( "\n" );
 	 }
 	 lastLineRead= line;
       } catch (IOException ex)  {
