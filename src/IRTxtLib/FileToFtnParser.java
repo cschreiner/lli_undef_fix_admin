@@ -263,7 +263,7 @@ public class FileToFtnParser
       try {
 	 reader.close();
       } catch ( IOException ex ) {
-	 System.err.print( IRTxtLib+ 
+	 System.err.print( IRTxtLib.programName+ 
 			   ": can't close LLVM IR file after reading, \n"+
 			   "\t"+ "file=\""+ filename+ "\", \n"+
 			   "\t"+ ex.getMessage() );
