@@ -29,7 +29,7 @@
    *   package
    * **************************************************************************
    */
-package <$package_name>;
+package IRTxtLib;
 
 /* ****************************************************************************
  *   imports
@@ -71,6 +71,23 @@ public class FtnParts
     * =========================================================================
     */
 
+   /** holds the function's return type */
+   public TypeInteger retType;
+
+   /** holds data about each argument to the function */
+   public RegWithType args[];
+
+   /** holds the name of the function */
+   public String name;
+
+   /** holds the whole function as a single string, including any known
+    * comments.
+    */
+   public String ftnSt; 
+
+   // TODO: add fields to hold statements.  For example:
+   // String statements[];
+
 
    /* =========================================================================
     * constructors
@@ -101,6 +118,31 @@ public class FtnParts
       System.err.println ( "Internal error: "+
 	    "unexpected call to default constructor for FtnParts." );
       System.exit(-127);
+   }}
+
+   // ------------------------------------------------------------------------
+   // FtnParts()
+   // ------------------------------------------------------------------------
+   /** commonly used constructor 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param ftnSt - the whole function, stored as a single string
+    * 
+    * @return - n/a (it's a constructor!)
+    *
+    * @throws 
+    */
+   public FtnParts(String ftnSt )
+   {{
+      this.ftnSt= ftnSt;
    }}
 
 
