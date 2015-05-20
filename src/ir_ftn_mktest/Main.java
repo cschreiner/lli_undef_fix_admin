@@ -129,26 +129,24 @@ public class Main
     *
     * </ul>
     *
-    * @param argc - the number of command-line arguments
-    *
     * @param argv - an array of strings with the command line arguments
     * 
     * @return - 
     *
     * @throws 
     */
-   public static void main( int argc, String argv[] )
+   public static void main( String args[] )
    {{
       final int EXPECTED_NUM_ARGS= 2;
 
-      if ( argc != EXPECTED_NUM_ARGS ) {
+      if ( args.length != EXPECTED_NUM_ARGS ) {
          System.err.print( "expected "+ EXPECTED_NUM_ARGS+ 
-			   " arguments, but found "+ argc+ ".\n" );
+			   " arguments, but found "+ args.length+ ".\n" );
 	 System.exit( -1 );
       }
 
-      arg_verbosity= Integer.parseInt( argv[0] );
-      arg_ir_filename= argv[1];
+      arg_verbosity= Integer.parseInt( args[0] );
+      arg_ir_filename= args[1];
 
       /* ..............................................................
        */
@@ -172,7 +170,7 @@ public class Main
     * 
     * @throws 
     */
-   private void startWork()
+   private static void startWork()
    {{
       String ftnTxt= null;
       FileToFtnParser parser= new FileToFtnParser( arg_ir_filename );
