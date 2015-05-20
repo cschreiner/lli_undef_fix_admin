@@ -146,16 +146,18 @@ sub parseFtn
    my $ftnTxt= "";
    my $line= undef;
 
-   $ftnTxt.= $this->{'lastLineRead'};
-
-   while ( $line= $this->{'fh'}->getline() )  {
-      if ( $line =~ m/^ \s* define \s+/x )  {
-         last;
+   if ( $this->{'lastLineRead'} eq "" )  {
+      while ( $line= $this->{'fh'}->getline() )  {
+	 if ( $line =~ m/^ \s* define \s+/x )  {
+	    last;
+	 }
       }
-   }
-   if ( $this->{'fh'}->eof )  {
-      $this->close();
-      return $ftnTxt;
+      if ( $this->{'fh'}->eof )  {
+	 $this->close();
+	 return $ftnTxt;
+      }
+   } else {
+      $ftnTxt.= $this->{'lastLineRead'};
    }
 
    $ftnTxt.= $line;
