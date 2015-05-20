@@ -176,10 +176,12 @@ public class FtnParts
    {{
       String chunks[]= ftnSt.split( "\\b" );
 
-      if ( IRTxtLib.arg_verbosity > 2 ) {
+      if ( IRTxtLib.arg_verbosity >= 2 ) {
 	 for( int ii= 0; ii < chunks.length; ii++ ) {
 	    System.out.println( "chunk=\""+ chunks[ii]+ "\"" );
 	 }
+      } else {
+	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
       }
 
       // TODO: add more code here
