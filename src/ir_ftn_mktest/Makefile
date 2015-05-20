@@ -7,14 +7,14 @@ SRCS_W_PKG=$(addprefix ir_ftn_mktest/, $(SRCS) )
 
 OBJS=$(subst .java,.class, $(SRCS) )
 
-default: .build_complete
+default: prereqs .build_complete
 
-.build_complete: ../IRTxtLib/.build_complete $(SRCS)
+prereqs:
+	cd ../IRTxtLib; make 
+
+.build_complete: prereqs $(SRCS)
 	cd ..; javac $(SRCS_W_PKG)
 	@touch $@
-
-../IRTxtLib/.build_complete:
-	cd ../IRTxtLib; make
 
 clean:
 	cd ../IRTxtLib; make clean
