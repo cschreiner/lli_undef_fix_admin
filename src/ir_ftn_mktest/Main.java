@@ -157,6 +157,7 @@ public class Main
 	 set up globals
        */
       IRTxtLib.programName= PROGRAM_NAME;
+      IRTxtLib.arg_verbosity= arg_verbosity;
 
       /* ..............................................................
        */

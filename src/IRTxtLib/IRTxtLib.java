@@ -68,6 +68,8 @@ public class IRTxtLib
 
    public static String programName= "";
 
+   public static int arg_verbosity= 0;
+
 
    /* =========================================================================
     * instance variables
