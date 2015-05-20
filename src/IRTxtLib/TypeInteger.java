@@ -145,7 +145,7 @@ public class TypeInteger
    public TypeInteger( int targetWidth )
    {{
       if ( (targetWidth < MIN_WIDTH) || (targetWidth > MAX_WIDTH) )  {
-	 throw new Error( Main.PROGRAM_NAME+ 
+	 throw new Error( IRTxtLib.programName+ 
 	       ": internal error 2015apr24_122941, bitWidth out of range. \n" );
       }
       bitWidth= targetWidth;
@@ -363,7 +363,7 @@ public class TypeInteger
       if ( this.bitWidth == that.bitWidth ) { return 0; }
       if ( this.bitWidth < that.bitWidth ) { return -1; }
       if ( this.bitWidth > that.bitWidth ) { return +1; }
-      throw new Error( Main.PROGRAM_NAME+ 
+      throw new Error( IRTxtLib.programName+ 
 		       ": internal error 2015apr24_125802. \n" );
    }}
 
