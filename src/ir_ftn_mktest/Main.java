@@ -1,28 +1,27 @@
-/*.. 
-   * Project Name: lli_undef_fix
-   *
-   * File Name: Main.java
-   *
-   * File Description: class Main
-   *	(list here the package-scope classes in this file)
-   *
-   * lli_undef_fix was written by Christian A. Schreiner at University of
-   * Utah.  Copyright (C) 2015-2015 by University of Utah.  All rights
-   * reserved.  You may use, examine, or modify this file only in accordance
-   * with the GNU Public License, or, alternately, by special written
-   * arrangement with the author.  This file comes with no warranties.  If
-   * you use it and something breaks, you are solely responsible for
-   * cleaning up afterwards.
-   *
-   */
+/* 
+ * Program Name: lli_undef_fix
+ *
+ * File Name: Main.java
+ *
+ * File Description: class Main
+ *	(list here the package-scope classes in this file)
+ *
+ * lli_undef_fix was written by Christian A. Schreiner at University of
+ * Utah.  Copyright (C) 2015-2015 by University of Utah.  All rights
+ * reserved.  You may use, examine, or modify this file only in accordance
+ * with the GNU Public License, or, alternately, by special written
+ * arrangement with the author.  This file comes with no warranties.  If
+ * you use it and something breaks, you are solely responsible for
+ * cleaning up afterwards.
+ */
 
 /*.. Configuration Management Information:
    * 
-   * $Source: /home/cas/templates/auto_uut/RCS/cas_tmpl.java,v $
+   * $Source: /net/home/cas/templates/auto_uut/RCS/cas_tmpl.java,v $
    * $File: $
    * $Author: cas $
-   * $Date: 2014/04/04 10:25:56 $
-   * $Revision: 1.3 $
+   * $Date: 2015/05/20 07:15:19 $
+   * $Revision: 1.4 $
    * 
    */
 
@@ -30,12 +29,15 @@
    *   package
    * **************************************************************************
    */
-package <$package_name>;
+package ir_ftn_mktest;
 
 /* ****************************************************************************
-   *   imports
-   * **************************************************************************
-   */
+ *   imports
+ * ****************************************************************************
+ */
+
+import IRTxtLib.*;
+
 //import java.util.*;
 //import java.applet.Applet;
 //import java.awt.*;
@@ -47,56 +49,59 @@ package <$package_name>;
 // ****************************************************************************
 // File's primary class: Main
 // ****************************************************************************
-/*** 
-   * <ul>
-   * <li> Description: 
-   *
-   * <li> Algorithm: 
-   * </ul>
-   */
+/** provides a main function for the program
+ * <ul>
+ * <li> Description: 
+ *
+ * <li> Algorithm: 
+ * </ul>
+ */
 public class Main 
 {
 
 /* ############################################################################
-   * primary class' direct contents
-   * ##########################################################################
-   */
+ * primary class' direct contents
+ * ############################################################################
+ */
+   
+   /* =========================================================================
+    * class variables
+    * =========================================================================
+    */
+   static String arg_ir_filename= "";
+   static int arg_verbosity= 0;
 
    /* =========================================================================
-      * class variables
-      * =======================================================================
-      */
-
-   /* =========================================================================
-      * instance variables
-      * =======================================================================
-      */
+    * instance variables
+    * =========================================================================
+    */
 
 
    /* =========================================================================
-      * constructors
-      * =======================================================================
-      */
+    * constructors
+    * =========================================================================
+    */
+
 
    // -------------------------------------------------------------------------
    // Main()
    // -------------------------------------------------------------------------
-   /*** default constructor
-      *
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - n/a (it's a constructor!)
-      *
-      * @throws
-      */
+   /** default constructor
+    *
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - n/a (it's a constructor!)
+    *
+    * @throws
+    */
    private Main()
    {{
       System.err.println ( "Internal error: "+
@@ -106,42 +111,120 @@ public class Main
 
 
    /* =========================================================================
-      * methods
-      * =======================================================================
-      */
+    * methods
+    * =========================================================================
+    */
+
+   // ------------------------------------------------------------------------
+   // main()
+   // ------------------------------------------------------------------------
+   /**  starts the program
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param argc - the number of command-line arguments
+    *
+    * @param argv - an array of strings with the command line arguments
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   public static void main( int argc, String argv[] )
+   {{
+      final int EXPECTED_NUM_ARGS= 2;
+
+      if ( argc != EXPECTED_NUM_ARGS ) {
+         System.err.print( "expected "+ EXPECTED_NUM_ARGS+ 
+			   " arguments, but found "+ argc+ ".\n" );
+	 System.exit( -1 );
+      }
+
+      arg_verbosity= Integer.parseInt( argv[0] );
+      arg_ir_filename= argv[1];
+
+      /* ..............................................................
+       */
+      startWork();
+   }}
+
+   // ------------------------------------------------------------------------
+   // startWork()
+   // ------------------------------------------------------------------------
+   /**  starts the main work of the program
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @throws 
+    */
+   private void startWork()
+   {{
+      String ftnTxt= null;
+      FileToFtnParser parser= new FileToFtnParser( arg_ir_filename );
+      String hashes39= "#######################################";
+
+      while( true )  {
+	 ftnTxt= parser.parseFtn();
+	 if ( ftnTxt == null ) { break; }
+	 if ( arg_verbosity > 0 )  {
+	    System.out.println ( hashes39+ hashes39 );
+	    System.out.println ( "found function: <<EOF " );
+	    System.out.println ( ftnTxt );
+	    System.out.println ( "EOF" );
+	 }
+      }
+
+      // TODO: add more text here
+
+   }}
 
 
 /* ############################################################################
-   * trivially simple subclasses
-   * ##########################################################################
-   */
+ * trivially simple subclasses
+ * ############################################################################
+ */
 
 /* ****************************************************************************
-   * end of primary class
-   * **************************************************************************
-   */
+ * end of primary class
+ * ****************************************************************************
+ */
 } // end class Main
 
 
 /* ****************************************************************************
-   * templates 
-   * **************************************************************************
-   */
+ * templates 
+ * ****************************************************************************
+ */
 
 /* template is 22 lines long */
 // ############################################################################
 // class_name()
 // ############################################################################
-/***  
-   * 
-   * <ul>
-   * 
-   * <li> Detailed Description: 
-   * 
-   * <li> Algorithm: 
-   * </ul>
-   * 
-   */
+/**  
+ * 
+ * <ul>
+ * 
+ * <li> Detailed Description: 
+ * 
+ * <li> Algorithm: 
+ * </ul>
+ * 
+ */
 //private class class_name
 //{
 //   /* variables */
@@ -158,22 +241,22 @@ public class Main
    // ------------------------------------------------------------------------
    // fname()
    // ------------------------------------------------------------------------
-   /***  
-      * 
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - 
-      *
-      * @throws 
-      */
+   /**  
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
    //private type fname()
    //{{
    //}}
@@ -181,7 +264,7 @@ public class Main
 
 
 /* ****************************************************************************
-   *   end of file
-   * **************************************************************************
-   */
+ *   end of file
+ * ****************************************************************************
+ */
 
