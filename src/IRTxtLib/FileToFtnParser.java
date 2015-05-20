@@ -100,7 +100,7 @@ public class FileToFtnParser
     */
    private FileToFtnParser()
    {{
-      System.err.println ( "Internal error: "+
+      System.err.println ( IRTxtLib.programName+ ": internal error: "+
 	    "unexpected call to default constructor for FileToFtnParser." );
       System.exit(-127);
    }}
@@ -132,7 +132,8 @@ public class FileToFtnParser
       try {
 	 reader= new LineNumberReader( new FileReader(filename) );
       } catch (IOException ex) {
-         System.err.print( "Can not open IR file for reading, \n"+ 
+         System.err.print( IRTxtLib.programName+ 
+			   ": can not open IR file for reading, \n"+ 
 			   "\t"+ "file=\""+ filename+ "\", \n"+
 			   "\t"+ ex.getMessage()+ "\n" );
          System.exit( -1 );
@@ -203,9 +204,10 @@ public class FileToFtnParser
 	 }
 	 lastLineRead= line;
       } catch (IOException ex)  {
-	 System.err.print( "Something went wrong when reading from the IR file, \n"+
-			   "\t"+ "file=\""+ filename+ "\", \n"+
-			   "\t"+ ex.getMessage()+ ".\n" );
+	 System.err.print( IRTxtLib.programName+ 
+	       ": something went wrong when reading from the IR file, \n"+
+	       "\t"+ "file=\""+ filename+ "\", \n"+
+	       "\t"+ ex.getMessage()+ ".\n" );
       }
 
       return ftnTxt.toString();
@@ -261,7 +263,8 @@ public class FileToFtnParser
       try {
 	 reader.close();
       } catch ( IOException ex ) {
-	 System.err.print( "Can't close LLVM IR file after reading, \n"+
+	 System.err.print( IRTxtLib+ 
+			   ": can't close LLVM IR file after reading, \n"+
 			   "\t"+ "file=\""+ filename+ "\", \n"+
 			   "\t"+ ex.getMessage() );
 	 System.exit( -1 );
