@@ -36,12 +36,9 @@ package IRTxtLib;
    *   imports
    * **************************************************************************
    */
+import java.io.*;
+
 //import java.util.*;
-//import java.applet.Applet;
-//import java.awt.*;
-//import java.awt.event.*;
-//import java.awt.Color.*;
-//import java.awt.geom.*;
 
 
 // ****************************************************************************
@@ -137,7 +134,7 @@ public class FileToFtnParser
       } catch (IOException ex) {
          System.err.print( "Can not open IR file for reading, \n"+ 
 			   "\t"+ "file=\""+ filename+ "\", \n"+
-			   "\t"+ ex.message()+ "\n" );
+			   "\t"+ ex.getMessage()+ "\n" );
          System.exit( -1 );
       }
    }}
@@ -173,32 +170,40 @@ public class FileToFtnParser
       StringBuffer ftnTxt= new StringBuffer("");
       String line= "";
 
-      if ( lastLineRead == null ) {
-	 while ( line= reader.readLine() ) {
-            if( line == null ) { 
-	       // we've reached EOF
-	       close();
-	       return ftnTxt.toString();
+      try {
+	 if ( lastLineRead == null ) {
+	    while ( true ) {
+	       line= reader.readLine();
+	       if( line == null ) { 
+		  // we've reached EOF
+		  close();
+		  return ftnTxt.toString();
+	       }
+	       if ( isFtnHeader(line) ) { 
+		  ftnTxt.append( line );
+		  break; 
+	       }
 	    }
-	    if ( isFtnHeader(line) ) { 
-	       ftnTxt.append( line );
-	       break; 
-	    }
+	 } else {
+	    ftnTxt.append( lastLineRead );
 	 }
-      } else {
-	 ftnTxt.append( lastLineRead );
-      }
 
-      while( line= reader.readLine() ) {
-	 if ( line == null ) {
+	 while( true ) {
+	    line= reader.readLine();
+	    if ( line == null ) {
 	       // we've reached EOF
 	       close();
 	       return ftnTxt.toString();
+	    }
+	    if ( isFtnHeader(line) )  { break; }
+	    ftnTxt.append( line );
 	 }
-	 if ( isFtnHeader(line) )  { break; }
-	 ftnTxt.append( line );
+	 lastLineRead= line;
+      } catch (IOException ex)  {
+	 System.err.print( "Something went wrong when reading from the IR file, \n"+
+			   "\t"+ "file=\""+ filename+ "\", \n"+
+			   "\t"+ ex.getMessage()+ ".\n" );
       }
-      lastLineRead= line;
 
       return ftnTxt.toString();
    }}
@@ -255,7 +260,7 @@ public class FileToFtnParser
       } catch ( IOException ex ) {
 	 System.err.print( "Can't close LLVM IR file after reading, \n"+
 			   "\t"+ "file=\""+ filename+ "\", \n"+
-			   "\t"+ ex.message() );
+			   "\t"+ ex.getMessage() );
 	 System.exit( -1 );
       }
       isClosed= true;
