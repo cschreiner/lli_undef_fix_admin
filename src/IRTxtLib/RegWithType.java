@@ -75,6 +75,9 @@ public class RegWithType
    public String regName;
    public TypeInteger type;
 
+   /* optional metadata about the register */
+   public boolean isUsed;
+
    /* =========================================================================
       * constructors
       * =======================================================================
@@ -140,6 +143,9 @@ public class RegWithType
          throw new Error( IRTxtLib.programName+ 
 	       ": internal warning 2015apr09_170526 (null TypeInteger)\n" );
       }
+
+      /* we assume that variables are used until we establish otherwise */
+      isUsed= true;
    }}
 
 
