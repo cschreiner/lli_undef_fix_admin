@@ -30,7 +30,7 @@
    *   package
    * **************************************************************************
    */
-package <$package_name>;
+package IRTxtLib;
 
 /* ****************************************************************************
    *   imports
@@ -47,13 +47,14 @@ package <$package_name>;
 // ****************************************************************************
 // File's primary class: FileToFtnParser
 // ****************************************************************************
-/*** 
-   * <ul>
-   * <li> Description: 
-   *
-   * <li> Algorithm: 
-   * </ul>
-   */
+/** parses an IR file into individual functions
+ *
+ * <ul>
+ * <li> Description: 
+ *
+ * <li> Algorithm: 
+ * </ul>
+ */
 public class FileToFtnParser 
 {
 
@@ -63,40 +64,43 @@ public class FileToFtnParser
    */
 
    /* =========================================================================
-      * class variables
-      * =======================================================================
-      */
+     * class variables
+     * ========================================================================
+     */
 
    /* =========================================================================
-      * instance variables
-      * =======================================================================
-      */
-
+    * instance variables
+    * =========================================================================
+    */
+   String filename;
+   String lastLineRead;
+   boolean isClosed;
+   LineNumberReader reader;
 
    /* =========================================================================
-      * constructors
-      * =======================================================================
-      */
+   * constructors
+   * ==========================================================================
+   */
 
    // -------------------------------------------------------------------------
    // FileToFtnParser()
    // -------------------------------------------------------------------------
-   /*** default constructor
-      *
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - n/a (it's a constructor!)
-      *
-      * @throws
-      */
+   /** default constructor
+    *
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - n/a (it's a constructor!)
+    *
+    * @throws
+    */
    private FileToFtnParser()
    {{
       System.err.println ( "Internal error: "+
@@ -104,44 +108,192 @@ public class FileToFtnParser
       System.exit(-127);
    }}
 
+   // ------------------------------------------------------------------------
+   // FileToFtnParser()
+   // ------------------------------------------------------------------------
+   /** commonly used constructor 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    * </ul>
+    *
+    * @param filename - the name of the file to read and parse
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   public FileToFtnParser( String filename )
+   {{
+      this.filename= filename;
+      lastLineRead= null;
+      isClosed= false;
+      try {
+	 reader= new LineNumberReader( new FileReader(filename) );
+      } catch (IOException ex) {
+         System.err.print( "Can not open IR file for reading, \n"+ 
+			   "\t"+ "file=\""+ filename+ "\", \n"+
+			   "\t"+ ex.message()+ "\n" );
+         System.exit( -1 );
+      }
+   }}
 
    /* =========================================================================
-      * methods
-      * =======================================================================
-      */
+    * methods
+    * =========================================================================
+    */
+
+   // ------------------------------------------------------------------------
+   // parseFtn()
+   // ------------------------------------------------------------------------
+   /**  parses one function's text out of the file's contents
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - the function's text, or null if EOF has been reached
+    *
+    * @throws 
+    */
+   public String parseFtn()
+   {{
+      if ( isClosed ) { return null; }
+
+      StringBuffer ftnTxt= new StringBuffer("");
+      String line= "";
+
+      if ( lastLineRead == null ) {
+	 while ( line= reader.readLine() ) {
+            if( line == null ) { 
+	       // we've reached EOF
+	       close();
+	       return ftnTxt.toString();
+	    }
+	    if ( isFtnHeader(line) ) { 
+	       ftnTxt.append( line );
+	       break; 
+	    }
+	 }
+      } else {
+	 ftnTxt.append( lastLineRead );
+      }
+
+      while( line= reader.readLine() ) {
+	 if ( line == null ) {
+	       // we've reached EOF
+	       close();
+	       return ftnTxt.toString();
+	 }
+	 if ( isFtnHeader(line) )  { break; }
+	 ftnTxt.append( line );
+      }
+      lastLineRead= line;
+
+      return ftnTxt.toString();
+   }}
+
+
+   // ------------------------------------------------------------------------
+   // isFtnHeader()
+   // ------------------------------------------------------------------------
+   /**  returns true if the indicated text appears to start a function
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    *
+    * @param txt - one line of the 
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   private boolean isFtnHeader( String st )
+   {{
+      return st.matches( "\\s*"+ "define"+ "\\s+.*" );
+   }}
+
+   // ------------------------------------------------------------------------
+   // close()
+   // ------------------------------------------------------------------------
+   /**  closes the file this instance is reading from
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void close()
+   {{
+      try {
+	 reader.close();
+      } catch ( IOException ex ) {
+	 System.err.print( "Can't close LLVM IR file after reading, \n"+
+			   "\t"+ "file=\""+ filename+ "\", \n"+
+			   "\t"+ ex.message() );
+	 System.exit( -1 );
+      }
+      isClosed= true;
+      return;
+   }}
 
 
 /* ############################################################################
-   * trivially simple subclasses
-   * ##########################################################################
-   */
+ * trivially simple subclasses
+ * ############################################################################
+ */
 
 /* ****************************************************************************
-   * end of primary class
-   * **************************************************************************
-   */
+ * end of primary class
+ * ****************************************************************************
+ */
 } // end class FileToFtnParser
 
 
 /* ****************************************************************************
-   * templates 
-   * **************************************************************************
-   */
+ * templates 
+ * ****************************************************************************
+ */
 
 /* template is 22 lines long */
 // ############################################################################
 // class_name()
 // ############################################################################
-/***  
-   * 
-   * <ul>
-   * 
-   * <li> Detailed Description: 
-   * 
-   * <li> Algorithm: 
-   * </ul>
-   * 
-   */
+/**  
+ * 
+ * <ul>
+ * 
+ * <li> Detailed Description: 
+ * 
+ * <li> Algorithm: 
+ * </ul>
+ * 
+ */
 //private class class_name
 //{
 //   /* variables */
@@ -158,30 +310,28 @@ public class FileToFtnParser
    // ------------------------------------------------------------------------
    // fname()
    // ------------------------------------------------------------------------
-   /***  
-      * 
-      * <ul>
-      * <li> Detailed Description: 
-      *
-      * <li> Algorithm: 
-      *
-      * <li> Reentrancy: unknown
-      *
-      * <li> No inputs.
-      * </ul>
-      * 
-      * @return - 
-      *
-      * @throws 
-      */
+   /**  
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
    //private type fname()
    //{{
    //}}
 
-
-
 /* ****************************************************************************
-   *   end of file
-   * **************************************************************************
-   */
+ *   end of file
+ * ****************************************************************************
+ */
 
