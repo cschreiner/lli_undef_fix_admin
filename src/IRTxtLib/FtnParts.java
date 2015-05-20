@@ -174,6 +174,16 @@ public class FtnParts
     */
    private void parse()
    {{
+      String chunks[]= ftnSt.split( "\\b" );
+
+      if ( IRTxtLib.arg_verbosity > 2 ) {
+	 for( int ii= 0; ii < chunks.length; ii++ ) {
+	    System.out.println( "chunk=\""+ chunks[ii]+ "\"" );
+	 }
+      }
+
+      // TODO: add more code here
+      return;
    }}
 
 
