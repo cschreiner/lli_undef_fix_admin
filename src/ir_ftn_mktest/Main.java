@@ -196,6 +196,9 @@ public class Main
 	    System.out.println ( ftnTxt );
 	    System.out.println ( "EOF" );
 	 }
+
+	 System.out.println ( "verbosity= "+ arg_verbosity+ "\n" );;
+	 FtnParts ftnParts= new FtnParts( ftnTxt );
       }
 
       // TODO: add more text here
