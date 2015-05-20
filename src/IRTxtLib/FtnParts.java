@@ -188,7 +188,7 @@ public class FtnParts
       // TODO: add more code here
       int currentToken= 0;
 
-      currentToken= 
+      currentToken= 0; // TODO: make this meaningful
 
 
       // clean up and return
@@ -230,14 +230,16 @@ public class FtnParts
 
       Vector<String> tokenPartVec= new Vector<String>();
       for( int ii= 0; ii < chunks.length; ii++ )  {
-         String tokenParts[]= chunks[ii].split(
+         String tokenParts[]= chunks[ii].split(" ");; // TODO: make this meaningful
       }
 
 
 
       int currentChunk= 0;
 
-      currentChunk= 
+      currentChunk= 0; // TODO: make this meaningful
+
+      return new String[]{ }; // TODO: make this meaningful
    }}
 
    // ------------------------------------------------------------------------
@@ -259,11 +261,11 @@ public class FtnParts
     *
     * @throws 
     */
-   private removeInitialToken()
+   private String removeInitialToken()
    {{
       final String TOKENS[]= { "(", ")", ",", "@", "%", "{", "}" };
 
-      
+      return ""; // TODO: make this meaningful 
    }}
 
 
