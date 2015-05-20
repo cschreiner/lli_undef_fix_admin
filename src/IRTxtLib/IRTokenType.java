@@ -55,25 +55,25 @@ package IRTxtLib;
  */
 public enum IRTokenType {
    /** any valid token constant i must make TOK_MIN <= i true */
-   TOK_MIN, 
+   MIN, 
    /** it is not yet known what this token is */
-   TOK_UNKNOWN, 
+   UNKNOWN, 
    /** string literals, delimited by "s at the ends */
-   TOK_STRING, 
+   STRING, 
    /** register names, like %33 and %sub */
-   TOK_REG, 
+   REG, 
    /** address names, like @ftn1 and @MAX_LENGTH */
    TO_ADDR, 
    /** numeric literals, like 5 and -327 */
-   TOK_NUM, 
+   NUM, 
    /** punctuation is things like (, ), commas, and such. */
-   TOK_PUNCT, 
+   PUNCT, 
    /** all sequences of whitespace */
-   TOK_SPACE, 
+   SPACE, 
    /** all comments */
-   TOK_COMMENT, 
-   /** any valid token constant i must make i < TOK_MAX true */
-   TOK_MAX };
+   COMMENT, 
+   /** any valid token constant i must make i < MAX true */
+   MAX };
 
 
 
