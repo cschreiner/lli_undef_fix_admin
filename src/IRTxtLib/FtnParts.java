@@ -35,13 +35,10 @@ package IRTxtLib;
  *   imports
  * ****************************************************************************
  */
-//import java.util.*;
-//import java.applet.Applet;
-//import java.awt.*;
-//import java.awt.event.*;
-//import java.awt.Color.*;
-//import java.awt.geom.*;
 
+import java.util.*;
+
+import IRTxtLib.*;
 
 // ****************************************************************************
 // File's primary class: FtnParts
@@ -143,6 +140,11 @@ public class FtnParts
    public FtnParts(String ftnSt )
    {{
       this.ftnSt= ftnSt;
+      retType= null;
+      args= null;
+      name= null;
+
+      parse();
    }}
 
 
@@ -150,6 +152,30 @@ public class FtnParts
     * methods
     * =========================================================================
     */
+
+   // ------------------------------------------------------------------------
+   // parse()
+   // ------------------------------------------------------------------------
+   /** parses the ftnSt field to be able to populate the other fields 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   private void parse()
+   {{
+   }}
+
 
 
 /* ############################################################################
