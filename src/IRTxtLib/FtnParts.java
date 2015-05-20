@@ -174,6 +174,50 @@ public class FtnParts
     */
    private void parse()
    {{
+      // TODO2: create a better tokenizer than this
+      String tokens[]= tokenize();
+
+      if ( IRTxtLib.arg_verbosity >= 2 ) {
+	 for( int ii= 0; ii < tokens.length; ii++ ) {
+	    System.out.println( "token=\""+ tokens[ii]+ "\"" );
+	 }
+      } else {
+	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
+      }
+
+      // TODO: add more code here
+      int currentToken= 0;
+
+      currentToken= 
+
+
+      // clean up and return
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // tokenize()
+   // ------------------------------------------------------------------------
+   /**  converts the function text into an array of tokens
+    * 
+    * TODO2: create a better tokenizer than this
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   private String[] tokenize()
+   {{
+      // TODO2: create a better tokenizer than this
       String chunks[]= ftnSt.split( "\\b" );
 
       if ( IRTxtLib.arg_verbosity >= 2 ) {
@@ -184,8 +228,42 @@ public class FtnParts
 	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
       }
 
-      // TODO: add more code here
-      return;
+      Vector<String> tokenPartVec= new Vector<String>();
+      for( int ii= 0; ii < chunks.length; ii++ )  {
+         String tokenParts[]= chunks[ii].split(
+      }
+
+
+
+      int currentChunk= 0;
+
+      currentChunk= 
+   }}
+
+   // ------------------------------------------------------------------------
+   // removeInitialToken()
+   // ------------------------------------------------------------------------
+   /**  
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   private removeInitialToken()
+   {{
+      final String TOKENS[]= { "(", ")", ",", "@", "%", "{", "}" };
+
+      
    }}
 
 
