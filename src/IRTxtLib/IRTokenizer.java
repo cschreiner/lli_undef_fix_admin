@@ -46,7 +46,7 @@ package IRTxtLib;
 // ****************************************************************************
 // File's primary class: IRTokenizer
 // ****************************************************************************
-/** 
+/** splits a string of IR text into tokens.
  * <ul>
  * <li> Description: 
  *
