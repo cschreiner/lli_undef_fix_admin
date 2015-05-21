@@ -1,9 +1,11 @@
 # Makefile for the IRTxtLib (LLVM IR Textual Format Processing Library) project.
 
 SRCS= \
+	CrudeFtnParts.java \
 	FileToFtnParser.java \
 	FtnParts.java \
 	IRToken.java \
+	IRTokenizer.java \
 	IRTokenType.java \
 	IRTxtLib.java \
 	RegWithType.java \
