@@ -55,31 +55,65 @@ package IRTxtLib;
  */
 public enum IRTokenType {
    /** any valid token constant i must make TOK_MIN <= i true */
-   MIN, 
+   MIN ("MIN"), 
    /** it is not yet known what this token is */
-   UNKNOWN, 
+   UNKNOWN ("UNKNOWN"), 
    /** string literals, delimited by "s at the ends */
-   STRING, 
+   STRING ("STRING"), 
    /** register names, like %33 and %sub */
-   REG, 
+   REG ("REG"), 
    /** address names, like @ftn1 and @MAX_LENGTH */
-   ADDR, 
+   ADDR ("ADDR"), 
    /** numeric literals, like 5 and -327 */
-   NUM, 
+   NUM ("NUM"), 
    /** punctuation is things like (, ), commas, and such. */
-   PUNCT, 
+   PUNCT ("PUNCT"), 
    /** all sequences of whitespace */
-   SPACE, 
+   SPACE ("SPACE"), 
    /** a keyword, such as 'define', 'mul', or 'nsw' */
-   WORD,
+   WORD ("WORD"),
    /** all comments */
-   COMMENT, 
+   COMMENT ("COMMENT"), 
    /** a comdat name, per LLVM IR LangRef, e.g. "$something" */
-   COMDAT_NAME,
+   COMDAT_NAME ("COMDAT_NAME"),
    /** an attribute group id, e.g. "#17" */
-   ATTR_GROUP_ID,
+   ATTR_GROUP_ID ("ATTR_GROUP_ID"),
    /** any valid token constant i must make i < MAX true */
-   MAX };
+   MAX ("MAX") };
+
+   private final String name;
+
+   // ------------------------------------------------------------------------
+   // IRTokenType
+   // ------------------------------------------------------------------------
+   IRTokenType( String name ) 
+   {
+      this.name= name;
+   }
+
+   // ------------------------------------------------------------------------
+   // toString()
+   // ------------------------------------------------------------------------
+   /**  returns a string representation of the token type
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - per description
+    *
+    * @throws 
+    */
+   public String toString()
+   {{
+      return name;
+   }}
 
 
 
