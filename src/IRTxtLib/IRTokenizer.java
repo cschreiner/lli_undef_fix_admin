@@ -162,8 +162,10 @@ public class IRTokenizer
    public IRToken[] lex()
    {{
       while ( state != IRTokenType.MAX ) {
+	 lexInStateUnknown();  // determines which state to go to next
 	 System.out.println ( "IRTokenizer.lex(): "+ 
-			      "starting main iteration, state="+ state );;
+			      "starting main iteration, going to state="+ 
+			      state );;
 	 System.out.println ( "\t"+ "idx="+ idx+ ", next chars=\""+ 
 			      txt.substring( idx, idx+20 )+ "\"" );;
 	 if ( idx >= txt.length() ) {
@@ -171,9 +173,6 @@ public class IRTokenizer
 		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "." );
 	 }
 	 switch ( state ) {
-	 case UNKNOWN:
-	    lexInStateUnknown();
-	    break;
 	 case STRING:
 	    lexInStateString();
 	    state= IRTokenType.UNKNOWN;
@@ -299,6 +298,8 @@ public class IRTokenizer
    private void lexInStateRegAddrEtc()
    {{
       for ( ; idx < txt.length(); idx++ ) {
+         System.out.println( "lexInStateRegAddrEtc(): char=\""+ 
+			     txt.charAt(idx)+ "\"" );;
 	 switch ( txt.charAt(idx) ) {
 	 case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
 	 case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
@@ -448,6 +449,8 @@ public class IRTokenizer
     * 
     * <ul>
     * <li> Detailed Description: 
+    *   Recall that keywords include type names, which can have digits (e.g. 
+    *	"I35").
     *
     * <li> Algorithm: 
     *
@@ -463,7 +466,7 @@ public class IRTokenizer
    private void lexInStateWord()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-	 if ( Character.isJavaIdentifierStart(txt.charAt(idx)) ) {
+	 if ( Character.isJavaIdentifierPart(txt.charAt(idx)) ) {
 	    tokenTxt.append( txt.charAt(idx) );
 	 } else {
 	    return;
@@ -560,25 +563,29 @@ public class IRTokenizer
     */
    private void lexInStateUnknown()
    {{
-      char ch= txt.charAt(idx );
+      char ch= txt.charAt(idx);
       switch ( ch ) {
       case '"':
 	 finishToken( IRTokenType.STRING );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case '%':
 	 finishToken( IRTokenType.REG );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case '@':
 	 finishToken( IRTokenType.ADDR );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case '-':
       case '0': case '1': case '2': case '3': case '4': 
       case '5': case '6': case '7': case '8': case '9': 
 	 finishToken( IRTokenType.NUM );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case ',': case '!': case '*': case '=': 
       case '(': case ')': 
@@ -587,10 +594,12 @@ public class IRTokenizer
       case '<': case '>': 
 	 finishToken( IRTokenType.PUNCT );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case ' ': case '\t': case '\r': case '\n':
 	 finishToken( IRTokenType.SPACE );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
       case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
@@ -598,18 +607,22 @@ public class IRTokenizer
       case 'v': case 'w': case 'x': case 'y': case 'z': 
 	 finishToken( IRTokenType.WORD );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case ';':
 	 finishToken( IRTokenType.COMMENT );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case '$':
 	 finishToken( IRTokenType.COMDAT_NAME );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       case '#':
 	 finishToken( IRTokenType.ATTR_GROUP_ID );
 	 tokenTxt.append(ch);
+	 idx++;
 	 return;
       default:
 	 //  intentionally nothing
