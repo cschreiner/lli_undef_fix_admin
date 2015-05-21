@@ -108,6 +108,35 @@ public class IRToken
     * =========================================================================
     */
 
+   // ------------------------------------------------------------------------
+   // toString()
+   // ------------------------------------------------------------------------
+   /**  converts this token to a String
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - a string representation
+    *
+    * @throws 
+    */
+   public String toString()
+   {{
+      StringBuffer retSt= new StringBuffer("");
+      retSt.append( "<token>" );
+      retSt.append( type.toString() );
+      retSt.append( ": \"" );
+      retSt.append( txt );
+      retSt.append( "\" </token>" );
+   }}
+
 
 /* ############################################################################
  * trivially simple subclasses
