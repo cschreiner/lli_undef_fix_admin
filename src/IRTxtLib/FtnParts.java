@@ -198,8 +198,8 @@ public class FtnParts
       // begin parsing
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      if ( !chunks[currentChunk].type == IRTokenType.WORD ) {
-      if ( !chunks[currentChunk].txt.equals("define") ) {
+      if ( chunks[currentChunk].type != IRTokenType.WORD ||
+	   !chunks[currentChunk].txt.equals("define") ) {
 	 throw new Error( "expected \"define\", found \""+ 
 			  chunks[currentChunk].txt+ "\"" );
       }
@@ -254,7 +254,7 @@ public class FtnParts
 	      chunks[currentChunk].txt.equals( "," ) ) {
 	    currentChunk++;
 	    continue; 
-	 } else if ( chunks[currentChunk].type= IRTokenType.PUNCT &&
+	 } else if ( chunks[currentChunk].type == IRTokenType.PUNCT &&
 		     chunks[currentChunk].txt.equals( ")" ) ) {
 	    break;
 	 } else {
@@ -278,12 +278,12 @@ public class FtnParts
       // ............................................................
       // figure out what registers are used and which aren't
       for ( int arg= 0; arg < args.length; arg++ )  {
-	 arg[arg].isUsed= false;
+	 args[arg].isUsed= false;
 	 System.out.println ( "checking for use of "+ args[arg].regName );
 	 for ( int cc= firstBodyChunk; cc < chunks.length; cc++ ) {
 	    if ( chunks[cc].type == IRTokenType.REG ) {
 	       if ( chunks[cc].txt.equals(args[arg].regName) ) {
-		  arg[arg].isUsed= true;
+		  args[arg].isUsed= true;
 		  break;
 	       }
 	    }
