@@ -191,7 +191,7 @@ public class FtnParts
       Vector<RegWithType> argVec= new Vector<RegWithType>();
       int argNum= 1;
 
-      currentChunk= 0; 
+      int currentChunk= 0; 
 
       // ............................................................
       // begin parsing
@@ -211,7 +211,7 @@ public class FtnParts
 
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      if ( !chunks[currentChunk].matches("\s*@") ) {
+      if ( !chunks[currentChunk].matches("\\s*@") ) {
 	 throw new Exception( "expected \" @\", found \""+ currentChunk+ 
 			      "\"" );
       }
@@ -219,7 +219,7 @@ public class FtnParts
 
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      if ( !chunks[currentChunk].matches("\w*") ) {
+      if ( !chunks[currentChunk].matches("\\w*") ) {
 	 throw new Exception( "expected \"<ftn_name>\", found \""+ 
 			      currentChunk+ "\"" );
       }
@@ -248,10 +248,10 @@ public class FtnParts
 
 	 currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-	 if (  chunks[currentChunk].matches( "\s*,\s*" ) ) {
+	 if (  chunks[currentChunk].matches( "\\s*,\\s*" ) ) {
 	    currentChunk++;
 	    continue; 
-	 } else if ( chunks[currentChunk].matches( "\s*)\s*" ) ) {
+	 } else if ( chunks[currentChunk].matches( "\\s*)\\s*" ) ) {
 	    break;
 	 } else {
 	    throw new Exception( "expected \",\" or \")\", found \""+ 
@@ -306,6 +306,41 @@ public class FtnParts
          ii++;
       }
       return ii;
+   }}
+
+   // ------------------------------------------------------------------------
+   // toString()
+   // ------------------------------------------------------------------------
+   /** generates a string representation of this instance 
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - the String
+    *
+    * @throws 
+    */
+   public String toString()
+   {{
+      StringBuffer retVal= new StringBuffer( "" );
+
+      retVal.append( "name=\""+ name+ "\"\n" );
+      retVal.append( "retType=\""+ retType.getName()+ "\"\n" );
+      retVal.append( "args: \n" );
+      for ( int ii= 0; ii < args.length; ii++ )  {
+	 retVal.append( ii+ ": " );
+	 retVal.append( arg[ii].toString()+ "\n" );
+      }
+      retVal.append( "EndOfRecord\n" );
+
+      return retVal.toString();
    }}
 
 
