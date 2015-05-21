@@ -176,7 +176,7 @@ public class RegWithType
    {{
       StringBuffer retVal= new StringBuffer("");
       retVal.append( "reg "+ regName+ ": " );
-      retVal.append( "type="+ type.getName()+ "," );
+      retVal.append( "type="+ type.getName()+ ", " );
       retVal.append( "flags=" );
       retVal.append( isUsed ? "U" : "u" );
       retVal.append( "." );
