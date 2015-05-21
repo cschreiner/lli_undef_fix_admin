@@ -1,9 +1,9 @@
 /* 
  * Program Name: lli_undef_fix
  *
- * File Name: FtnParts.java
+ * File Name: CrudeFtnParts.java
  *
- * File Description: class FtnParts
+ * File Description: class CrudeFtnParts
  *	(list here the package-scope classes in this file)
  *
  * lli_undef_fix was written by Christian A. Schreiner at University of
@@ -41,7 +41,7 @@ import java.util.*;
 import IRTxtLib.*;
 
 // ****************************************************************************
-// File's primary class: FtnParts
+// File's primary class: CrudeFtnParts
 // ****************************************************************************
 /** 
  * <ul>
@@ -50,7 +50,7 @@ import IRTxtLib.*;
  * <li> Algorithm: 
  * </ul>
  */
-public class FtnParts 
+public class CrudeFtnParts 
 {
 
 /* ############################################################################
@@ -92,7 +92,7 @@ public class FtnParts
     */
 
    // -------------------------------------------------------------------------
-   // FtnParts()
+   // CrudeFtnParts()
    // -------------------------------------------------------------------------
    /** default constructor
     *
@@ -110,15 +110,15 @@ public class FtnParts
     *
     * @throws
     */
-   private FtnParts()
+   private CrudeFtnParts()
    {{
       System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for FtnParts." );
+	    "unexpected call to default constructor for CrudeFtnParts." );
       System.exit(-127);
    }}
 
    // ------------------------------------------------------------------------
-   // FtnParts()
+   // CrudeFtnParts()
    // ------------------------------------------------------------------------
    /** commonly used constructor 
     * 
@@ -137,7 +137,7 @@ public class FtnParts
     *
     * @throws 
     */
-   public FtnParts(String ftnSt )
+   public CrudeFtnParts(String ftnSt )
    {{
       this.ftnSt= ftnSt;
       retType= null;
@@ -371,7 +371,7 @@ public class FtnParts
  * end of primary class
  * ****************************************************************************
  */
-} // end class FtnParts
+} // end class CrudeFtnParts
 
 
 /* ****************************************************************************
