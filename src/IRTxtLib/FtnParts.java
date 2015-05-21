@@ -174,11 +174,20 @@ public class FtnParts
     */
    private void parse()
    {{
-      // TODO2: create a full-fledged tokenizer
+      /* TODO2: create a full-fledged tokenizer.  See
+	 IRTxtLib/IRTokenizer.java.
+
+	 The code below is _very_ kludged.  Among other things, it requires
+	 whitespace between the parenthesis ending arguments and the body's
+	 opening brace, e.g.: 
+
+		define i12 @ftn_foo ( i7 ) {...
+                                      here^
+       */
 
       // ............................................................
       // set up
-      String chunks[]= ftnSt.split( "\\b" );
+      String chunks[]= ftnSt.split( "(\\b|\\s+)" );
 
       if ( IRTxtLib.arg_verbosity >= 2 ) {
 	 for( int ii= 0; ii < chunks.length; ii++ ) {
@@ -261,7 +270,9 @@ public class FtnParts
 
       }
 
-      // we can discard the rest of the chunks
+      /* we can discard the rest of the chunks, they hold the function
+       * body, which isn't important right now.
+       */
 
       // ............................................................
       // store what we've parsed out
