@@ -198,8 +198,8 @@ public class FtnParts
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
       if ( !chunks[currentChunk].equals("define") ) {
-	 throw new Error( "expected \"define\", found \""+ currentChunk+ 
-			      "\"" );
+	 throw new Error( "expected \"define\", found \""+ 
+			  chunks[currentChunk]+ "\"" );
       }
       currentChunk++;
 
@@ -212,8 +212,8 @@ public class FtnParts
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
       if ( !chunks[currentChunk].matches("\\s*@") ) {
-	 throw new Error( "expected \" @\", found \""+ currentChunk+ 
-			      "\"" );
+	 throw new Error( "expected \" @\", found \""+ 
+			  chunks[currentChunk]+ "\"" );
       }
       currentChunk++;
 
@@ -221,7 +221,7 @@ public class FtnParts
 
       if ( !chunks[currentChunk].matches("\\w*") ) {
 	 throw new Error( "expected \"<ftn_name>\", found \""+ 
-			      currentChunk+ "\"" );
+			  chunks[currentChunk]+ "\"" );
       }
       StringBuffer ftnNameBuffer= new StringBuffer( "@" );
       ftnNameBuffer.append( chunks[currentChunk] );
@@ -232,7 +232,7 @@ public class FtnParts
 
       if ( !chunks[currentChunk].equals( "(" ) ) {
 	 throw new Error( "expected \"(\", found \""+ 
-			      currentChunk+ "\"" );
+			  chunks[currentChunk]+ "\"" );
       }
       currentChunk++;
 
@@ -251,11 +251,12 @@ public class FtnParts
 	 if (  chunks[currentChunk].matches( "\\s*,\\s*" ) ) {
 	    currentChunk++;
 	    continue; 
-	 } else if ( chunks[currentChunk].matches( "\\s*)\\s*" ) ) {
+	 } else if ( chunks[currentChunk].matches( "\\s*\\)\\s*" ) ) {
 	    break;
 	 } else {
 	    throw new Error( "expected \",\" or \")\", found \""+ 
-				 currentChunk+ "\"" );
+			     chunks[currentChunk]+ "\"" );
+
 	 }
 
       }
