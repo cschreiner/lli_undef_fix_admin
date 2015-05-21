@@ -281,7 +281,9 @@ public class FtnParts
       // ............................................................
       // figure out what registers are used and which aren't
       for ( int ii= 0; ii < args.length; ii++ )  {
-	 args[ii].isUsed= ftnSt.matches( args[ii].regName+ "\\b" );
+	 String pattern= ".*"+ args[ii].regName+ "\\b.*";
+	 System.out.println ( "checking for use of "+ args[ii].regName+ "via pattern \""+ pattern+ "\"" );;
+	 args[ii].isUsed= ftnSt.matches( pattern );
       }
 
       // ............................................................
