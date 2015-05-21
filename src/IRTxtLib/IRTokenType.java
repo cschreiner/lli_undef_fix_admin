@@ -63,15 +63,21 @@ public enum IRTokenType {
    /** register names, like %33 and %sub */
    REG, 
    /** address names, like @ftn1 and @MAX_LENGTH */
-   TO_ADDR, 
+   ADDR, 
    /** numeric literals, like 5 and -327 */
    NUM, 
    /** punctuation is things like (, ), commas, and such. */
    PUNCT, 
    /** all sequences of whitespace */
    SPACE, 
+   /** a keyword, such as 'define', 'mul', or 'nsw' */
+   WORD,
    /** all comments */
    COMMENT, 
+   /** a comdat name, per LLVM IR LangRef, e.g. "$something" */
+   COMDAT_NAME,
+   /** an attribute group id, e.g. "#17" */
+   ATTR_GROUP_ID,
    /** any valid token constant i must make i < MAX true */
    MAX };
 
