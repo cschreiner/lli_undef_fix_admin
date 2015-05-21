@@ -198,7 +198,7 @@ public class FtnParts
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
       if ( !chunks[currentChunk].equals("define") ) {
-	 throw new Exception( "expected \"define\", found \""+ currentChunk+ 
+	 throw new Error( "expected \"define\", found \""+ currentChunk+ 
 			      "\"" );
       }
       currentChunk++;
@@ -212,7 +212,7 @@ public class FtnParts
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
       if ( !chunks[currentChunk].matches("\\s*@") ) {
-	 throw new Exception( "expected \" @\", found \""+ currentChunk+ 
+	 throw new Error( "expected \" @\", found \""+ currentChunk+ 
 			      "\"" );
       }
       currentChunk++;
@@ -220,7 +220,7 @@ public class FtnParts
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
       if ( !chunks[currentChunk].matches("\\w*") ) {
-	 throw new Exception( "expected \"<ftn_name>\", found \""+ 
+	 throw new Error( "expected \"<ftn_name>\", found \""+ 
 			      currentChunk+ "\"" );
       }
       StringBuffer ftnNameBuffer= new StringBuffer( "@" );
@@ -231,7 +231,7 @@ public class FtnParts
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
       if ( !chunks[currentChunk].equals( "(" ) ) {
-	 throw new Exception( "expected \"(\", found \""+ 
+	 throw new Error( "expected \"(\", found \""+ 
 			      currentChunk+ "\"" );
       }
       currentChunk++;
@@ -254,7 +254,7 @@ public class FtnParts
 	 } else if ( chunks[currentChunk].matches( "\\s*)\\s*" ) ) {
 	    break;
 	 } else {
-	    throw new Exception( "expected \",\" or \")\", found \""+ 
+	    throw new Error( "expected \",\" or \")\", found \""+ 
 				 currentChunk+ "\"" );
 	 }
 
@@ -264,7 +264,7 @@ public class FtnParts
 
       // ............................................................
       // store what we've parsed out
-      args= argVec.toArray();
+      args= argVec.toArray( new RegWithType[0] );
 
       // ............................................................
       // figure out what registers are used and which aren't
@@ -315,6 +315,8 @@ public class FtnParts
     * 
     * <ul>
     * <li> Detailed Description: 
+    *	The representation contains many lines, and is biased towards a 
+    *	technically-inclined human.
     *
     * <li> Algorithm: 
     *
@@ -336,7 +338,7 @@ public class FtnParts
       retVal.append( "args: \n" );
       for ( int ii= 0; ii < args.length; ii++ )  {
 	 retVal.append( ii+ ": " );
-	 retVal.append( arg[ii].toString()+ "\n" );
+	 retVal.append( args[ii].toString()+ "\n" );
       }
       retVal.append( "EndOfRecord\n" );
 
