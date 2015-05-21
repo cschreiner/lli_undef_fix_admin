@@ -266,8 +266,8 @@ public class FtnParts
 
       currentChunk++;
 
-      /* ignore the rest of the chunks.  They hold the function body, which
-       * isn't important right now.
+      /* Ignore the rest of the chunks for now.  They hold the function body,
+       * which we don't need till later.
        */
       firstBodyChunk= currentChunk;
 
