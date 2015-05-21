@@ -154,6 +154,35 @@ public class RegWithType
       * =======================================================================
       */
 
+   // ------------------------------------------------------------------------
+   // toString()
+   // ------------------------------------------------------------------------
+   /**  
+    * <ul>
+    * <li> Detailed Description: 
+    *	The string is one line long, and does not contain any newlines.
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - a string representation
+    *
+    * @throws 
+    */
+   public String toString()
+   {{
+      StringBuffer retVal= new StringBuffer("");
+      retVal.append( "reg "+ regName+ ": " );
+      retVal.append( "type="+ type.getName()+ "," );
+      retVal.append( "flags=" );
+      retVal.append( isUsed ? "U" : "u" );
+      retVal.append( "." );
+   }}
+
 
 /* ############################################################################
    * trivially simple subclasses
