@@ -135,6 +135,8 @@ public class IRToken
       retSt.append( ": \"" );
       retSt.append( txt );
       retSt.append( "\" </token>" );
+
+      return retSt.toString();
    }}
 
 
