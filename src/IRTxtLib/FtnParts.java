@@ -267,6 +267,12 @@ public class FtnParts
       args= argVec.toArray();
 
       // ............................................................
+      // figure out what registers are used and which aren't
+      for ( int ii= 0; ii < args.length; ii++ )  {
+	 args[ii].isUsed= ftnSt.matches( "\\b"+ args[ii].regName+ "\\b" );
+      }
+
+      // ............................................................
       // clean up and return
       return;
    }}
@@ -302,80 +308,6 @@ public class FtnParts
       return ii;
    }}
 
-
-
-   // ------------------------------------------------------------------------
-   // tokenize()
-   // ------------------------------------------------------------------------
-   /**  converts the function text into an array of tokens
-    * 
-    * TODO2: create a better tokenizer than this
-    * <ul>
-    * <li> Detailed Description: 
-    *
-    * <li> Algorithm: 
-    *
-    * <li> Reentrancy: unknown
-    *
-    * <li> No inputs.
-    * </ul>
-    * 
-    * @return - 
-    *
-    * @throws 
-    */
-   private String[] tokenize()
-   {{
-      // TODO2: create a better tokenizer than this
-      String chunks[]= ftnSt.split( "\\b" );
-
-      if ( IRTxtLib.arg_verbosity >= 2 ) {
-	 for( int ii= 0; ii < chunks.length; ii++ ) {
-	    System.out.println( "chunk=\""+ chunks[ii]+ "\"" );
-	 }
-      } else {
-	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
-      }
-
-      Vector<String> tokenPartVec= new Vector<String>();
-      for( int ii= 0; ii < chunks.length; ii++ )  {
-         String tokenParts[]= chunks[ii].split(" ");; // TODO: make this meaningful
-      }
-
-
-
-      int currentChunk= 0;
-
-      currentChunk= 0; // TODO: make this meaningful
-
-      return new String[]{ }; // TODO: make this meaningful
-   }}
-
-   // ------------------------------------------------------------------------
-   // removeInitialToken()
-   // ------------------------------------------------------------------------
-   /**  
-    * 
-    * <ul>
-    * <li> Detailed Description: 
-    *
-    * <li> Algorithm: 
-    *
-    * <li> Reentrancy: unknown
-    *
-    * <li> No inputs.
-    * </ul>
-    * 
-    * @return - 
-    *
-    * @throws 
-    */
-   private String removeInitialToken()
-   {{
-      final String TOKENS[]= { "(", ")", ",", "@", "%", "{", "}" };
-
-      return ""; // TODO: make this meaningful 
-   }}
 
 
 
