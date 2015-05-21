@@ -162,6 +162,10 @@ public class IRTokenizer
    public IRToken[] lex()
    {{
       while ( state != IRTokenType.MAX ) {
+	 System.out.println ( "IRTokenizer.lex(): "+ 
+			      "starting main iteration, state="+ state );;
+	 System.out.println ( "\t"+ "idx="+ idx+ ", next chars=\""+ 
+			      txt.substring( idx, idx+20 )+ "\"" );;
 	 if ( idx >= txt.length() ) {
 	    throw new Error("Internal error 2015may21_130227, "+ 
 		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "." );
@@ -169,7 +173,6 @@ public class IRTokenizer
 	 switch ( state ) {
 	 case UNKNOWN:
 	    lexInStateUnknown();
-	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case STRING:
 	    lexInStateString();
@@ -195,6 +198,10 @@ public class IRTokenizer
 	    lexInStateSpace();
 	    state= IRTokenType.UNKNOWN;
 	    break;
+	 case WORD:
+	    lexInStateWord();
+	    state= IRTokenType.UNKNOWN;
+	    break;
 	 case COMMENT:
 	    lexInStateComment();
 	    state= IRTokenType.UNKNOWN;
@@ -216,8 +223,7 @@ public class IRTokenizer
 	    break;
 	 default:
 	    throw new Error( "Internal error 2015may21_121912: "+ 
-			      "don't understand state. " );
-	    // TODO2: find some way to include the state's name in the message.
+			      "don't understand state "+ state );
 	 } // switch
       }
 
@@ -436,6 +442,39 @@ public class IRTokenizer
    }}
 
    // ------------------------------------------------------------------------
+   // lexInStateWord()
+   // ------------------------------------------------------------------------
+   /**  lexes out an keyword
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStateWord()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 if ( Character.isJavaIdentifierStart(txt.charAt(idx)) ) {
+	    tokenTxt.append( txt.charAt(idx) );
+	 } else {
+	    return;
+	 }
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
    // lexInStateComment()
    // ------------------------------------------------------------------------
    /**  lexes out an comment
@@ -503,7 +542,7 @@ public class IRTokenizer
    // ------------------------------------------------------------------------
    // lexInStateUnknown()
    // ------------------------------------------------------------------------
-   /**  handles lexing when instate UNKNOWN
+   /**  handles lexing when in state UNKNOWN
     * 
     * <ul>
     * <li> Detailed Description: 
