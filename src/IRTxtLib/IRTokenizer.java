@@ -162,16 +162,24 @@ public class IRTokenizer
    public IRToken[] lex()
    {{
       while ( state != IRTokenType.MAX ) {
-	 lexInStateUnknown();  // determines which state to go to next
+         final int debugSubStLen= 30;;
+         int debugSubStEnd= (idx+debugSubStLen) > txt.length() ? 
+	       (txt.length()) : (idx+debugSubStLen);;
 	 System.out.println ( "IRTokenizer.lex(): "+ 
-			      "starting main iteration, going to state="+ 
-			      state );;
-	 System.out.println ( "\t"+ "idx="+ idx+ ", next chars=\""+ 
-			      txt.substring( idx, idx+20 )+ "\"" );;
-	 if ( idx >= txt.length() ) {
+			      "starting main iteration, idx="+ idx );;
+	 System.out.println( "\t"+ "debugSubStEnd="+ debugSubStEnd+ 
+			     ", txt length="+ txt.length() );;
+	 System.out.println( "\t"+ "next chars=\""+ 
+			      txt.substring( idx, debugSubStEnd )+ "\"" );;
+	 lexInStateUnknown();  // determines which state to go to next
+	 System.out.println ( "going to state="+ state );;
+
+	 // sanity check against infinite iterations
+	 if ( (idx >= txt.length()) && (state != IRTokenType.MAX) ) {
 	    throw new Error("Internal error 2015may21_130227, "+ 
 		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "." );
 	 }
+
 	 switch ( state ) {
 	 case STRING:
 	    lexInStateString();
@@ -541,6 +549,40 @@ public class IRTokenizer
       return;
    }}
 
+   // template for above functions:
+   // ------------------------------------------------------------------------
+   // lexInStateXx()
+   // ------------------------------------------------------------------------
+   /**  lexes out an xx
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStateXx()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 if ( false /*xxx*/ ) {
+	    tokenTxt.append( txt.charAt(idx) );
+	 } else {
+	    return;
+	 }
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
 
    // ------------------------------------------------------------------------
    // lexInStateUnknown()
@@ -563,6 +605,11 @@ public class IRTokenizer
     */
    private void lexInStateUnknown()
    {{
+      if ( idx >= txt.length() ) {
+	 state= IRTokenType.MAX;
+	 return;
+      }
+
       char ch= txt.charAt(idx);
       switch ( ch ) {
       case '"':
