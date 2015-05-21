@@ -201,7 +201,8 @@ public class Main
 	 FtnParts ftnParts= new FtnParts( ftnTxt );
 
 	 if ( arg_verbosity > 0 ) {
-	    System.out.print( "function: \n" );
+            System.out.println( "---" );
+	    System.out.println( "function: " );
 	    System.out.println( ftnParts.toString() );
 	 }
       }
