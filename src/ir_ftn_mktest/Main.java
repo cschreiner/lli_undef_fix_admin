@@ -190,7 +190,7 @@ public class Main
       while( true )  {
 	 ftnTxt= parser.parseFtn();
 	 if ( ftnTxt == null ) { break; }
-	 if ( arg_verbosity > 0 )  {
+	 if ( arg_verbosity > 1 )  {
 	    System.out.println ( hashes39+ hashes39 );
 	    System.out.println ( "found function: <<EOF " );
 	    System.out.println ( ftnTxt );
@@ -199,6 +199,11 @@ public class Main
 
 	 System.out.println ( "verbosity= "+ arg_verbosity+ "\n" );;
 	 FtnParts ftnParts= new FtnParts( ftnTxt );
+
+	 if ( arg_verbosity > 0 ) {
+	    System.out.print( "function: \n" );
+	    System.out.println( ftnParts.toString() );
+	 }
       }
 
       // TODO: add more text here
