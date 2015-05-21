@@ -202,7 +202,7 @@ public class IRTokenizer
 	    /* TODO3: double check if comdat names need to accept different
 	     * characters than identifiers.  If so, comdat names may need
 	     * their own function here, instead of piggybacking off of the
-	     * Register and Address function.
+	     * function that handles Registers and Addresses. 
 	     */
 	    lexInStateRegAddrEtc();
 	    state= IRTokenType.UNKNOWN;
