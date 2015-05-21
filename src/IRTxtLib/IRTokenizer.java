@@ -36,7 +36,8 @@ package IRTxtLib;
  *   imports
  * ****************************************************************************
  */
-//import java.util.*;
+
+import java.util.*;
 
 import IRTxtLib.*;
 
@@ -126,8 +127,8 @@ public class IRTokenizer
    public IRTokenizer( String txt )
    {{
       this.txt= txt;
-      state= IRTokenType.UKNOWN;
-      ii= 0;
+      state= IRTokenType.UNKNOWN;
+      idx= 0;
       tokenVec= new Vector<IRToken>();
       tokenTxt= new StringBuffer("");
    }}
@@ -198,7 +199,7 @@ public class IRTokenizer
 	    lexInStateComment();
 	    state= IRTokenType.UNKNOWN;
 	    break;
-	 case COMDATE_NAME:
+	 case COMDAT_NAME:
 	    /* TODO3: double check if comdat names need to accept different
 	     * characters than identifiers.  If so, comdat names may need
 	     * their own function here, instead of piggybacking off of the
@@ -217,7 +218,6 @@ public class IRTokenizer
 	    throw new Error( "Internal error 2015may21_121912: "+ 
 			      "don't understand state. " );
 	    // TODO2: find some way to include the state's name in the message.
-	    break;
 	 } // switch
       }
 
@@ -245,23 +245,23 @@ public class IRTokenizer
     */
    private void lexInStateString()
    {{
-      boolean backslashExcape= false;
+      boolean backslashEscape= false;
       for ( ; idx < txt.length(); idx++ ) {
-	 switch ( txt[idx] ) {
+	 switch ( txt.charAt(idx) ) {
 	 case '\\': 
-	    backslashExcape= true;
-	    tokenTxt.append( txt[idx] );
+	    backslashEscape= true;
+	    tokenTxt.append( txt.charAt(idx) );
 	    break;
 	 case '"':
 	    if ( backslashEscape ) {
-	       tokenTxt.append( txt[idx] );
+	       tokenTxt.append( txt.charAt(idx) );
 	       backslashEscape= false;
 	    } else {
 	       return;
 	    }
 	    break;
 	 default:
-	    tokenTxt.append( txt[idx] );
+	    tokenTxt.append( txt.charAt(idx) );
 	    backslashEscape= false;
 	    break;
 	 } //switch
@@ -293,7 +293,7 @@ public class IRTokenizer
    private void lexInStateRegAddrEtc()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-	 switch ( txt[idx] ) {
+	 switch ( txt.charAt(idx) ) {
 	 case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
 	 case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
 	 case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
@@ -311,7 +311,7 @@ public class IRTokenizer
 	  */
 	 case '0': case '1': case '2': case '3': case '4': 
 	 case '5': case '6': case '7': case '8': case '9': 
-	    tokenTxt.append( txt[idx] );
+	    tokenTxt.append( txt.charAt(idx) );
 	    break;
 
 	 /* the LangRef says: 
@@ -330,7 +330,6 @@ public class IRTokenizer
 	 */
 	 default:
 	    return;
-	    break;
 	 } //switch
       }
 
@@ -360,8 +359,8 @@ public class IRTokenizer
    private void lexInStateNum()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-	 if ( Character.isDigit(txt[ii]) ) {
-	    tokenTxt.append( txt[idx] );
+	 if ( Character.isDigit(txt.charAt(idx) ) ) {
+	    tokenTxt.append( txt.charAt(idx) );
 	 } else {
 	    return;
 	 }
@@ -425,8 +424,8 @@ public class IRTokenizer
    private void lexInStateSpace()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-	 if ( Character.isWhitespace(txt[idx]) ) {
-	    tokenTxt.append( txt[idx] );
+	 if ( Character.isWhitespace(txt.charAt(idx)) ) {
+	    tokenTxt.append( txt.charAt(idx) );
 	 } else {
 	    return;
 	 }
@@ -458,10 +457,10 @@ public class IRTokenizer
    private void lexInStateComment()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-	 if ( txt[idx] == '\n' || txt[idx] == '\r' ) {
+	 if ( txt.charAt(idx) == '\n' || txt.charAt(idx) == '\r' ) {
 	    return;
 	 } else {
-	    tokenTxt.append( txt[idx] );
+	    tokenTxt.append( txt.charAt(idx) );
 	 }
       }
 
@@ -489,8 +488,8 @@ public class IRTokenizer
    private void lexInStateAttrGroupId()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-	 if ( Character.isDigit(txt[idx]) ) {
-	    tokenTxt.append( txt[idx] );
+	 if ( Character.isDigit(txt.charAt(idx)) ) {
+	    tokenTxt.append( txt.charAt(idx) );
 	 } else {
 	    return;
 	 }
@@ -566,7 +565,7 @@ public class IRTokenizer
 	 tokenTxt.append(ch);
 	 return;
       case '$':
-	 finishToken( IRTokenType.COMDATE_NAME );
+	 finishToken( IRTokenType.COMDAT_NAME );
 	 tokenTxt.append(ch);
 	 return;
       case '#':
