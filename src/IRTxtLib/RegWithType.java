@@ -148,7 +148,6 @@ public class RegWithType
       isUsed= true;
    }}
 
-
    /* =========================================================================
       * methods
       * =======================================================================
@@ -181,6 +180,8 @@ public class RegWithType
       retVal.append( "flags=" );
       retVal.append( isUsed ? "U" : "u" );
       retVal.append( "." );
+
+      return retVal.toString();
    }}
 
 
