@@ -174,24 +174,15 @@ public class FtnParts
     */
    private void parse()
    {{
-      /* TODO2: create a full-fledged tokenizer.  See
-	 IRTxtLib/IRTokenizer.java.
-
-	 The code below is _very_ kludged.  Among other things, it requires
-	 whitespace between the parenthesis ending arguments and the body's
-	 opening brace, e.g.: 
-
-		define i12 @ftn_foo ( i7 ) {...
-                                      here^
-       */
 
       // ............................................................
       // set up
-      String chunks[]= ftnSt.split( "(\\b|\\s+)" );
+      IRTokenizer tokenizer= new IRTokenizer( ftnSt );
+      IRToken[] chunks= tokenizer.lex();  // one chunk == one token
 
       if ( IRTxtLib.arg_verbosity >= 2 ) {
 	 for( int ii= 0; ii < chunks.length; ii++ ) {
-	    System.out.println( "chunk=\""+ chunks[ii]+ "\"" );
+	    System.out.println( "chunk=\""+ chunks[ii].toString()+ "\"" );
 	 }
       } else {
 	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
@@ -199,6 +190,7 @@ public class FtnParts
 
       Vector<RegWithType> argVec= new Vector<RegWithType>();
       int argNum= 1;
+      int firstBodyChunk= 0; // the first chunk that contains the function body
 
       int currentChunk= 0; 
 
@@ -206,50 +198,51 @@ public class FtnParts
       // begin parsing
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      if ( !chunks[currentChunk].equals("define") ) {
+      if ( !chunks[currentChunk].type == IRTokenType.WORD ) {
+      if ( !chunks[currentChunk].txt.equals("define") ) {
 	 throw new Error( "expected \"define\", found \""+ 
-			  chunks[currentChunk]+ "\"" );
+			  chunks[currentChunk].txt+ "\"" );
       }
       currentChunk++;
 
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      String retTypeName= chunks[currentChunk];
+      if ( chunks[currentChunk].type != IRTokenType.WORD ) {
+	 throw new Error( "Expected a type name, found \""+ 
+			  chunks[currentChunk].txt+ "\"." );
+      }
+      String retTypeName= chunks[currentChunk].txt;
       retType= new TypeInteger( retTypeName );
       currentChunk++;
 
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      if ( !chunks[currentChunk].matches("\\s*@") ) {
-	 throw new Error( "expected \" @\", found \""+ 
-			  chunks[currentChunk]+ "\"" );
+      if ( chunks[currentChunk].type != IRTokenType.ADDR ) {
+	 throw new Error( "expected \"@<ftn_name>\", found \""+ 
+			  chunks[currentChunk].txt+ "\"" );
       }
+      name= chunks[currentChunk].txt;
       currentChunk++;
 
       currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-      if ( !chunks[currentChunk].matches("\\w*") ) {
-	 throw new Error( "expected \"<ftn_name>\", found \""+ 
-			  chunks[currentChunk]+ "\"" );
-      }
-      StringBuffer ftnNameBuffer= new StringBuffer( "@" );
-      ftnNameBuffer.append( chunks[currentChunk] );
-      name= ftnNameBuffer.toString();
-      currentChunk++;
-
-      currentChunk= skipWhitespaceChunks( chunks, currentChunk );
-
-      if ( !chunks[currentChunk].equals( "(" ) ) {
+      if ( chunks[currentChunk].type != IRTokenType.PUNCT ||
+	   !chunks[currentChunk].txt.equals( "(" ) ) {
 	 throw new Error( "expected \"(\", found \""+ 
-			  chunks[currentChunk]+ "\"" );
+			  chunks[currentChunk].txt+ "\"" );
       }
       currentChunk++;
 
-      while ( !chunks[currentChunk].equals( ")" ) ) {
+      while ( !chunks[currentChunk].txt.equals( ")" ) ) {
 	 currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-	 String argTypeName= chunks[currentChunk];
-	 String argName= "%"+ argNum;
+	 String argTypeName= chunks[currentChunk].txt;
+	 String argName= "";
+	 argName= "%"+ argNum;
+	 /* TODO2: add code here to set argName to the given argument name iff
+	  * one is specified.
+	  */
+
 	 argNum++;
 	 argVec.add( new RegWithType( argName, 
 				      new TypeInteger(argTypeName) ) );
@@ -257,22 +250,26 @@ public class FtnParts
 
 	 currentChunk= skipWhitespaceChunks( chunks, currentChunk );
 
-	 if (  chunks[currentChunk].matches( "\\s*,\\s*" ) ) {
+	 if ( chunks[currentChunk].type == IRTokenType.PUNCT &&
+	      chunks[currentChunk].txt.equals( "," ) ) {
 	    currentChunk++;
 	    continue; 
-	 } else if ( chunks[currentChunk].matches( "\\s*\\)\\s*" ) ) {
+	 } else if ( chunks[currentChunk].type= IRTokenType.PUNCT &&
+		     chunks[currentChunk].txt.equals( ")" ) ) {
 	    break;
 	 } else {
 	    throw new Error( "expected \",\" or \")\", found \""+ 
-			     chunks[currentChunk]+ "\"" );
-
+			     chunks[currentChunk].txt+ "\"" );
 	 }
 
       }
 
-      /* we can discard the rest of the chunks, they hold the function
-       * body, which isn't important right now.
+      currentChunk++;
+
+      /* ignore the rest of the chunks.  They hold the function body, which
+       * isn't important right now.
        */
+      firstBodyChunk= currentChunk;
 
       // ............................................................
       // store what we've parsed out
@@ -280,10 +277,17 @@ public class FtnParts
 
       // ............................................................
       // figure out what registers are used and which aren't
-      for ( int ii= 0; ii < args.length; ii++ )  {
-	 String pattern= ".*"+ args[ii].regName+ "\\b.*";
-	 System.out.println ( "checking for use of "+ args[ii].regName+ "via pattern \""+ pattern+ "\"" );;
-	 args[ii].isUsed= ftnSt.matches( pattern );
+      for ( int arg= 0; arg < args.length; arg++ )  {
+	 arg[arg].isUsed= false;
+	 System.out.println ( "checking for use of "+ args[arg].regName );
+	 for ( int cc= firstBodyChunk; cc < chunks.length; cc++ ) {
+	    if ( chunks[cc].type == IRTokenType.REG ) {
+	       if ( chunks[cc].txt.equals(args[arg].regName) ) {
+		  arg[arg].isUsed= true;
+		  break;
+	       }
+	    }
+	 }
       }
 
       // ............................................................
@@ -313,10 +317,10 @@ public class FtnParts
     *
     * @throws 
     */
-   private int skipWhitespaceChunks( String[] chunks, int start )
+   private int skipWhitespaceChunks( IRToken[] chunks, int start )
    {{
       int ii= start;
-      while ( chunks[ii].matches("\\s*") ) {
+      while ( chunks[ii].type == IRTokenType.SPACE ) {
          ii++;
       }
       return ii;
