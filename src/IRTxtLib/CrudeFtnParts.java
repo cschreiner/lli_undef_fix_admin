@@ -44,6 +44,9 @@ import IRTxtLib.*;
 // File's primary class: CrudeFtnParts
 // ****************************************************************************
 /** 
+ * TODO: eliminate this class once the new class FtnParts works
+ * properly.
+ *
  * <ul>
  * <li> Description: 
  *
