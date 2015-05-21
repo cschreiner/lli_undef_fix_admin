@@ -79,7 +79,7 @@ public enum IRTokenType {
    /** an attribute group id, e.g. "#17" */
    ATTR_GROUP_ID ("ATTR_GROUP_ID"),
    /** any valid token constant i must make i < MAX true */
-   MAX ("MAX") };
+   MAX ("MAX");
 
    private final String name;
 
@@ -115,7 +115,7 @@ public enum IRTokenType {
       return name;
    }}
 
-
+} // end of enum
 
 /* ****************************************************************************
  *   end of file
