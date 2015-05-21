@@ -161,43 +161,345 @@ public class IRTokenizer
    public IRToken[] lex()
    {{
       while ( state != IRTokenType.MAX ) {
+	 if ( idx >= txt.length() ) {
+	    throw new Error("Internal error 2015may21_130227, "+ 
+		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "." );
+	 }
 	 switch ( state ) {
 	 case UNKNOWN:
 	    lexInStateUnknown();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case STRING:
 	    lexInStateString();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case REG:
 	    lexInStateRegAddrEtc();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case ADDR:
 	    lexInStateRegAddrEtc();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case NUM:
 	    lexInStateNum();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case PUNCT:
 	    lexInStatePunct();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case SPACE:
 	    lexInStateSpace();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case COMMENT:
 	    lexInStateComment();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case COMDATE_NAME:
+	    /* TODO3: double check if comdat names need to accept different
+	     * characters than identifiers.  If so, comdat names may need
+	     * their own function here, instead of piggybacking off of the
+	     * Register and Address function.
+	     */
 	    lexInStateRegAddrEtc();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case ATTR_GROUP_ID:
 	    lexInStateAttrGroupId();
+	    state= IRTokenType.UNKNOWN;
 	    break;
 	 case MAX:
+	    break;
+	 default:
+	    throw new Error( "Internal error 2015may21_121912: "+ 
+			      "don't understand state. " );
+	    // TODO2: find some way to include the state's name in the message.
 	    break;
 	 } // switch
       }
 
+      return tokenVec.toArray( new IRToken[]() );
    }}
+
+   // ------------------------------------------------------------------------
+   // lexInStateString()
+   // ------------------------------------------------------------------------
+   /**  lexes out an string literal
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStateString()
+   {{
+      boolean backslashExcape= false;
+      for ( ; idx < txt.length(); idx++ ) {
+	 switch ( txt[idx] ) {
+	 case '\\': 
+	    backslashExcape= true;
+	    tokenTxt.append( txt[idx] );
+	    break;
+	 case '"':
+	    if ( backslashEscape ) {
+	       tokenTxt.append( txt[idx] );
+	       backslashEscape= false;
+	    } else {
+	       return;
+	    }
+	    break;
+	 default:
+	    tokenTxt.append( txt[idx] );
+	    backslashEscape= false;
+	    break;
+	 } //switch
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // lexInStateRegAddrEtc()
+   // ------------------------------------------------------------------------
+   /**  lexes out an register name, address name, comdat name, and such.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStateRegAddrEtc()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 switch ( txt[idx] ) {
+	 case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
+	 case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
+	 case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
+	 case 'v': case 'w': case 'x': case 'y': case 'z': 
+	 case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': 
+	 case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': 
+	 case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': 
+	 case 'V': case 'W': case 'X': case 'Y': case 'Z': 
+	 case '-': case '$': case '.': case '_': 
+
+	 /* The llvm LangRef 'Identifiers' section says digits are forbidden
+	  * as a first character, but identifiers like '%1' are actually
+	  * common practice, and this is sanctioned elsewhere in the LangRef.
+	  * Sheesh.
+	  */
+	 case '0': case '1': case '2': case '3': case '4': 
+	 case '5': case '6': case '7': case '8': case '9': 
+	    tokenTxt.append( txt[idx] );
+	    break;
+
+	 /* the LangRef says: 
+	    [ ] other characters can be used in identifiers if surrounded by 
+		quotes.  
+	    [ ] Special characters may be embedded via "\xx" where xx is an 
+		ASCII code.  
+            [ ] The "\01" prefix may be used in global variables to suppress 
+		name mangling.   It is unclear if this preceeds or follows 
+		the @ sigil.
+            This code does not support any of this, yet.  
+
+	    TODO3: add this feature if needed.  If so, and the updates do not
+	    apply to comdat names, then comdat names will need their own
+	    function to replace this one.
+	 */
+	 default:
+	    return;
+	    break;
+	 } //switch
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // lexInStateNum()
+   // ------------------------------------------------------------------------
+   /**  lexes out an number
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStateNum()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 if ( Character.isDigit(txt[ii]) ) {
+	    tokenTxt.append( txt[idx] );
+	 } else {
+	    return;
+	 }
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // lexInStatePunct()
+   // ------------------------------------------------------------------------
+   /**  lexes out a punctuation character, or for that matter, any single
+    *  character.
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStatePunct()
+   {{
+      idx++;
+      if ( idx < txt.length() )  {
+	 // there are more chars to tokenize
+	 return;
+      }
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // lexInStateSpace()
+   // ------------------------------------------------------------------------
+   /**  lexes out an sequence of whitespace (which includes end-of-line
+    *  markers)
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    * 
+    * @throws 
+    */
+   private void lexInStateSpace()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 if ( Character.isWhitespace(txt[idx]) ) {
+	    tokenTxt.append( txt[idx] );
+	 } else {
+	    return;
+	 }
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // lexInStateComment()
+   // ------------------------------------------------------------------------
+   /**  lexes out an comment
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private void lexInStateComment()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 if ( txt[idx] == '\n' || txt[idx] == '\r' ) {
+	    return;
+	 } else {
+	    tokenTxt.append( txt[idx] );
+	 }
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
+   // ------------------------------------------------------------------------
+   // lexInStateAttrGroupId()
+   // ------------------------------------------------------------------------
+   /**  lexes out an Attribute Group Id
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @throws 
+    */
+   private void lexInStateAttrGroupId()
+   {{
+      for ( ; idx < txt.length(); idx++ ) {
+	 if ( Character.isDigit(txt[idx]) ) {
+	    tokenTxt.append( txt[idx] );
+	 } else {
+	    return;
+	 }
+      }
+
+      state= IRTokenType.MAX;
+      return;
+   }}
+
 
    // ------------------------------------------------------------------------
    // lexInStateUnknown()
@@ -248,7 +550,7 @@ public class IRTokenizer
 	 finishToken( IRTokenType.PUNCT );
 	 tokenTxt.append(ch);
 	 return;
-      case ' ': case '\t': 
+      case ' ': case '\t': case '\r': case '\n':
 	 finishToken( IRTokenType.SPACE );
 	 tokenTxt.append(ch);
 	 return;
@@ -271,12 +573,38 @@ public class IRTokenizer
 	 finishToken( IRTokenType.ATTR_GROUP_ID );
 	 tokenTxt.append(ch);
 	 return;
+      default:
+	 //  intentionally nothing
+	 break;
       } // switch
 
       throw new Error( "Internal error 2015may21_120736: "+ 
 		       "do not recognize char '"+ ch+ "' at position "+ idx+ 
 		       "." );
    }}
+
+   // ------------------------------------------------------------------------
+   // fname()
+   // ------------------------------------------------------------------------
+   /**  
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   //private type fname()
+   //{{
+   //}}
 
    // ------------------------------------------------------------------------
    // finishToken()
