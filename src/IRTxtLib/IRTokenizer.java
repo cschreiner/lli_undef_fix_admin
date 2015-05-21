@@ -221,7 +221,7 @@ public class IRTokenizer
 	 } // switch
       }
 
-      return tokenVec.toArray( new IRToken[]() );
+      return tokenVec.toArray( new IRToken[0] );
    }}
 
    // ------------------------------------------------------------------------
