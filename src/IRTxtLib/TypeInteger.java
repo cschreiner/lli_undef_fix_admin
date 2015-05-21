@@ -144,11 +144,39 @@ public class TypeInteger
       */
    public TypeInteger( int targetWidth )
    {{
-      if ( (targetWidth < MIN_WIDTH) || (targetWidth > MAX_WIDTH) )  {
-	 throw new Error( IRTxtLib.programName+ 
-	       ": internal error 2015apr24_122941, bitWidth out of range. \n" );
-      }
       bitWidth= targetWidth;
+      constructorHelper();
+   }}
+
+   // -------------------------------------------------------------------------
+   // TypeInteger(String)
+   // -------------------------------------------------------------------------
+   /*** commonly used constructor
+      *
+      * <ul>
+      * <li> Detailed Description: 
+      *
+      * <li> Algorithm: 
+      *
+      * <li> Reentrancy: unknown
+      *
+      * </ul>
+      * @param name - the official LLVM name for the integer type 
+      *		(i.e. i followed by the bitwidth)
+      * 
+      * @return - n/a (it's a constructor!)
+      *
+      * @throws
+      */
+   public TypeInteger( String name )
+   {{
+      if ( !name.matches("i[0-9]+") )  {
+	 throw new Error( IRTxtLib.programName+ 
+	       ": internal error 2015amay21_092612, "+
+	       "unrecognized type name \""+ name+ "\". \n" );
+      }
+
+      bitWidth= Integer.parseInt( name.substring(1) );
       constructorHelper();
    }}
 
@@ -211,6 +239,12 @@ public class TypeInteger
     */
    private void constructorHelper()
    {{
+      // check the bitwidth
+      if ( (bitWidth < MIN_WIDTH) || (bitWidth > MAX_WIDTH) )  {
+	 throw new Error( IRTxtLib.programName+ 
+	       ": internal error 2015apr24_122941, bitWidth out of range. \n" );
+      }
+
       maxVal= 1;
       for (int ii= 1; ii < bitWidth; ii++ )  {
 	 maxVal*= 2;
