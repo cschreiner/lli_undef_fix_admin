@@ -142,9 +142,9 @@ $need_to_exit= $FALSE;
 ## -----------------------------------------------------------------------
 ##   set up defaults
 
-use vars qw ( $arg_ir_filename );
-use vars qw ( $arg_verbosity );
+use vars qw ( $arg_ir_filename $arg_verbosity $arg_outDirname $arg_numCalls );
 $arg_verbosity= 0;
+$arg_numCalls= 5;
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -180,6 +180,7 @@ if ( scalar(@ARGV) > 0 )  {
 	 "man" => \$arg_man,
 	 "revision" => \$arg_revision,
 	 "v+" => \$arg_verbosity,
+	 "n=i" => \$arg_numCalls,
 	 );
 
    if ( $arg_help )  {
@@ -202,6 +203,7 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 ##   parse arguments that GetOptions left behind
 
 $arg_ir_filename= shift @ARGV;
+$arg_outDirname= shift @ARGV;
 
 ## -----------------------------------------------------------------------
 ##   check arguments
@@ -228,7 +230,8 @@ if ( $debug_flag )  {
 ## ===========================================================================
 ##   run java
 
-our $cmd= "java ir_ftn_mktest.Main $arg_verbosity $arg_ir_filename";
+our $cmd= "java ir_ftn_mktest.Main ". 
+      "$arg_verbosity $arg_ir_filename $arg_outDirname $arg_numCalls";
 our( $status, $dumped_core, $signal)= system_wrapper( $cmd, "" );
 if ( $status != 0 or $dumped_core )  {
    warn $main::scriptname . ": java exit status= \"$status\" \n" .
