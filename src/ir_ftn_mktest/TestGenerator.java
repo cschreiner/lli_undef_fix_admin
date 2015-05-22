@@ -231,7 +231,7 @@ public class TestGenerator
       retVal.append( indent+ "; %convert [? x i8]* to i8* \n" );
       retVal.append( indent+ "%printf_st_i8 = "+ 
 		     "getelementptr [37 x i8]* @printf_st, i64 0, i64 0 \n" );
-      retVal.append( indent+ "%1= add i32 0, i32 0 \n" );
+      retVal.append( indent+ "%1= add i32 0, 0 \n" );
 
       for ( int ii= 0; ii < numCalls; ii++ )  {
          retVal.append( "\n" );
