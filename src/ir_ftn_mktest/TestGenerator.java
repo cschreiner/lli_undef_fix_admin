@@ -237,11 +237,15 @@ public class TestGenerator
 			" "+ ftnParts.getName()+ "(" );
 	 for( int arg= 0; arg < ftnParts.getArgs().length; arg++ ) {
 	    if ( ftnParts.getArgs()[arg].isUsed ) {
-	       retVal.append( ftnParts.getArgs()[arg].type.getRandVal()+ 
-			      ", " );
+	       retVal.append( ftnParts.getArgs()[arg].type.getRandVal() );
 	    } else {
-	       retVal.append( "0, " );
+	       retVal.append( "0" );
 	    }
+	    if ( (arg+1) < ftnParts.getArgs().length ) {
+	       // all args are followed by a comma, except for the last one.
+	       retVal.append( "," );
+	    }
+	    retVal.append( " " );
 	 }
 	 retVal.append( " ) \n" );
 	 retVal.append( indent+ 
