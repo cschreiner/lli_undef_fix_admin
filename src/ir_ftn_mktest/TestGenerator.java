@@ -68,6 +68,7 @@ public class TestGenerator
     */
 
    FtnParts ftnParts;
+   int numCalls;
 
    /* =========================================================================
     * constructors
@@ -101,7 +102,7 @@ public class TestGenerator
    }}
 
    // -------------------------------------------------------------------------
-   // TestGenerator( FtnParts )
+   // TestGenerator( FtnParts, int )
    // -------------------------------------------------------------------------
    /** commonly used constructor
     *
@@ -116,14 +117,16 @@ public class TestGenerator
     * 
     * @param ftnParts - a FtnParts instance with info about the function to
     *	test
+    * @param numCalls - the number of times to call the function
     *
     * @return - n/a (it's a constructor!)
     *
     * @throws
     */
-   public TestGenerator( FtnParts ftnParts )
+   public TestGenerator( FtnParts ftnParts, intCalls )
    {{
       this.ftnParts= ftnParts;
+      this.numCalls= numCalls;
    }}
 
 
@@ -191,8 +194,56 @@ public class TestGenerator
 
       retVal.append( ";; Warning: AUTOMATICALLY GENERATED CODE \n" );
       retVal.append( ";; !! Do _NOT_ hand edit!! \n" );
-      retVal.append( ";; seed= "+ randomizer.getSeed() );
+      retVal.append( ";; Generator: "+ Main.PROGRAM_NAME );
+      retVal.append( ";; Seed: "+ randomizer.getSeed() );
       retVal.append( "\n\n" );
+
+      // generate declarations that all programs need
+      retVal.append( "@printf_st = private unnamed_addr constant [37 x i8] "+
+		     "c\"this prints if poison-free: '0x%x' \\0A\\00\"\n" );
+      retVal.append( "; external declaration of the printf(~) function \n" );
+
+      retVal.append( "declare i32 @printf(i8* nocapture readonly, ...)\n" );
+      retVal.append( "\n\n" );
+
+      // main function
+      final String indent= "  ";
+      final String mainReturnTypeName= "i32";
+      retVal.append( "define "+ mainReturnTypeName+ " @main() { \n" );
+      retVal.append( indent+ "; \%convert [? x i8]* to i8* \n" );
+      retVal.append( indent+ "  %printf_st_i8 = "+ 
+		     "getelementptr [37 x i8]* \@printf_st, i64 0, i64 0 \n" );
+      retVal.append( indent+ "%1= add 0, 0" );
+      retVal.append( "\n\n" );
+
+      for ( int ii= 0; ii < numCalls; ii++ )  {
+         retVal.append( indent+ "; call "+ ii );
+         String resultReg= "%result"+ ii;
+	 retVal.append( indent+
+			resultReg+ "= call "+ ftnParts.getRetType.getName()+ 
+			" "+ ftnParts.getName()+ "(" );
+	 for( int arg= 0; arg < ftnParts.getArgs.length; arg++ ) {
+	    if ( ftnParts.getArgs[arg].isUsed ) {
+	       retVal.append( ftnParts.getArgs[arg].type.getRandVal()+ ", " );
+	    } else {
+	       retVal.append( "0, " );
+	    }
+	 }
+	 retVal.append( " ) " );
+	 retVal.append( indent+ 
+			"call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, "+ 
+			ftnParts.getRetType.getName()+ " "+ resultReg+ 
+			" )\n" );
+      }
+      retVal.append( "\n\n" );
+
+      retVal.append( indent+ mainReturnTypeName+ " 0 \n" );
+      retVal.append( "} \n" );
+      retVal.append( "\n\n" );
+      retVal.append( "; end of file \n\n" );
+
+      // clean up and return
+      return retVal.toString();
    }}
 
 
