@@ -407,7 +407,6 @@ public class IRTokenizer
     */
    private void lexInStatePunct()
    {{
-      idx++;
       if ( idx < txt.length() )  {
 	 // there are more chars to tokenize
 	 return;
