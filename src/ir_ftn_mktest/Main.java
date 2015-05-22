@@ -197,7 +197,6 @@ public class Main
 	    System.out.println ( "EOF" );
 	 }
 
-	 System.out.println ( "verbosity= "+ arg_verbosity+ "\n" );;
 	 FtnParts ftnParts= new FtnParts( ftnTxt );
 
 	 if ( arg_verbosity > 0 ) {
