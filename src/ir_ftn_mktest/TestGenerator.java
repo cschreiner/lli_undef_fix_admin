@@ -114,7 +114,9 @@ public class TestGenerator
     *
     * </ul>
     * 
-    * @param ftnParts - a FtnParts instance with info about the function to test
+    * @param ftnParts - a FtnParts instance with info about the function to
+    *	test
+    *
     * @return - n/a (it's a constructor!)
     *
     * @throws
@@ -131,9 +133,9 @@ public class TestGenerator
     */
 
    // ------------------------------------------------------------------------
-   // generate()
+   // generate( String filename )
    // ------------------------------------------------------------------------
-   /**  
+   /**  generates the tests in the specified file
     * 
     * <ul>
     * <li> Detailed Description: 
@@ -145,12 +147,52 @@ public class TestGenerator
     * <li> No inputs.
     * </ul>
     * 
-    * @return - 
+    * @return - void
     *
     * @throws 
     */
-   public void generate()
+   public void generate( String filename )
    {{
+      String code= generateCode();
+
+      if ( Main.arg_verbosity >= 1 ) {
+         System.out.println( "code: <<EOF" );
+         System.out.println( code );
+         System.out.println( "EOF" );
+      }
+      
+      // TODO: add code here to write to the file
+
+   }}
+
+   // ------------------------------------------------------------------------
+   // generateCode()
+   // ------------------------------------------------------------------------
+   /**  generates the test code
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return a String containing the generated LLVM IR code
+    *
+    * @throws 
+    */
+   private String generateCode()
+   {{
+      StringBuffer retVal= new StringBuffer("");
+      SeededRandom randomizer= new SeededRandom();
+
+      retVal.append( ";; Warning: AUTOMATICALLY GENERATED CODE \n" );
+      retVal.append( ";; !! Do _NOT_ hand edit!! \n" );
+      retVal.append( ";; seed= "+ randomizer.getSeed() );
+      retVal.append( "\n\n" );
    }}
 
 
