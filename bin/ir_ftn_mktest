@@ -215,29 +215,29 @@ if ( $debug_flag )  {
 
 }
 
+## ===========================================================================
+##   set up classpath
+
+{
+   use Cwd qw(abs_path);
+   my $raw_java_class_dir= "$FindBin::Bin/../src";
+   my $java_class_dir= abs_path($raw_java_class_dir);
+   $ENV{'CLASSPATH'}= $java_class_dir . ":" . $ENV{'CLASSPATH'};
+}
 
 ## ===========================================================================
-##   parse out the file, handling each function as it arrives
+##   run java
 
-our $fileParser= new ir_ftn_mktest::ParseFile( $arg_ir_filename );
-
-while( $main::TRUE )  {
-   my $ftnTxt= $fileParser->parseFtn();
-   if ( !defined($ftnTxt) )  { last; }
-   if ( $arg_verbosity > 0 )  {
-      print "x"x 70 . "\n";
-      print "ftn: <<EOF\n" . $ftnTxt . "\nEOF\n\n";
-   }
-} 
+our $cmd= "java ir_ftn_mktest.Main $arg_verbosity $arg_ir_filename";
+our( $status, $dumped_core, $signal)= system_wrapper( $cmd, "" );
+if ( $status != 0 or $dumped_core )  {
+   warn $main::scriptname . ": java exit status= \"$status\" \n" .
+         "\t" . "dumped_core=\"$dumped_core\", exit signal=\"$signal\".\n";
+}
 
 ## ===========================================================================
-##   
-
-## ===========================================================================
-##   
-
-## ===========================================================================
-##   
+##   clean up and exit
+exit $status;
 
 ## ===========================================================================
 ##   
