@@ -204,9 +204,13 @@ public class Main
 	    System.out.println( "function: " );
 	    System.out.println( ftnParts.toString() );
 	 }
-      }
 
-      // TODO: add more text here
+	 final int numCalls= 5; // TODO: make this cmd-line settable
+	 final String outFilename= 
+	       "snoopy.ll"; // TODO: make this cmd-line settable
+	 TestGenerator generator= new TestGenerator( ftnParts, numCalls );
+	 generator.generate( outFilename );
+      }
 
    }}
 
