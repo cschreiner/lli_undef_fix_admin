@@ -360,6 +360,34 @@ public class FtnParts
    }}
 
    // ------------------------------------------------------------------------
+   // getNameWithoutSigil()
+   // ------------------------------------------------------------------------
+   /**  Returns the function name without its preceeding sigil (usually an @)
+    *   This can be useful when generating filenames from the function name.
+    *
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - per description
+    *
+    * @throws 
+    */
+   public String getNameWithoutSigil()
+   {{
+      /* TODO3: do something to check that this removes all preceeding
+       * non-alphabetic characters.
+       */
+      return name.substring(1);
+   }}
+
+   // ------------------------------------------------------------------------
    // trivially simple setter/getter methods
    // ------------------------------------------------------------------------
    /**  @return the function's return type */
