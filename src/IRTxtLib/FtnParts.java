@@ -183,8 +183,6 @@ public class FtnParts
 	 for( int ii= 0; ii < chunks.length; ii++ ) {
 	    System.out.println( "chunk=\""+ chunks[ii].toString()+ "\"" );
 	 }
-      } else {
-	 System.out.println ( "found verbosity= "+ IRTxtLib.arg_verbosity );;
       }
 
       Vector<RegWithType> argVec= new Vector<RegWithType>();
@@ -278,7 +276,6 @@ public class FtnParts
       // figure out what registers are used and which aren't
       for ( int arg= 0; arg < args.length; arg++ )  {
 	 args[arg].isUsed= false;
-	 System.out.println ( "checking for use of "+ args[arg].regName );
 	 for ( int cc= firstBodyChunk; cc < chunks.length; cc++ ) {
 	    if ( chunks[cc].type == IRTokenType.REG ) {
 	       if ( chunks[cc].txt.equals(args[arg].regName) ) {
