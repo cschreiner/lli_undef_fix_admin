@@ -61,6 +61,9 @@ import IRTxtLib.*;
  *
  * <li> Algorithm: 
  * </ul>
+ *
+ * TODO: make sure this works now that the minimum value of an integer can be
+ *	negative.  Especially check random number generation. -- CAS 2015may21
  */
 public class TypeInteger 
 {
@@ -247,13 +250,14 @@ public class TypeInteger
 	       " is out of range. \n" );
       }
 
+      // set the minimum and maximum values
       maxVal= 1;
       for (int ii= 1; ii < bitWidth; ii++ )  {
 	 maxVal*= 2;
       }
+      minVal= -maxVal;
       maxVal-= 1;
 
-      minVal= 0;
       name= "i"+ bitWidth;
 
       if ( minVal == maxVal )  {;;
@@ -320,9 +324,9 @@ public class TypeInteger
 			   "\", margin=\""+ margin+ "\"\n" );
 	 System.out.print( "   range=\""+ range+ "\"\n" );
       }
-      if ( range == 0 )  { //;;
+      if ( range <= 0 )  { //;;
 	 System.out.println( toString() );
-	 throw new Error( "range should not be zero. \n" ); //;
+	 throw new Error( "range "+ range+ " should be positive. \n" ); //;
       }
 
       // TODO2: this is trying to implement the following.  Remove the kludge.
