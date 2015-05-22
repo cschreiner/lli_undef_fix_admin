@@ -163,16 +163,18 @@ public class IRTokenizer
    {{
       while ( state != IRTokenType.MAX ) {
          if ( IRTxtLib.arg_verbosity >= 3 )  {
-	    final int debugSubStLen= 30;
-	    int debugSubStEnd= (idx+debugSubStLen) > txt.length() ? 
-		  (txt.length()) : (idx+debugSubStLen);
+	    final int infoSubStLen= 30;
+	    int infoSubStEnd= (idx+infoSubStLen) > txt.length() ? 
+		  (txt.length()) : (idx+infoSubStLen);
 	    System.out.println ( "IRTokenizer.lex(): "+ 
 				 "starting main iteration, idx="+ idx );
-	    System.out.println( "\t"+ "debugSubStEnd="+ debugSubStEnd+ 
+	    System.out.println( "\t"+ "infoSubStEnd="+ infoSubStEnd+ 
 				", txt length="+ txt.length() );
 	    System.out.println( "\t"+ "next chars=\""+ 
-				 txt.substring( idx, debugSubStEnd )+ "\"" );
-	    determineNextState();  // determines which state to go to next
+				 txt.substring( idx, infoSubStEnd )+ "\"" );
+	 }
+	 determineNextState();  // determines which state to go to next
+         if ( IRTxtLib.arg_verbosity >= 3 )  {
 	    System.out.println ( "going to state="+ state );
 	 }
 
