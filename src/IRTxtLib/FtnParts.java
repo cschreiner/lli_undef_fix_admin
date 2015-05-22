@@ -359,8 +359,26 @@ public class FtnParts
       return retVal.toString();
    }}
 
+   // ------------------------------------------------------------------------
+   // trivially simple setter/getter methods
+   // ------------------------------------------------------------------------
+   /**  @return the function's return type */
+   public TypeInteger getRetType()
+   {{ return retType; }}
 
+   /**  @return an array whose elements describe the arguments to the 
+	function 
+   */
+   public RegWithType[] getArgs()
+   {{ return args; }}
 
+   /**  @return the name of the function */
+   public type getName()
+   {{ return name; }}
+
+   /**  @return the original string defining the function */
+   public String getFtnSt()
+   {{ return ftnSt; }}
 
 /* ############################################################################
  * trivially simple subclasses
