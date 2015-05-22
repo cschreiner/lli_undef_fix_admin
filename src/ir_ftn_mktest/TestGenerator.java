@@ -207,8 +207,8 @@ public class TestGenerator
 
       retVal.append( ";; Warning: AUTOMATICALLY GENERATED CODE \n" );
       retVal.append( ";; !! Do _NOT_ hand edit!! \n" );
-      retVal.append( ";; Generator: "+ Main.PROGRAM_NAME );
-      retVal.append( ";; Seed: "+ randomizer.getSeed() );
+      retVal.append( ";; Generator: "+ Main.PROGRAM_NAME+ "\n" );
+      retVal.append( ";; Seed: "+ randomizer.getSeed()+ "\n" );
       retVal.append( "\n\n" );
 
       // generate declarations that all programs need
@@ -224,12 +224,12 @@ public class TestGenerator
       final String mainReturnTypeName= "i32";
       retVal.append( "define "+ mainReturnTypeName+ " @main() { \n" );
       retVal.append( indent+ "; %convert [? x i8]* to i8* \n" );
-      retVal.append( indent+ "  %printf_st_i8 = "+ 
+      retVal.append( indent+ "%printf_st_i8 = "+ 
 		     "getelementptr [37 x i8]* @printf_st, i64 0, i64 0 \n" );
-      retVal.append( indent+ "%1= add 0, 0" );
-      retVal.append( "\n\n" );
+      retVal.append( indent+ "%1= add 0, 0 \n" );
 
       for ( int ii= 0; ii < numCalls; ii++ )  {
+         retVal.append( "\n" );
          retVal.append( indent+ "; call "+ ii+ "\n" );
          String resultReg= "%result"+ ii;
 	 retVal.append( indent+
@@ -255,7 +255,7 @@ public class TestGenerator
       }
       retVal.append( "\n\n" );
 
-      retVal.append( indent+ mainReturnTypeName+ " 0 \n" );
+      retVal.append( indent+ "ret "+ mainReturnTypeName+ " 0 \n" );
       retVal.append( "} \n" );
       retVal.append( "\n\n" );
       retVal.append( "; end of file \n\n" );
