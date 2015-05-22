@@ -36,6 +36,8 @@ package ir_ftn_mktest;
  * ****************************************************************************
  */
 
+import java.io.*;
+
 import IRTxtLib.*;
 
 //import java.util.*;
@@ -71,6 +73,8 @@ public class Main
    public final static String PROGRAM_NAME= "ir_ftn_mktest";
    static String arg_ir_filename= "";
    static int arg_verbosity= 0;
+   static String arg_outDirname= "";
+   static int arg_numCalls= 5;
 
    /* =========================================================================
     * instance variables
@@ -138,7 +142,7 @@ public class Main
     */
    public static void main( String args[] )
    {{
-      final int EXPECTED_NUM_ARGS= 2;
+      final int EXPECTED_NUM_ARGS= 4;
 
       /* ..............................................................
 	 set up command line arguments
@@ -152,6 +156,8 @@ public class Main
 
       arg_verbosity= Integer.parseInt( args[0] );
       arg_ir_filename= args[1];
+      arg_outDirname= args[2];
+      arg_numCalls= Integer.parseInt( args[3] );
 
       /* ..............................................................
 	 set up globals
@@ -161,8 +167,53 @@ public class Main
 
       /* ..............................................................
        */
+      checkArgsAndSetUp();
       startWork();
    }}
+
+   // ------------------------------------------------------------------------
+   // checkArgsAndSetUp()
+   // ------------------------------------------------------------------------
+   /**  checks command line args
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - void
+    *
+    * @throws 
+    */
+   private static void checkArgsAndSetUp()
+   {{
+      File outDir= new File( arg_outDirname );
+
+      if ( outDir.exists() ) {
+	 if ( !outDir.isDirectory() ) {
+	    System.err.println( PROGRAM_NAME+ 
+				": output directory is not a directory; ");  
+	    System.err.println( "\t"+ "dir=\""+ arg_outDirname+ "\", " );
+	    System.err.println( "\t"+ "please specify an empty directory." );
+	    System.exit(-1);
+	 }
+	 if ( outDir.list().length > 0 ) {
+	    System.err.println( PROGRAM_NAME+ 
+				": output directory is not empty; ");  
+	    System.err.println( "\t"+ "dir=\""+ arg_outDirname+ "\", " );
+	    System.err.println( "\t"+ "please specify an empty directory." );
+	    System.exit(-1);
+	 }
+      } else {
+	 outDir.mkdir();
+      }
+   }}
+
 
    // ------------------------------------------------------------------------
    // startWork()
@@ -205,10 +256,9 @@ public class Main
 	    System.out.println( ftnParts.toString() );
 	 }
 
-	 final int numCalls= 5; // TODO: make this cmd-line settable
-	 final String outFilename= 
-	       "snoopy.ll"; // TODO: make this cmd-line settable
-	 TestGenerator generator= new TestGenerator( ftnParts, numCalls );
+	 TestGenerator generator= new TestGenerator( ftnParts, arg_numCalls );
+	 String outFilename= arg_outDirname+ File.separator+ 
+	       ftnParts.getName()+ ".ll";
 	 generator.generate( outFilename );
       }
 
