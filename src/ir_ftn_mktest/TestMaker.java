@@ -1,9 +1,9 @@
 /* 
  * Program Name: lli_undef_fix
  *
- * File Name: TestMaker.java
+ * File Name: TestGenerator.java
  *
- * File Description: class TestMaker
+ * File Description: class TestGenerator
  *	(list here the package-scope classes in this file)
  *
  * lli_undef_fix was written by Christian A. Schreiner at University of
@@ -36,24 +36,20 @@ package ir_ftn_mktest;
  * ****************************************************************************
  */
 //import java.util.*;
-//import java.applet.Applet;
-//import java.awt.*;
-//import java.awt.event.*;
-//import java.awt.Color.*;
-//import java.awt.geom.*;
 
+import IRTxtLib.*;
 
 // ****************************************************************************
-// File's primary class: TestMaker
+// File's primary class: TestGenerator
 // ****************************************************************************
-/** 
+/** creates a test program for one function
  * <ul>
  * <li> Description: 
  *
  * <li> Algorithm: 
  * </ul>
  */
-public class TestMaker 
+public class TestGenerator 
 {
 
 /* ############################################################################
@@ -71,6 +67,7 @@ public class TestMaker
     * =========================================================================
     */
 
+   FtnParts ftnParts;
 
    /* =========================================================================
     * constructors
@@ -78,7 +75,7 @@ public class TestMaker
     */
 
    // -------------------------------------------------------------------------
-   // TestMaker()
+   // TestGenerator()
    // -------------------------------------------------------------------------
    /** default constructor
     *
@@ -96,11 +93,35 @@ public class TestMaker
     *
     * @throws
     */
-   private TestMaker()
+   private TestGenerator()
    {{
       System.err.println ( "Internal error: "+
-	    "unexpected call to default constructor for TestMaker." );
+	    "unexpected call to default constructor for TestGenerator." );
       System.exit(-127);
+   }}
+
+   // -------------------------------------------------------------------------
+   // TestGenerator( FtnParts )
+   // -------------------------------------------------------------------------
+   /** commonly used constructor
+    *
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * </ul>
+    * 
+    * @param ftnParts - a FtnParts instance with info about the function to test
+    * @return - n/a (it's a constructor!)
+    *
+    * @throws
+    */
+   public TestGenerator( FtnParts ftnParts )
+   {{
+      this.ftnParts= ftnParts;
    }}
 
 
@@ -108,6 +129,29 @@ public class TestMaker
     * methods
     * =========================================================================
     */
+
+   // ------------------------------------------------------------------------
+   // generate()
+   // ------------------------------------------------------------------------
+   /**  
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - 
+    *
+    * @throws 
+    */
+   public void generate()
+   {{
+   }}
 
 
 /* ############################################################################
@@ -119,7 +163,7 @@ public class TestMaker
  * end of primary class
  * ****************************************************************************
  */
-} // end class TestMaker
+} // end class TestGenerator
 
 
 /* ****************************************************************************
