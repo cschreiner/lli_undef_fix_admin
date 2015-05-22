@@ -206,7 +206,7 @@ public class TestGenerator
       SeededRandom randomizer= new SeededRandom();
 
       retVal.append( ";; Warning: AUTOMATICALLY GENERATED CODE \n" );
-      retVal.append( ";; !! Do _NOT_ hand edit!! \n" );
+      retVal.append( ";; !! -- Do _NOT_ hand edit! -- !! \n" );
       retVal.append( ";; Generator: "+ Main.PROGRAM_NAME+ "\n" );
       retVal.append( ";; Seed: "+ randomizer.getSeed()+ "\n" );
       retVal.append( "\n\n" );
@@ -231,7 +231,7 @@ public class TestGenerator
       retVal.append( indent+ "; %convert [? x i8]* to i8* \n" );
       retVal.append( indent+ "%printf_st_i8 = "+ 
 		     "getelementptr [37 x i8]* @printf_st, i64 0, i64 0 \n" );
-      retVal.append( indent+ "%1= add 0, 0 \n" );
+      retVal.append( indent+ "%1= add i32 0, i32 0 \n" );
 
       for ( int ii= 0; ii < numCalls; ii++ )  {
          retVal.append( "\n" );
@@ -241,6 +241,7 @@ public class TestGenerator
 			resultReg+ "= call "+ ftnParts.getRetType().getName()+ 
 			" "+ ftnParts.getName()+ "(" );
 	 for( int arg= 0; arg < ftnParts.getArgs().length; arg++ ) {
+	    retVal.append( ftnParts.getArgs()[arg].type.getName()+ " " );
 	    if ( ftnParts.getArgs()[arg].isUsed ) {
 	       retVal.append( ftnParts.getArgs()[arg].type.getRandVal() );
 	    } else {
