@@ -219,6 +219,11 @@ public class TestGenerator
       retVal.append( "declare i32 @printf(i8* nocapture readonly, ...)\n" );
       retVal.append( "\n\n" );
 
+      // insert the function-under-test
+      retVal.append( "; the function-under-test: \n" );
+      retVal.append( ftnParts.getFtnSt() );
+      retVal.append( "\n\n" );
+
       // main function
       final String indent= "  ";
       final String mainReturnTypeName= "i32";
