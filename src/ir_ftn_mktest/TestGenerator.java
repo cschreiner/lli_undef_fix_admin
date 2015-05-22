@@ -230,7 +230,7 @@ public class TestGenerator
       retVal.append( "\n\n" );
 
       for ( int ii= 0; ii < numCalls; ii++ )  {
-         retVal.append( indent+ "; call "+ ii );
+         retVal.append( indent+ "; call "+ ii+ "\n" );
          String resultReg= "%result"+ ii;
 	 retVal.append( indent+
 			resultReg+ "= call "+ ftnParts.getRetType().getName()+ 
