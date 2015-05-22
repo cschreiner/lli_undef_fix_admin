@@ -162,17 +162,19 @@ public class IRTokenizer
    public IRToken[] lex()
    {{
       while ( state != IRTokenType.MAX ) {
-         final int debugSubStLen= 30;;
-         int debugSubStEnd= (idx+debugSubStLen) > txt.length() ? 
-	       (txt.length()) : (idx+debugSubStLen);;
-	 System.out.println ( "IRTokenizer.lex(): "+ 
-			      "starting main iteration, idx="+ idx );;
-	 System.out.println( "\t"+ "debugSubStEnd="+ debugSubStEnd+ 
-			     ", txt length="+ txt.length() );;
-	 System.out.println( "\t"+ "next chars=\""+ 
-			      txt.substring( idx, debugSubStEnd )+ "\"" );;
-	 determineNextState();  // determines which state to go to next
-	 System.out.println ( "going to state="+ state );;
+         if ( IRTxtLib.arg_verbosity >= 3 )  {
+	    final int debugSubStLen= 30;
+	    int debugSubStEnd= (idx+debugSubStLen) > txt.length() ? 
+		  (txt.length()) : (idx+debugSubStLen);
+	    System.out.println ( "IRTokenizer.lex(): "+ 
+				 "starting main iteration, idx="+ idx );
+	    System.out.println( "\t"+ "debugSubStEnd="+ debugSubStEnd+ 
+				", txt length="+ txt.length() );
+	    System.out.println( "\t"+ "next chars=\""+ 
+				 txt.substring( idx, debugSubStEnd )+ "\"" );
+	    determineNextState();  // determines which state to go to next
+	    System.out.println ( "going to state="+ state );
+	 }
 
 	 // sanity check against infinite iterations
 	 if ( (idx >= txt.length()) && (state != IRTokenType.MAX) ) {
@@ -306,8 +308,6 @@ public class IRTokenizer
    private void lexInStateRegAddrEtc()
    {{
       for ( ; idx < txt.length(); idx++ ) {
-         System.out.println( "lexInStateRegAddrEtc(): char=\""+ 
-			     txt.charAt(idx)+ "\"" );;
 	 switch ( txt.charAt(idx) ) {
 	 case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
 	 case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
