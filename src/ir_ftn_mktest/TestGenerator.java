@@ -37,6 +37,8 @@ package ir_ftn_mktest;
  */
 //import java.util.*;
 
+import java.io.*;
+
 import IRTxtLib.*;
 
 // ****************************************************************************
@@ -163,9 +165,20 @@ public class TestGenerator
          System.out.println( code );
          System.out.println( "EOF" );
       }
-      
-      // TODO: add code here to write to the file
 
+      // TODO: add code here to write to the file
+      try {
+	 FileWriter writer= new FileWriter( filename );
+	 writer.write( code );
+	 writer.close();
+      } catch ( IOException ex ) {
+	 System.err.println( 
+	       "Problem while writing the test program to its file, " );
+	 System.err.println( "\t"+ "file=\""+ filename+ "\", \n" );
+	 System.err.println( "\t"+ ex.getMessage()+ ".\n" );
+      }
+
+      return;
    }}
 
    // ------------------------------------------------------------------------
