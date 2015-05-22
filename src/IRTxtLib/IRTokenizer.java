@@ -585,7 +585,7 @@ public class IRTokenizer
 
 
    // ------------------------------------------------------------------------
-   // lexInStateUnknown()
+   // determineNextState()
    // ------------------------------------------------------------------------
    /**  handles lexing when in state UNKNOWN
     * 
@@ -613,24 +613,24 @@ public class IRTokenizer
       char ch= txt.charAt(idx);
       switch ( ch ) {
       case '"':
-	 finishToken( IRTokenType.STRING );
+	 state= IRTokenType.STRING;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case '%':
-	 finishToken( IRTokenType.REG );
+	 state= IRTokenType.REG;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case '@':
-	 finishToken( IRTokenType.ADDR );
+	 state= IRTokenType.ADDR;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case '-':
       case '0': case '1': case '2': case '3': case '4': 
       case '5': case '6': case '7': case '8': case '9': 
-	 finishToken( IRTokenType.NUM );
+	 state= IRTokenType.NUM;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
@@ -639,12 +639,12 @@ public class IRTokenizer
       case '[': case ']': 
       case '{': case '}': 
       case '<': case '>': 
-	 finishToken( IRTokenType.PUNCT );
+	 state= IRTokenType.PUNCT;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case ' ': case '\t': case '\r': case '\n':
-	 finishToken( IRTokenType.SPACE );
+	 state= IRTokenType.SPACE;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
@@ -652,22 +652,22 @@ public class IRTokenizer
       case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
       case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
       case 'v': case 'w': case 'x': case 'y': case 'z': 
-	 finishToken( IRTokenType.WORD );
+	 state= IRTokenType.WORD;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case ';':
-	 finishToken( IRTokenType.COMMENT );
+	 state= IRTokenType.COMMENT;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case '$':
-	 finishToken( IRTokenType.COMDAT_NAME );
+	 state= IRTokenType.COMDAT_NAME;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
       case '#':
-	 finishToken( IRTokenType.ATTR_GROUP_ID );
+	 state= IRTokenType.ATTR_GROUP_ID;
 	 tokenTxt.append(ch);
 	 idx++;
 	 return;
