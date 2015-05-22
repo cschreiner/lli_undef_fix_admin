@@ -405,16 +405,16 @@ public class TypeInteger
    // Short get subroutines
    // ========================================================================
    /** @return the bitwidth */
-   int getBitWidth() {{ return bitWidth; }}
+   public int getBitWidth() {{ return bitWidth; }}
 
    /** @return the maximum value of this integer type */
-   long getMaxVal() {{ return maxVal; }}
+   public long getMaxVal() {{ return maxVal; }}
 
    /** @return the minimum value of this integer type */
-   long getMinVal() {{ return minVal; }}
+   public long getMinVal() {{ return minVal; }}
 
    /** @return the name of this type */
-   String getName() {{ return name; }}
+   public String getName() {{ return name; }}
 
    // ========================================================================
    // Short set subroutines
