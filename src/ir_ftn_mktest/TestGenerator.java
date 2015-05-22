@@ -243,7 +243,7 @@ public class TestGenerator
 	       retVal.append( "0, " );
 	    }
 	 }
-	 retVal.append( " ) " );
+	 retVal.append( " ) \n" );
 	 retVal.append( indent+ 
 			"call i32 (i8*, ...)* @printf(i8* %printf_st_i8, "+ 
 			ftnParts.getRetType().getName()+ " "+ resultReg+ 
