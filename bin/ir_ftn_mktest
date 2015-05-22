@@ -208,6 +208,16 @@ $arg_outDirname= shift @ARGV;
 ## -----------------------------------------------------------------------
 ##   check arguments
 
+if ( $arg_ir_filename eq "" )  {
+   warn $main::scriptname . 
+	 ": did not find an LLVM IR filename, nothing to do. \n";
+   $need_to_exit= $main::TRUE;
+}
+if ( $arg_outDirname eq "" )  {
+   warn $main::scriptname . 
+	 ": did not find an output directory, nothing to do. \n";
+   $need_to_exit= $main::TRUE;
+}
 if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 
 ## -----------------------------------------------------------------------
