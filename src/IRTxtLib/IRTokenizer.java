@@ -171,7 +171,7 @@ public class IRTokenizer
 			     ", txt length="+ txt.length() );;
 	 System.out.println( "\t"+ "next chars=\""+ 
 			      txt.substring( idx, debugSubStEnd )+ "\"" );;
-	 lexInStateUnknown();  // determines which state to go to next
+	 determineNextState();  // determines which state to go to next
 	 System.out.println ( "going to state="+ state );;
 
 	 // sanity check against infinite iterations
@@ -183,35 +183,35 @@ public class IRTokenizer
 	 switch ( state ) {
 	 case STRING:
 	    lexInStateString();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case REG:
 	    lexInStateRegAddrEtc();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case ADDR:
 	    lexInStateRegAddrEtc();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case NUM:
 	    lexInStateNum();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case PUNCT:
 	    lexInStatePunct();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case SPACE:
 	    lexInStateSpace();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case WORD:
 	    lexInStateWord();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case COMMENT:
 	    lexInStateComment();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case COMDAT_NAME:
 	    /* TODO3: double check if comdat names need to accept different
@@ -220,11 +220,11 @@ public class IRTokenizer
 	     * function that handles Registers and Addresses. 
 	     */
 	    lexInStateRegAddrEtc();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case ATTR_GROUP_ID:
 	    lexInStateAttrGroupId();
-	    state= IRTokenType.UNKNOWN;
+	    finishToken();
 	    break;
 	 case MAX:
 	    break;
@@ -603,7 +603,7 @@ public class IRTokenizer
     *
     * @throws 
     */
-   private void lexInStateUnknown()
+   private void determineNextState()
    {{
       if ( idx >= txt.length() ) {
 	 state= IRTokenType.MAX;
@@ -717,6 +717,7 @@ public class IRTokenizer
     *
     * <li> Reentrancy: unknown
     *
+    * <li> (no parameters)
     * </ul>
     *
     * @param nextState - the next state to go to
@@ -725,7 +726,7 @@ public class IRTokenizer
     *
     * @throws 
     */
-   private void finishToken( IRTokenType nextState )
+   private void finishToken() 
    {{
       if ( tokenTxt.length() > 0 ) {
 	 IRToken tok= new IRToken();
@@ -734,8 +735,6 @@ public class IRTokenizer
 	 tokenVec.add( tok );
 	 tokenTxt= new StringBuffer("");
       }
-
-      state= nextState;
    }}
 
 
