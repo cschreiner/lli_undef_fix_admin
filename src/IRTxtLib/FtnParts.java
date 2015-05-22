@@ -373,7 +373,7 @@ public class FtnParts
    {{ return args; }}
 
    /**  @return the name of the function */
-   public type getName()
+   public String getName()
    {{ return name; }}
 
    /**  @return the original string defining the function */
