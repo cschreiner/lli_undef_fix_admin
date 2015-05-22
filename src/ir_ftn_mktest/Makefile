@@ -1,7 +1,8 @@
 # Makefile for the ir_ftn_mktest project.
 
 SRCS= \
-	Main.java
+	Main.java \
+	TestGenerator.java
 
 SRCS_W_PKG=$(addprefix ir_ftn_mktest/, $(SRCS) ) 
 
