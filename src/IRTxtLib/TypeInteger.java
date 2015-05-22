@@ -35,6 +35,7 @@ package IRTxtLib;
 /* ****************************************************************************
    *   imports
    * **************************************************************************
+  
    */
 import java.util.*;
 //import java.applet.Applet;
@@ -242,7 +243,8 @@ public class TypeInteger
       // check the bitwidth
       if ( (bitWidth < MIN_WIDTH) || (bitWidth > MAX_WIDTH) )  {
 	 throw new Error( IRTxtLib.programName+ 
-	       ": internal error 2015apr24_122941, bitWidth out of range. \n" );
+	       ": internal error 2015apr24_122941, bitWidth of "+ bitWidth+ 
+	       " is out of range. \n" );
       }
 
       maxVal= 1;
@@ -253,6 +255,11 @@ public class TypeInteger
 
       minVal= 0;
       name= "i"+ bitWidth;
+
+      if ( minVal == maxVal )  {;;
+	 System.err.println ( "Warning 2015may21_231301: minVal=maxVal="+ 
+			      maxVal+ ".  Why? " );;
+      }
       return;
    }}
 
@@ -308,10 +315,14 @@ public class TypeInteger
    {{
       long range= maxVal- minVal- 2* margin;
 
-      if ( false ) {
+      if ( false )  {
 	 System.out.print( "max=\""+ maxVal+ "\", min=\""+ minVal+
 			   "\", margin=\""+ margin+ "\"\n" );
 	 System.out.print( "   range=\""+ range+ "\"\n" );
+      }
+      if ( range == 0 )  { //;;
+	 System.out.println( toString() );
+	 throw new Error( "range should not be zero. \n" ); //;
       }
 
       // TODO2: this is trying to implement the following.  Remove the kludge.
@@ -399,6 +410,35 @@ public class TypeInteger
       if ( this.bitWidth > that.bitWidth ) { return +1; }
       throw new Error( IRTxtLib.programName+ 
 		       ": internal error 2015apr24_125802. \n" );
+   }}
+
+   // ------------------------------------------------------------------------
+   // toString()
+   // ------------------------------------------------------------------------
+   /**  returns a String representation of this instance
+    * 
+    * <ul>
+    * <li> Detailed Description: 
+    *
+    * <li> Algorithm: 
+    *
+    * <li> Reentrancy: unknown
+    *
+    * <li> No inputs.
+    * </ul>
+    * 
+    * @return - per description
+    *
+    * @throws 
+    */
+   public String toString()
+   {{
+      StringBuffer retVal= new StringBuffer("");
+      retVal.append( "name=\""+ name+ "\" \n" );
+      retVal.append( "bitWidth=\""+ bitWidth+ "\" \n" );
+      retVal.append( "minVal, maxVal=\""+ minVal+ "\", \""+ maxVal+ "\" \n" );
+
+      return retVal.toString();
    }}
 
    // ========================================================================
