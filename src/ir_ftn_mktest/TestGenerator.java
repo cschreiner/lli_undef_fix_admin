@@ -125,7 +125,7 @@ public class TestGenerator
     *
     * @throws
     */
-   public TestGenerator( FtnParts ftnParts, intCalls )
+   public TestGenerator( FtnParts ftnParts, int numCalls )
    {{
       this.ftnParts= ftnParts;
       this.numCalls= numCalls;
@@ -223,9 +223,9 @@ public class TestGenerator
       final String indent= "  ";
       final String mainReturnTypeName= "i32";
       retVal.append( "define "+ mainReturnTypeName+ " @main() { \n" );
-      retVal.append( indent+ "; \%convert [? x i8]* to i8* \n" );
+      retVal.append( indent+ "; %convert [? x i8]* to i8* \n" );
       retVal.append( indent+ "  %printf_st_i8 = "+ 
-		     "getelementptr [37 x i8]* \@printf_st, i64 0, i64 0 \n" );
+		     "getelementptr [37 x i8]* @printf_st, i64 0, i64 0 \n" );
       retVal.append( indent+ "%1= add 0, 0" );
       retVal.append( "\n\n" );
 
@@ -233,19 +233,20 @@ public class TestGenerator
          retVal.append( indent+ "; call "+ ii );
          String resultReg= "%result"+ ii;
 	 retVal.append( indent+
-			resultReg+ "= call "+ ftnParts.getRetType.getName()+ 
+			resultReg+ "= call "+ ftnParts.getRetType().getName()+ 
 			" "+ ftnParts.getName()+ "(" );
-	 for( int arg= 0; arg < ftnParts.getArgs.length; arg++ ) {
-	    if ( ftnParts.getArgs[arg].isUsed ) {
-	       retVal.append( ftnParts.getArgs[arg].type.getRandVal()+ ", " );
+	 for( int arg= 0; arg < ftnParts.getArgs().length; arg++ ) {
+	    if ( ftnParts.getArgs()[arg].isUsed ) {
+	       retVal.append( ftnParts.getArgs()[arg].type.getRandVal()+ 
+			      ", " );
 	    } else {
 	       retVal.append( "0, " );
 	    }
 	 }
 	 retVal.append( " ) " );
 	 retVal.append( indent+ 
-			"call i32 (i8*, ...)* \@printf(i8* \%printf_st_i8, "+ 
-			ftnParts.getRetType.getName()+ " "+ resultReg+ 
+			"call i32 (i8*, ...)* @printf(i8* %printf_st_i8, "+ 
+			ftnParts.getRetType().getName()+ " "+ resultReg+ 
 			" )\n" );
       }
       retVal.append( "\n\n" );
