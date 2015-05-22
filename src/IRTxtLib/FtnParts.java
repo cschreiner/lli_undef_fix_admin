@@ -69,18 +69,18 @@ public class FtnParts
     */
 
    /** holds the function's return type */
-   public TypeInteger retType;
+   private TypeInteger retType;
 
    /** holds data about each argument to the function */
-   public RegWithType args[];
+   private RegWithType args[];
 
    /** holds the name of the function */
-   public String name;
+   private String name;
 
    /** holds the whole function as a single string, including any known
     * comments.
     */
-   public String ftnSt; 
+   private String ftnSt; 
 
    // TODO: add fields to hold statements.  For example:
    // String statements[];
