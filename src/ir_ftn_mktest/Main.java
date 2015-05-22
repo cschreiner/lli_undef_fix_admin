@@ -258,7 +258,7 @@ public class Main
 
 	 TestGenerator generator= new TestGenerator( ftnParts, arg_numCalls );
 	 String outFilename= arg_outDirname+ File.separator+ 
-	       ftnParts.getName()+ ".ll";
+	       ftnParts.getNameWithoutSigil()+ ".ll";
 	 generator.generate( outFilename );
       }
 
