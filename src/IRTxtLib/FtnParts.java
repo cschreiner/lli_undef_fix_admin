@@ -174,7 +174,6 @@ public class FtnParts
     */
    private void parse()
    {{
-
       // ............................................................
       // set up
       IRTokenizer tokenizer= new IRTokenizer( ftnSt );
