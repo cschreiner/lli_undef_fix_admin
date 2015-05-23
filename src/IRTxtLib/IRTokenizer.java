@@ -631,24 +631,20 @@ public class IRTokenizer
 	 state= IRTokenType.STRING;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case '%':
 	 state= IRTokenType.REG;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case '@':
 	 state= IRTokenType.ADDR;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case '-':
       case '0': case '1': case '2': case '3': case '4': 
       case '5': case '6': case '7': case '8': case '9': 
 	 state= IRTokenType.NUM;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case ',': case '!': case '*': case '=': 
       case '(': case ')': 
       case '[': case ']': 
@@ -657,12 +653,10 @@ public class IRTokenizer
 	 state= IRTokenType.PUNCT;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case ' ': case '\t': case '\r': case '\n':
 	 state= IRTokenType.SPACE;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
       case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
       case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
@@ -670,54 +664,32 @@ public class IRTokenizer
 	 state= IRTokenType.WORD;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case ';':
 	 state= IRTokenType.COMMENT;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case '$':
 	 state= IRTokenType.COMDAT_NAME;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       case '#':
 	 state= IRTokenType.ATTR_GROUP_ID;
 	 tokenTxt.append(ch);
 	 idx++;
-	 return;
       default:
-	 //  intentionally nothing
-	 break;
+	 throw new Error( "Internal error 2015may21_120736: "+ 
+			  "do not recognize char '"+ ch+ "' at position "+ 
+			  idx+ "." );
       } // switch
 
-      throw new Error( "Internal error 2015may21_120736: "+ 
-		       "do not recognize char '"+ ch+ "' at position "+ idx+ 
-		       "." );
-   }}
+      // if we reached end-of-txt, clean up
+      if ( idx >= txt.length() ) {
+	 finishToken();
+	 state= IRTokenType.MAX;
+      }
 
-   // ------------------------------------------------------------------------
-   // fname()
-   // ------------------------------------------------------------------------
-   /**  
-    * 
-    * <ul>
-    * <li> Detailed Description: 
-    *
-    * <li> Algorithm: 
-    *
-    * <li> Reentrancy: unknown
-    *
-    * <li> No inputs.
-    * </ul>
-    * 
-    * @return - 
-    *
-    * @throws 
-    */
-   //private type fname()
-   //{{
-   //}}
+      return;
+   }}
 
    // ------------------------------------------------------------------------
    // finishToken()
