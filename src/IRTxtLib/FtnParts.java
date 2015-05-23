@@ -82,7 +82,7 @@ public class FtnParts
     */
    private String ftnSt; 
 
-   // TODO: add fields to hold statements.  For example:
+   // TODO3: add fields to hold statements.  For example:
    // String statements[];
 
 
