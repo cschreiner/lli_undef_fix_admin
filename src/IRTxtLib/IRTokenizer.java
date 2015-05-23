@@ -184,7 +184,7 @@ public class IRTokenizer
 	 // sanity check against infinite iterations
 	 if ( (idx >= txt.length()) && (state != IRTokenType.MAX) ) {
 	    throw new Error("Internal error 2015may21_130227, "+ 
-		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "."+
+		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ ". \n"+
 		  "Additional info: \n"+
 		  "states: last="+ lastState.toString()+ 
 		     ", current="+ state.toString()+ ".\n"+
