@@ -166,7 +166,6 @@ public class TestGenerator
          System.out.println( "EOF" );
       }
 
-      // TODO: add code here to write to the file
       try {
 	 FileWriter writer= new FileWriter( filename );
 	 writer.write( code );
