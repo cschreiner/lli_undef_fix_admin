@@ -188,13 +188,14 @@ public class IRTokenizer
 			", current="+ state.toString()+ ".\n" );
 	    msg.append( "<txt>"+ txt.substring( txt.length()- 60 )+ 
 			"</txt>\n" );
-	    for( int ii= tokenVec.size()-4; ii <= tokenVec.size(); ii++ ) {
+	    for( int ii= tokenVec.size()-4; ii < tokenVec.size(); ii++ ) {
 	       msg.append( "token "+ ii+ ": "+ 
 			   tokenVec.elementAt(ii).toString()+ "\n" );
 	    }
 	    throw new Error("Internal error 2015may21_130227, "+ 
 		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ ". \n"+
-		  "Additional info: \n"+ msg.toString()+ "\n" );
+		  "Additional info: \n"+ 
+		  msg.toString()+ "\n" );
 	 }
 
 	 switch ( state ) {
