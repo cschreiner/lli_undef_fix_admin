@@ -161,6 +161,8 @@ public class IRTokenizer
     */
    public IRToken[] lex()
    {{
+      IRTokenType lastState= IRTokenType.UNKNOWN;
+
       while ( state != IRTokenType.MAX ) {
          if ( IRTxtLib.arg_verbosity >= 3 )  {
 	    final int infoSubStLen= 30;
@@ -173,6 +175,7 @@ public class IRTokenizer
 	    System.out.println( "\t"+ "next chars=\""+ 
 				 txt.substring( idx, infoSubStEnd )+ "\"" );
 	 }
+	 lastState= state;
 	 determineNextState();  // determines which state to go to next
          if ( IRTxtLib.arg_verbosity >= 3 )  {
 	    System.out.println ( "going to state="+ state );
@@ -181,7 +184,11 @@ public class IRTokenizer
 	 // sanity check against infinite iterations
 	 if ( (idx >= txt.length()) && (state != IRTokenType.MAX) ) {
 	    throw new Error("Internal error 2015may21_130227, "+ 
-		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "." );
+		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ "."+
+		  "Additional info: \n"+
+		  "states: last="+ lastState.toString()+ 
+		     ", current="+ state.toString()+ ".\n"+
+		  "<txt>"+ txt.substring( txt.length()- 60 )+ "</txt>\n" );
 	 }
 
 	 switch ( state ) {
