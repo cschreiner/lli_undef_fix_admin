@@ -28,8 +28,15 @@ if [ $ir_ftn_mktest_status -ne 0 ]; then
 fi
 
 cd $workdir
+for ii in INTERESTING UNINTERESTING TOOL_ISSUE/DUP PASSED KILLED \
+      NOT_YET_DONE; do
+   mkdir -p $ii
+done
+mv *.ll NOT_YET_DONE
 
-for llfile in *.ll; do
+for raw_llfile in NOT_YET_DONE/*.ll; do
+   llfile=`basename $llfile`
+   mv $raw_llfile $llfile
    report_file=`basename $llfile .ll`.report
    llfile_o3=`basename $llfile .ll`_o3.ll
    opt -O3 -S $llfile > $llfile_o3
@@ -63,8 +70,12 @@ for llfile in *.ll; do
    diff -q $llfile.stdout $llfile_o3.stdout
    diff_status=$?
    if [ $diff_status -ne 0 ]; then
-      echo stdout differs 
-      needs_attention=true
+      if [ "$needs_attention" = "false" ]; then
+	 echo stdout differs yet everything else seems in order >> $report_file
+	 needs_attention=true
+      else 
+	 echo stdout differs, as expected given other problems >> $report_file
+      fi
    fi
 
    echo needs_attention=\"$needs_attention\" >> $report_file
