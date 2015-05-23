@@ -694,8 +694,8 @@ public class IRTokenizer
 
       // if we reached end-of-txt, clean up
       if ( idx >= txt.length() ) {
-	 finishToken();
-	 state= IRTokenType.MAX;
+      	 finishToken();
+      	 state= IRTokenType.MAX;
       }
 
       return;
