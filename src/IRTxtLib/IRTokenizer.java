@@ -631,20 +631,24 @@ public class IRTokenizer
 	 state= IRTokenType.STRING;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case '%':
 	 state= IRTokenType.REG;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case '@':
 	 state= IRTokenType.ADDR;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case '-':
       case '0': case '1': case '2': case '3': case '4': 
       case '5': case '6': case '7': case '8': case '9': 
 	 state= IRTokenType.NUM;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case ',': case '!': case '*': case '=': 
       case '(': case ')': 
       case '[': case ']': 
@@ -653,10 +657,12 @@ public class IRTokenizer
 	 state= IRTokenType.PUNCT;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case ' ': case '\t': case '\r': case '\n':
 	 state= IRTokenType.SPACE;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': 
       case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': 
       case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': 
@@ -664,18 +670,22 @@ public class IRTokenizer
 	 state= IRTokenType.WORD;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case ';':
 	 state= IRTokenType.COMMENT;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case '$':
 	 state= IRTokenType.COMDAT_NAME;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       case '#':
 	 state= IRTokenType.ATTR_GROUP_ID;
 	 tokenTxt.append(ch);
 	 idx++;
+	 break;
       default:
 	 throw new Error( "Internal error 2015may21_120736: "+ 
 			  "do not recognize char '"+ ch+ "' at position "+ 
