@@ -284,7 +284,7 @@ define i32 @main() {
          retVal.append( "\n" );
          retVal.append( indent+ "; call "+ ii+ "\n" );
 	 retVal.append( indent+ "call i32 (i8*, ...)* @printf("+ 
-	       "i8* %printf_call_num_st_i8, i32 1 )\n" );
+	       "i8* %printf_call_num_st_i8, i32 "+ ii+ " )\n" );
          String resultReg= "%result"+ ii;
 	 retVal.append( indent+
 			resultReg+ "= call "+ ftnParts.getRetType().getName()+ 
