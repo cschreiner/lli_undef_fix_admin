@@ -40,7 +40,7 @@ mv *.ll NOT_YET_DONE
 ) >> $workdir/log
 
 for raw_llfile in NOT_YET_DONE/*.ll; do
-   llfile=`basename $llfile`
+   llfile=`basename $raw_llfile`
    mv $raw_llfile $llfile
    report_file=`basename $llfile .ll`.report
    llfile_o3=`basename $llfile .ll`_o3.ll
