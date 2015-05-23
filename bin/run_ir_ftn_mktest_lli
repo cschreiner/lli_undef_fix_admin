@@ -33,6 +33,11 @@ for ii in INTERESTING UNINTERESTING TOOL_ISSUE/DUP PASSED KILLED \
    mkdir -p $ii
 done
 mv *.ll NOT_YET_DONE
+(
+   echo invocation: $scriptname "$@" 
+   echo start time=`date +%Y%b%d_%H%M%S` 
+   echo " "
+) >> $workdir/log
 
 for raw_llfile in NOT_YET_DONE/*.ll; do
    llfile=`basename $llfile`
