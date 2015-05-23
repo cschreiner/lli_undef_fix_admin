@@ -14,7 +14,8 @@ if [ -z "$arg_irfile" ]; then
    echo ${scriptname}: no IR file specified, nothing to do.
    exit 127
 fi
-workdir=$PROJ_ROOT/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$/`basename $arg_irfile`
+workdir=$PROJ_ROOT/`hostname -s`/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$/`basename $arg_irfile`
+# TODO: add something so a parent of the workdir can be specified on the command line.
 
 mkdir -p $workdir
 
