@@ -1,0 +1,65 @@
+#!/bin/sh
+# script to run ir_ftn_mktest + lli and look for definedness issues
+# between optimized and unoptimized code.
+
+scriptname=run_ir_ftn_mktest_lli
+
+# TODO: move the bulk of this program into a shell function, so we can call the function one time for every ir file specified on the command line.
+
+# TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
+# that get used.
+
+arg_irfile="$1" # read the functions to test from this file
+workdir=$PROJ_ROOT/data/${scriptname}..`date +%Y%b%d_%H%M%S`_$$/`basename $arg_irfile`
+
+mkdir -p $workdir
+
+echo running ir_ftn_mktest on \"$arg_irfile\"
+$PROJ_ROOT/admin/bin/ir_ftn_mktest $arg_irfile $workdir
+
+cd $workdir
+
+for llfile in *.ll; do
+   report_file=`basename $llfile .ll`.report
+   llfile_o3=`basename $llfile .ll`_o3.ll
+   opt -O3 -S $llfile > $llfile_o3
+
+   llifi $llfile > $llfile.stdout 2> $llfile.stderr
+   o0_status=$?
+   echo o0_status=$o0_status >> $report_file
+
+   llifi $llfile_o3 > $llfile_o3.stdout 2> $llfile_o3.stderr
+   o3_status=$?
+   echo o3_status=$o3_status >> $report_file
+
+   # test for less definedness
+   needs_attention=false
+   if [ "$o0_status" -eq 0 -a "$o3_status" -ne 0 ]; then
+      echo o3 is less defined by exit status >> $report_file
+      needs_attention=true
+   fi
+
+   grep -q poison $llfile.stdout 
+   o0_poison=$?
+   echo o0_poison=$o0_poison '(1 means no poison)' >> $report_file
+   grep -q poison $llfile_o3.stdout 
+   o3_poison=$?
+   echo o3_poison=$o3_poison '(1 means no poison)' >> $report_file
+   if [ "$o0_poison" -eq 1 -a "$o3_poison" -ne 1 ]; then
+      echo o3 is less defined by poison >> $report_file
+      needs_attention=true
+   fi
+
+   diff -q $llfile.stdout $llfile_o3.stdout
+   diff_status=$?
+   if [ $diff_status -ne 0 ]; then
+      echo stdout differs 
+      needs_attention=true
+   fi
+
+   echo needs_attention=\"$needs_attention\" >> $report_file
+   echo needs_attention=\"$needs_attention\" 
+done
+
+
+
