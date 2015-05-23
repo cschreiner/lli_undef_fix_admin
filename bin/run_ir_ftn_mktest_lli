@@ -20,6 +20,11 @@ mkdir -p $workdir
 
 echo running ir_ftn_mktest on \"$arg_irfile\"
 $PROJ_ROOT/admin/bin/ir_ftn_mktest $arg_irfile $workdir
+ir_ftn_mktest_status=$?
+if [ $ir_ftn_mktest_status -ne 0 ]; then
+   echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
+   exit $ir_ftn_mktest_status
+fi
 
 cd $workdir
 
