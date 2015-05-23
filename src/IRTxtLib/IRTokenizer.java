@@ -183,12 +183,18 @@ public class IRTokenizer
 
 	 // sanity check against infinite iterations
 	 if ( (idx >= txt.length()) && (state != IRTokenType.MAX) ) {
+	    StringBuffer msg= new StringBuffer( "" );
+	    msg.append( "states: last="+ lastState.toString()+ 
+			", current="+ state.toString()+ ".\n" );
+	    msg.append( "<txt>"+ txt.substring( txt.length()- 60 )+ 
+			"</txt>\n" );
+	    for( int ii= tokenVec.size()-4; ii <= tokenVec.size(); ii++ ) {
+	       msg.append( "token "+ ii+ ": "+ 
+			   tokenVec.elementAt(ii).toString()+ "\n" );
+	    }
 	    throw new Error("Internal error 2015may21_130227, "+ 
 		  "code=\"idx "+ idx+ " >= length "+ txt.length()+ ". \n"+
-		  "Additional info: \n"+
-		  "states: last="+ lastState.toString()+ 
-		     ", current="+ state.toString()+ ".\n"+
-		  "<txt>"+ txt.substring( txt.length()- 60 )+ "</txt>\n" );
+		  "Additional info: \n"+ msg.toString()+ "\n" );
 	 }
 
 	 switch ( state ) {
