@@ -91,7 +91,7 @@ run_one_file()
       else 
 	 time_remaining=$(( ($current_time-$start_time)*(100-$percent)/ \
 	       ($percent) ))
-	 time_remaining_min=$(( $time_remaining / 60 ))
+	 time_remaining_min=$(( $time_remaining / 60 + 1 ))
       fi
 
       echo examining $llfile_basename \
