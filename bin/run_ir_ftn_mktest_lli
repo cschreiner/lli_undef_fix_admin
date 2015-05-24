@@ -9,168 +9,176 @@ scriptname=run_ir_ftn_mktest_lli
 # TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
 # that get used.
 
-arg_irfile="$1" # read the functions to test from this file
-if [ -z "$arg_irfile" ]; then
-   echo ${scriptname}: no IR file specified, nothing to do.
-   exit 127
-fi
-workdir=$PROJ_ROOT/`hostname -s`/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$/`basename $arg_irfile`
-# TODO: add something so a parent of the workdir can be specified on the command line.
+run_one_file()  
+{
+   arg_irfile="$1" # read the functions to test from this file
+   if [ -z "$arg_irfile" ]; then
+      echo ${scriptname}: no IR file specified, nothing to do.
+      exit 127
+   fi
+   workdir=$PROJ_ROOT/`hostname -s`/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$/`basename $arg_irfile`
+   # TODO: add something so a parent of the workdir can be specified on the command line.
 
-mkdir -p $workdir
+   mkdir -p $workdir
 
-echo running ir_ftn_mktest on \"$arg_irfile\"
-$PROJ_ROOT/admin/bin/ir_ftn_mktest $arg_irfile $workdir
-ir_ftn_mktest_status=$?
-if [ $ir_ftn_mktest_status -ne 0 ]; then
-   echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
-   exit $ir_ftn_mktest_status
-fi
+   echo running ir_ftn_mktest on \"$arg_irfile\"
+   $PROJ_ROOT/admin/bin/ir_ftn_mktest $arg_irfile $workdir
+   ir_ftn_mktest_status=$?
+   if [ $ir_ftn_mktest_status -ne 0 ]; then
+      echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
+      exit $ir_ftn_mktest_status
+   fi
 
-cd $workdir
-for ii in INTERESTING UNINTERESTING TOOL_ISSUE/DUP PASSED KILLED \
-      NOT_YET_DONE; do
-   mkdir -p $ii
-done
-mv *.ll NOT_YET_DONE
-(
-   echo invocation: $scriptname "$@" 
-   echo start time=`date +%Y%b%d_%H%M%S` 
-   echo " "
-) >> $workdir/log
-
-
-current_file_num=0;
-total_files=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
-start_time=`date +%s`
-metric_num_passed=0
-metric_num_needs_attention=0
-
-for raw_llfile in NOT_YET_DONE/*.ll; do
-   llfile_basename=`basename $raw_llfile .ll`
-   llfile_o0=${llfile_basename}_o0.ll
-   llfile_o3=${llfile_basename}_o3.ll
-
-   report_file=$llfile_basename.report 
-   touch $report_file
+   cd $workdir
+   for ii in INTERESTING UNINTERESTING TOOL_ISSUE/DUP PASSED KILLED \
+	 NOT_YET_DONE; do
+      mkdir -p $ii
+   done
+   mv *.ll NOT_YET_DONE
    (
-      echo report for basename $llfile_basename 
-      echo " " 
-   ) >> $report_file
+      echo invocation: $scriptname "$@" 
+      echo start time=`date +%Y%b%d_%H%M%S` 
+      echo " "
+   ) >> $workdir/log
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   # report progress
-   current_file_num=$(( $current_file_num+ 1 ))
-   percent=$(( 100 * $current_file_num / $total_files ))
 
-   current_time=`date +%s`
-   # formula development:
-   # time_remaining = total_time * percent_remaining
-   # 
-   # time_remaining = total_time * (100-percent_so_far)
-   # 
-   #                      time_so_far
-   # time_remaining = (----------------) * (100-percent_so_far)
-   #                    percent_so_far
-   # 
-   #                   current_time - start_time
-   # time_remaining = (-------------------------) * (100-percent_so_far)
-   #                    percent_so_far
-   time_remaining=$(( ($current_time-$start_time)*(100-$percent)/($percent) ))
-   time_remaining_min=$(( $time_remaining / 60 ))
+   current_ftn_num=0;
+   total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
+   start_time=`date +%s`
+   metric_num_passed=0
+   metric_num_needs_attention=0
 
-   echo examining $llfile_basename \
-	 \($current_file_num of $total_files \(${percent}%\)\) \
-	 \(~$time_remaining_min min left\) 
+   for raw_llfile in NOT_YET_DONE/*.ll; do
+      llfile_basename=`basename $raw_llfile .ll`
+      llfile_o0=${llfile_basename}_o0.ll
+      llfile_o3=${llfile_basename}_o3.ll
 
-   mv $raw_llfile $llfile_o0
-
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   # run opt
-   opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
-   opt_status=$?
-   if [ $opt_status -ne 0 -o -s $llfile_basename.opt.stderr ]; then
+      report_file=$llfile_basename.report 
+      touch $report_file
       (
-	 echo opt failed with status \"$opt_status\", 
-	 echo see its stderr in $llfile_basename.opt.stderr 
+	 echo report for basename $llfile_basename 
+	 echo " " 
       ) >> $report_file
-      continue
-   fi
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   # run the unoptimized and optimized versions
-   llifi $llfile_o0 > $llfile_o0.stdout 2> $llfile_o0.stderr
-   o0_status=$?
-   echo o0_status=$o0_status >> $report_file
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # report progress
+      current_ftn_num=$(( $current_ftn_num+ 1 ))
+      percent=$(( 100 * $current_ftn_num / $total_ftns ))
 
-   llifi $llfile_o3 > $llfile_o3.stdout 2> $llfile_o3.stderr
-   o3_status=$?
-   echo o3_status=$o3_status >> $report_file
+      current_time=`date +%s`
+      # formula development:
+      # time_remaining = total_time * percent_remaining
+      # 
+      # time_remaining = total_time * (100-percent_so_far)
+      # 
+      #                      time_so_far
+      # time_remaining = (----------------) * (100-percent_so_far)
+      #                    percent_so_far
+      # 
+      #                   current_time - start_time
+      # time_remaining = (-------------------------) * (100-percent_so_far)
+      #                    percent_so_far
+      time_remaining=$(( ($current_time-$start_time)*(100-$percent)/($percent) ))
+      time_remaining_min=$(( $time_remaining / 60 ))
 
-   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   # tests for less definedness
-   needs_attention=false
-   if [ "$o0_status" -eq 0 -a "$o3_status" -ne 0 ]; then
-      echo o3 is less defined by exit status >> $report_file
-      needs_attention=true
-   fi
+      echo examining $llfile_basename \
+	    \($current_ftn_num of $total_ftns \(${percent}%\)\) \
+	    \(~$time_remaining_min min left\) 
 
-   grep -q poison $llfile_o0.stdout 
-   o0_poison=$?
-   echo o0_poison=$o0_poison '(1 means no poison)' >> $report_file
-   grep -q poison $llfile_o3.stdout 
-   o3_poison=$?
-   echo o3_poison=$o3_poison '(1 means no poison)' >> $report_file
-   if [ "$o0_poison" -eq 1 -a "$o3_poison" -ne 1 ]; then
-      echo o3 is less defined by poison >> $report_file
-      needs_attention=true
-   fi
+      mv $raw_llfile $llfile_o0
 
-   diff -q $llfile_o0.stdout $llfile_o3.stdout >> /dev/null
-   diff_status=$?
-   if [ $diff_status -ne 0 ]; then
-      if [ "$needs_attention" = "false" -a \
-	    $o0_status -eq 0 -a $o0_poison -eq 1 ]; then
-	 echo stdout differs yet everything else seems in order >> $report_file
-	 needs_attention=true
-      else 
-	 echo stdout differs, as expected given other problems >> $report_file
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # run opt
+      opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
+      opt_status=$?
+      if [ $opt_status -ne 0 -o -s $llfile_basename.opt.stderr ]; then
+	 (
+	    echo opt failed with status \"$opt_status\", 
+	    echo see its stderr in $llfile_basename.opt.stderr 
+	 ) >> $report_file
+	 continue
       fi
-   fi
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # run the unoptimized and optimized versions
+      llifi $llfile_o0 > $llfile_o0.stdout 2> $llfile_o0.stderr
+      o0_status=$?
+      echo o0_status=$o0_status >> $report_file
+
+      llifi $llfile_o3 > $llfile_o3.stdout 2> $llfile_o3.stderr
+      o3_status=$?
+      echo o3_status=$o3_status >> $report_file
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # tests for less definedness
+      needs_attention=false
+      if [ "$o0_status" -eq 0 -a "$o3_status" -ne 0 ]; then
+	 echo o3 is less defined by exit status >> $report_file
+	 needs_attention=true
+      fi
+
+      grep -q poison $llfile_o0.stdout 
+      o0_poison=$?
+      echo o0_poison=$o0_poison '(1 means no poison)' >> $report_file
+      grep -q poison $llfile_o3.stdout 
+      o3_poison=$?
+      echo o3_poison=$o3_poison '(1 means no poison)' >> $report_file
+      if [ "$o0_poison" -eq 1 -a "$o3_poison" -ne 1 ]; then
+	 echo o3 is less defined by poison >> $report_file
+	 needs_attention=true
+      fi
+
+      diff -q $llfile_o0.stdout $llfile_o3.stdout >> /dev/null
+      diff_status=$?
+      if [ $diff_status -ne 0 ]; then
+	 if [ "$needs_attention" = "false" -a \
+	       $o0_status -eq 0 -a $o0_poison -eq 1 ]; then
+	    echo stdout differs yet everything else seems in order >> $report_file
+	    needs_attention=true
+	 else 
+	    echo stdout differs, as expected given other problems >> $report_file
+	 fi
+      fi
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # move stuff not needing attention into another directory
+      echo needs_attention=\"$needs_attention\" >> $report_file
+      if [ "$needs_attention" = "true" ]; then
+	 echo $llfile_basename needs_attention
+	 echo $llfile_basename needs_attention >> $workdir/log
+	 metric_num_needs_attention=$(( $metric_num_needs_attention + 1 ))
+      else
+	 mv ${llfile_basename}.* ${llfile_basename}_* PASSED
+	 metric_num_passed=$(( $metric_num_passed + 1 ))
+      fi
+   done
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   # move stuff not needing attention into another directory
-   echo needs_attention=\"$needs_attention\" >> $report_file
-   if [ "$needs_attention" = "true" ]; then
-      echo $llfile_basename needs_attention
-      echo $llfile_basename needs_attention >> $workdir/log
-      metric_num_needs_attention=$(( $metric_num_needs_attention + 1 ))
-   else
-      mv ${llfile_basename}.* ${llfile_basename}_* PASSED
-      metric_num_passed=$(( $metric_num_passed + 1 ))
-   fi
-done
+   # log summary metrics
+   (
+      echo " "
+      echo ==================================================================
+      stop_time=`date +%s`
+      echo stop time=`date +%Y%b%d_%H%M%S` 
+      duration_s=$(( $stop_time - $start_time ))
+      duration_min=$(( $duration_s / 60 ))
+      duration_rem_s=$(( $duration_s % 60 ))
+      duration_hrs=$(( $duration_min / 60 ))
+      duration_rem_min=$(( $duration_min % 60 ))
+      echo run time= ${duration_hrs}:${duration_rem_min}:${duration_rem_s} \
+	    \($duration_s s\)
+      echo " "
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-# log summary metrics
-(
-   echo " "
-   echo ==================================================================
-   stop_time=`date +%s`
-   echo stop time=`date +%Y%b%d_%H%M%S` 
-   duration_s=$(( $stop_time - $start_time ))
-   duration_min=$(( $duration_s / 60 ))
-   duration_rem_s=$(( $duration_s % 60 ))
-   duration_hrs=$(( $duration_min / 60 ))
-   duration_rem_min=$(( $duration_min % 60 ))
-   echo run time= ${duration_hrs}:${duration_rem_min}:${duration_rem_s} \
-         \($duration_s s\)
-   echo " "
+      echo "number of ftns passing= ......... \"$metric_num_passed\"
+      echo "number of ftns needing attention= \"$metric_num_needs_attention\"
+      echo total number of ftns= ............ \"$total_ftns\"
+      echo " "
+      echo '(end of log)'
+      echo " "
+   ) >> $workdir/log
 
-   echo "number of .ll files passing= ......... \"$metric_num_passed\"
-   echo "number of .ll files needing attention= \"$metric_num_needs_attention\"
-   echo total number of .ll files= ............ \"$total_files\"
-   echo " "
-   echo '(end of log)'
-   echo " "
-) >> $workdir/log
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   # log summary metrics
+   return 0
+}
+
