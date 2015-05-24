@@ -43,6 +43,8 @@ mv *.ll NOT_YET_DONE
 current_file_num=0;
 total_files=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
 start_time=`date +%s`
+metric_num_passed=0
+metric_num_needs_attention=0
 
 for raw_llfile in NOT_YET_DONE/*.ll; do
    llfile_basename=`basename $raw_llfile .ll`
@@ -141,10 +143,34 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
    echo needs_attention=\"$needs_attention\" >> $report_file
    if [ "$needs_attention" = "true" ]; then
       echo $llfile_basename needs_attention
+      echo $llfile_basename needs_attention >> $workdir/log
+      metric_num_needs_attention=$(( $metric_num_needs_attention + 1 ))
    else
       mv ${llfile_basename}.* ${llfile_basename}_* PASSED
+      metric_num_passed=$(( $metric_num_passed + 1 ))
    fi
 done
 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+# log summary metrics
+(
+   echo " "
+   echo ==================================================================
+   stop_time=`date +%s`
+   echo stop time=`date +%Y%b%d_%H%M%S` 
+   duration_s=$(( $stop_time - $start_time ))
+   duration_min=$(( $duration_s / 60 ))
+   duration_rem_s=$(( $duration_s % 60 ))
+   duration_hrs=$(( $duration_min / 60 ))
+   duration_rem_min=$(( $duration_min % 60 ))
+   echo run time= ${duration_hrs}:${duration_rem_min}:${duration_rem_s} \
+         \($duration_s s\)
+   echo " "
 
-
+   echo "number of .ll files passing= ......... \"$metric_num_passed\"
+   echo "number of .ll files needing attention= \"$metric_num_needs_attention\"
+   echo total number of .ll files= ............ \"$total_files\"
+   echo " "
+   echo '(end of log)'
+   echo " "
+) >> $workdir/log
