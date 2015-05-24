@@ -77,7 +77,7 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
    time_remaining=$(( ($current_time-$start_time)*(100-$percent)/($percent) ))
    time_remaining_min=$(( $time_remaining / 60 ))
 
-   echo running $llfile_basename \
+   echo examining $llfile_basename \
 	 \($current_file_num of $total_files \(${percent}%\)\) \
 	 \(~$time_remaining_min min left\) 
 
