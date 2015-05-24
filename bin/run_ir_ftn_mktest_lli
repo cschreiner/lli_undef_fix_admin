@@ -76,7 +76,7 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
    diff_status=$?
    if [ $diff_status -ne 0 ]; then
       if [ "$needs_attention" = "false" -a \
-	    o0_status -eq 0 -a o0_poison -eq 1 ]; then
+	    $o0_status -eq 0 -a $o0_poison -eq 1 ]; then
 	 echo stdout differs yet everything else seems in order >> $report_file
 	 needs_attention=true
       else 
