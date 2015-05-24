@@ -40,7 +40,7 @@ mv *.ll NOT_YET_DONE
 ) >> $workdir/log
 
 
-current_file_num= 0;
+current_file_num=0;
 total_files=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
 
 for raw_llfile in NOT_YET_DONE/*.ll; do
@@ -105,9 +105,13 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
       fi
    fi
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   # move stuff not needing attention into another directory
    echo needs_attention=\"$needs_attention\" >> $report_file
    if [ "$needs_attention" = "true" ]; then
       echo $llfile_basename needs_attention
+   else
+      mv ${llfile_basename}.* ${llfile_basename}_* PASSED
    fi
 done
 
