@@ -39,11 +39,20 @@ mv *.ll NOT_YET_DONE
    echo " "
 ) >> $workdir/log
 
+
+current_file_num= 0;
+total_files=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
+
 for raw_llfile in NOT_YET_DONE/*.ll; do
-   llfile_basename=`basename $raw_llfile`
+   llfile_basename=`basename $raw_llfile .ll`
    llfile_o0=${llfile_basename}_o0.ll
    report_file=$llfile_basename.report 
    llfile_o3=${llfile_basename}_o3.ll
+
+   # report progress
+   percent=$(( 100 * $current_file_num / $total_files ))
+   echo running $llfile_basename \
+	 \( $current_file_num of $total_files \(${percent}%\)\)  
 
    mv $raw_llfile $llfile_o0
 
