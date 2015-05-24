@@ -38,6 +38,7 @@ run_one_file()
    (
       echo invocation: $scriptname "$@" 
       echo start time=`date +%Y%b%d_%H%M%S` 
+      echo host=`hostname`
       echo " "
    ) >> $workdir/log
 
