@@ -203,7 +203,6 @@ run_one_file()
 # main program
 
 for file in "$@"; do
-   echo got to mercury #;;
    run_one_file "$file"
 done
 
