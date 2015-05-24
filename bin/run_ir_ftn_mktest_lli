@@ -157,7 +157,8 @@ run_one_file()
    # log summary metrics
    (
       echo " "
-      echo ==================================================================
+      echo double_dash_32="================================"
+      echo ${double_dash_32}${double_dash_32}
       stop_time=`date +%s`
       echo stop time=`date +%Y%b%d_%H%M%S` 
       duration_s=$(( $stop_time - $start_time ))
@@ -182,3 +183,17 @@ run_one_file()
    return 0
 }
 
+# ===========================================================================
+# process command line args
+
+
+# ===========================================================================
+# main program
+
+for file in "$@"; do
+   echo got to mercury #;;
+   run_one_file "$file"
+done
+
+# ===========================================================================
+# end of script
