@@ -49,13 +49,17 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
    report_file=$llfile_basename.report 
    llfile_o3=${llfile_basename}_o3.ll
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    # report progress
+   current_file_num=$(( $current_file_num+ 1 ))
    percent=$(( 100 * $current_file_num / $total_files ))
    echo running $llfile_basename \
 	 \( $current_file_num of $total_files \(${percent}%\)\)  
 
    mv $raw_llfile $llfile_o0
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   # run opt
    opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
    opt_status=$?
    if [ $opt_status -ne 0 -o -s $llfile_basename.opt.stderr ]; then
@@ -66,6 +70,8 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
       continue
    fi
 
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   # run the unoptimized and optimized versions
    llifi $llfile_o0 > $llfile_o0.stdout 2> $llfile_o0.stderr
    o0_status=$?
    echo o0_status=$o0_status >> $report_file
