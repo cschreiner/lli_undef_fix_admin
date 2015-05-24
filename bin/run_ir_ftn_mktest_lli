@@ -40,13 +40,24 @@ mv *.ll NOT_YET_DONE
 ) >> $workdir/log
 
 for raw_llfile in NOT_YET_DONE/*.ll; do
-   llfile=`basename $raw_llfile`
-   mv $raw_llfile $llfile
-   report_file=`basename $llfile .ll`.report
-   llfile_o3=`basename $llfile .ll`_o3.ll
-   opt -O3 -S $llfile > $llfile_o3
+   llfile_basename=`basename $raw_llfile`
+   llfile_o0=${llfile_basename}_o0.ll
+   report_file=$llfile_basename.report 
+   llfile_o3=${llfile_basename}_o3.ll
 
-   llifi $llfile > $llfile.stdout 2> $llfile.stderr
+   mv $raw_llfile $llfile_o0
+
+   opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
+   opt_status=$?
+   if [ $opt_status -ne 0 -o -s $llfile_basename.opt.stderr ]; then
+      (
+	 echo opt failed with status \"$opt_status\", 
+	 echo see its stderr in $llfile_basename.opt.stderr 
+      ) >> $report_file
+      continue
+   fi
+
+   llifi $llfile_o0 > $llfile_o0.stdout 2> $llfile_o0.stderr
    o0_status=$?
    echo o0_status=$o0_status >> $report_file
 
@@ -54,14 +65,15 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
    o3_status=$?
    echo o3_status=$o3_status >> $report_file
 
-   # test for less definedness
+   # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+   # tests for less definedness
    needs_attention=false
    if [ "$o0_status" -eq 0 -a "$o3_status" -ne 0 ]; then
       echo o3 is less defined by exit status >> $report_file
       needs_attention=true
    fi
 
-   grep -q poison $llfile.stdout 
+   grep -q poison $llfile_o0.stdout 
    o0_poison=$?
    echo o0_poison=$o0_poison '(1 means no poison)' >> $report_file
    grep -q poison $llfile_o3.stdout 
@@ -72,7 +84,7 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
       needs_attention=true
    fi
 
-   diff -q $llfile.stdout $llfile_o3.stdout >> /dev/null
+   diff -q $llfile_o0.stdout $llfile_o3.stdout >> /dev/null
    diff_status=$?
    if [ $diff_status -ne 0 ]; then
       if [ "$needs_attention" = "false" -a \
@@ -86,7 +98,7 @@ for raw_llfile in NOT_YET_DONE/*.ll; do
 
    echo needs_attention=\"$needs_attention\" >> $report_file
    if [ "$needs_attention" = "true" ]; then
-      echo $llfile needs_attention
+      echo $llfile_basename needs_attention
    fi
 done
 
