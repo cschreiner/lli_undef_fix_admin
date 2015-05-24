@@ -42,19 +42,44 @@ mv *.ll NOT_YET_DONE
 
 current_file_num=0;
 total_files=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
+start_time=`date +%s`
 
 for raw_llfile in NOT_YET_DONE/*.ll; do
    llfile_basename=`basename $raw_llfile .ll`
    llfile_o0=${llfile_basename}_o0.ll
-   report_file=$llfile_basename.report 
    llfile_o3=${llfile_basename}_o3.ll
+
+   report_file=$llfile_basename.report 
+   touch $report_file
+   (
+      echo report for basename $llfile_basename 
+      echo " " 
+   ) >> $report_file
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
    # report progress
    current_file_num=$(( $current_file_num+ 1 ))
    percent=$(( 100 * $current_file_num / $total_files ))
+
+   current_time=`date +%s`
+   # formula development:
+   # time_remaining = total_time * percent_remaining
+   # 
+   # time_remaining = total_time * (100-percent_so_far)
+   # 
+   #                      time_so_far
+   # time_remaining = (----------------) * (100-percent_so_far)
+   #                    percent_so_far
+   # 
+   #                   current_time - start_time
+   # time_remaining = (-------------------------) * (100-percent_so_far)
+   #                    percent_so_far
+   time_remaining=$(( ($current_time-$start_time)*(100-$percent)/($percent) ))
+   time_remaining_min=$(( $time_remaining / 60 ))
+
    echo running $llfile_basename \
-	 \( $current_file_num of $total_files \(${percent}%\)\)  
+	 \($current_file_num of $total_files \(${percent}%\)\) \
+	 \(~$time_remaining_min min left\) 
 
    mv $raw_llfile $llfile_o0
 
