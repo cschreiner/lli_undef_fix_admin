@@ -16,12 +16,18 @@ do_one_dir()
    fi
 
    start_dir=`pwd`
+   if find $arg_work_dir -type d -iname PASSED | grep -q ^; then
+      echo ok >> /dev/null
+   else
+      echo no PASSED dir, nothing to do.
+      return 126
+   fi
    for passed_dir in `find $arg_work_dir -type d -iname PASSED`; do
       passed_parent=`dirname $passed_dir`
-      echo compressing in dir \"$passed_parent\"
       if ls -1 $passed_dir/*tar.bz2 | grep -q ^; then
-         echo "  " dir is already compressed
+         echo "  " dir already compressed: \"$passed_parent\"
       else
+	 echo compressing in dir \"$passed_parent\"
 	 cd $passed_parent
 	 tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
 	    rm -rf PASSED && \
