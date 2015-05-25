@@ -162,6 +162,9 @@ run_one_file()
 	 metric_num_needs_attention=$(( $metric_num_needs_attention + 1 ))
       else
 	 mv ${llfile_basename}.* ${llfile_basename}_* PASSED
+         tar -cvjf PASSED/${llfile_basename}.tar.bz2 \
+	       PASSED/${llfile_basename}.* PASSED/${llfile_basename}_*
+         rm PASSED/${llfile_basename}.* PASSED/${llfile_basename}_*
 	 metric_num_passed=$(( $metric_num_passed + 1 ))
       fi
    done
