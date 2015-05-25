@@ -18,8 +18,6 @@ do_one_dir()
    start_dir=`pwd`
    for passed_dir in `find $arg_work_dir -type d -iname PASSED`; do
       passed_parent=`dirname $passed_dir`
-      echo " "
-      echo =================================================================
       echo compressing in dir \"$passed_parent\"
       if ls -1 $passed_dir/*tar.bz2 | grep -q ^; then
          echo "  " dir is already compressed
@@ -35,6 +33,9 @@ do_one_dir()
 }
 
 for dir in "$@"; do
+   echo " "
+   echo =================================================================
+   echo working in dir \"$dir\"
    do_one_dir $dir
 done
 
