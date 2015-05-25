@@ -10,7 +10,11 @@ fi
 cd "$arg_start_dir"
 for passed_dir in `find . -type d -iname PASSED`; do
    start_dir=`pwd`
-   cd `basename $passed_dir`
+   passed_parent=`dirname $passed_dir`
+   echo ' "
+   echo =================================================================
+   echo compressing in dir \"$passed_parent\"
+   cd $passed_parent
    tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
       rm -rf PASSED/* && \
       mv /tmp/PASSED.tar.bz2 PASSED
