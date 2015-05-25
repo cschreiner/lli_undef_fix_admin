@@ -15,9 +15,9 @@ do_one_dir()
       return 127
    fi
 
+   start_dir=`pwd`
    cd "$arg_work_dir"
    for passed_dir in `find . -type d -iname PASSED`; do
-      start_dir=`pwd`
       passed_parent=`dirname $passed_dir`
       echo " "
       echo =================================================================
