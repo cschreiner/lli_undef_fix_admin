@@ -1,0 +1,19 @@
+#!/bin/sh
+# compress PASSED files created by run_ir_ftn_mktest_lli
+
+if [ $# -eq 0 ]; then
+   arg_start_dir=.
+else
+   arg_start_dir="$1"
+fi
+
+cd "$arg_start_dir"
+for passed_dir in `find . -type d -iname PASSED`; do
+   pushd `basename $passed_dir`
+   tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
+      rm -rf PASSED/* && \
+      mv /tmp/PASSED.tar.bz2 PASSED
+   popd
+done
+   
+
