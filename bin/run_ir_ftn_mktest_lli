@@ -26,7 +26,7 @@ run_one_file()
    ir_ftn_mktest_status=$?
    if [ $ir_ftn_mktest_status -ne 0 ]; then
       echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
-      exit $ir_ftn_mktest_status
+      return $ir_ftn_mktest_status
    fi
 
    cd $workdir
@@ -52,7 +52,7 @@ run_one_file()
    if [ $total_ftns -eq 0 ]; then
       echo No functions found, nothing to do. >> $workdir/log
       echo No functions found, nothing to do. 
-      exit 127
+      return 126
    fi
 
    for raw_llfile in NOT_YET_DONE/*.ll; do
