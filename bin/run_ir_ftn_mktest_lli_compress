@@ -16,13 +16,12 @@ do_one_dir()
    fi
 
    start_dir=`pwd`
-   if find $arg_work_dir -type d -iname PASSED | grep -q ^; then
-      echo ok >> /dev/null
-   else
+   passed_dirs=`find $arg_work_dir -type d -iname PASSED` 
+   if [ -z "$passed_dirs" ]; then
       echo no PASSED dir, nothing to do.
       return 126
    fi
-   for passed_dir in `find $arg_work_dir -type d -iname PASSED`; do
+   for passed_dir in $passed_dirs; do
       passed_parent=`dirname $passed_dir`
       if ls -1 $passed_dir/*tar.bz2 | grep -q ^; then
          echo "  " dir already compressed: \"$passed_parent\"
