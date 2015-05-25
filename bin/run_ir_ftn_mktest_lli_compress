@@ -11,7 +11,7 @@ cd "$arg_start_dir"
 for passed_dir in `find . -type d -iname PASSED`; do
    start_dir=`pwd`
    passed_parent=`dirname $passed_dir`
-   echo ' "
+   echo " "
    echo =================================================================
    echo compressing in dir \"$passed_parent\"
    cd $passed_parent
