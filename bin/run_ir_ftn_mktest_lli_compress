@@ -11,6 +11,7 @@ do_one_dir()
    if [ ! -d "$arg_work_dir" ]; then
       echo Error: this does not seem to be a directory:
       echo "  " \"$arg_work_dir\"
+      echo "  " pwd=\"`pwd`\"
       return 127
    fi
 
