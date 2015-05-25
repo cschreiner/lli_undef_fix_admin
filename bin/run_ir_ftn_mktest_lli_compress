@@ -16,7 +16,8 @@ for passed_dir in `find . -type d -iname PASSED`; do
    echo compressing in dir \"$passed_parent\"
    cd $passed_parent
    tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
-      rm -rf PASSED/* && \
+      rm -rf PASSED && \
+      mkdir PASSED && \
       mv /tmp/PASSED.tar.bz2 PASSED
    cd $start_dir
 done
