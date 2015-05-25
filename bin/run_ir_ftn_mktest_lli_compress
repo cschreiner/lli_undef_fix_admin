@@ -4,17 +4,17 @@
 do_one_dir()
 {
    if [ $# -eq 0 ]; then
-      arg_start_dir=.
+      arg_work_dir=.
    else
-      arg_start_dir="$1"
+      arg_work_dir="$1"
    fi
-   if [ ! -d "$arg_start_dir" ]; then
+   if [ ! -d "$arg_work_dir" ]; then
       echo Error: this does not seem to be a directory:
-      echo "  " \"$arg_start_dir\"
+      echo "  " \"$arg_work_dir\"
       return 127
    fi
 
-   cd "$arg_start_dir"
+   cd "$arg_work_dir"
    for passed_dir in `find . -type d -iname PASSED`; do
       start_dir=`pwd`
       passed_parent=`dirname $passed_dir`
@@ -29,9 +29,9 @@ do_one_dir()
 	    rm -rf PASSED && \
 	    mkdir PASSED && \
 	    mv /tmp/PASSED.tar.bz2 PASSED
-	 cd $start_dir
       fi
    done
+   cd $start_dir
 }
 
 for dir in "$@"; do
