@@ -9,11 +9,12 @@ fi
 
 cd "$arg_start_dir"
 for passed_dir in `find . -type d -iname PASSED`; do
-   pushd `basename $passed_dir`
+   start_dir=`pwd`
+   cd `basename $passed_dir`
    tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
       rm -rf PASSED/* && \
       mv /tmp/PASSED.tar.bz2 PASSED
-   popd
+   cd $start_dir
 done
    
 
