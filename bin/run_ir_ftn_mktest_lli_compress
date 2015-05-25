@@ -16,12 +16,16 @@ do_one_dir()
       echo " "
       echo =================================================================
       echo compressing in dir \"$passed_parent\"
-   cd $passed_parent
-      tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
-	 rm -rf PASSED && \
-	 mkdir PASSED && \
-	 mv /tmp/PASSED.tar.bz2 PASSED
-      cd $start_dir
+      if ls -1 $passed_dir/*tar.bz2 | grep -q ^; then
+         echo "  " dir is already compressed
+      else
+	 cd $passed_parent
+	 tar -cvjf /tmp/PASSED.tar.bz2 PASSED && \
+	    rm -rf PASSED && \
+	    mkdir PASSED && \
+	    mv /tmp/PASSED.tar.bz2 PASSED
+	 cd $start_dir
+      fi
    done
 }
 
