@@ -518,10 +518,11 @@ to the output directory, F<outdir>.
 Increase verbosity.  Verbosity increases by one unit every time this
 options is specified.
 
-=item -n
+=item -n I<num_calls>
 
-Specifies the number of times that the generated test should call 
-each function.  If unspecified, it defaults to 5.
+Specifies the number of times that the generated test should call each
+function.  If unspecified, it defaults to 5.  For a reasonably
+thorough test, one would usually want more calls.
 
 =back
 
