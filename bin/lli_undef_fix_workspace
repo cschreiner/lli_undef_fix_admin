@@ -10,6 +10,7 @@ scriptname=lli_undef_fix_workspace
 # ==========================================================================
 # read command line args
 arg_shell=false
+arg_exec=false
 
 need_to_exit=false
 while [ $# -ge 1 ]; do
@@ -18,9 +19,9 @@ while [ $# -ge 1 ]; do
          arg_shell=true
          shift
          ;;
-      --)
-         # preserve remaining arguments for future use
+      --exec)
          shift
+         # we will execute the remaining arguments as a command later.
          break
 	 ;;
       *)
@@ -38,10 +39,11 @@ fi
 if true; then #;;
    # print arguments for debugging
    echo arg_shell=\"$arg_shell\"
+   echo arg_exec=\"$arg_exec\"
    for ii in "$@"; do
       echo arg=\"$ii\"
    done
-   exit 1
+   #exit 1
 fi
 
 # ==========================================================================
@@ -66,12 +68,17 @@ cd $PROJ_ROOT/git
 # ==========================================================================
 # create the workspace or equivalent
 
-if [ "$arg_shell" = "true" ]; then
+if [ "$arg_exec" = "true" ]; then
    if [ $# -gt 0 ]; then
       exec bash -c "$@"
    else
-      exec bash 
+      ${scriptname}: error: no arguments found after '--exec', nothing to do.
+      exit 255
    fi
+fi
+
+if [ "$arg_shell" = "true" ]; then
+   exec bash -c "$@"
 fi
 
 # start a bunch of xwindows
