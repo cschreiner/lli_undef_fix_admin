@@ -500,10 +500,31 @@ Create test cases for each function specified in an LLVM IR file.
 
 ir_ftn_mktest.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
 
-ir_ftn_mktest.pl [debug] F<irfile>
+ir_ftn_mktest.pl [debug] F<irfile> F<outdir>
 
 =head1 DESCRIPTION
 
+Reads LLVM IR functions from F<irfile>, and writes out one program per
+function that calls that function the specified number of times with
+random parameters, and prints that result.  These programs are written
+to the output directory, F<outdir>.
+
+=head2 Options
+
+=over
+
+=item -v
+
+Increase verbosity.  Verbosity increases by one unit every time this
+options is specified.
+
+=item -n I<num_calls>
+
+Specifies the number of times that the generated test should call each
+function.  If unspecified, it defaults to 5.  For a reasonably
+thorough test, one would usually want more calls.
+
+=back
 
 =head1 EXTERNAL INFLUENCES
 

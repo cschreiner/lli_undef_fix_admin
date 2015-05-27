@@ -22,7 +22,7 @@ run_one_file()
    mkdir -p $workdir
 
    echo running ir_ftn_mktest on \"$arg_irfile\"
-   $PROJ_ROOT/admin/bin/ir_ftn_mktest $arg_irfile $workdir
+   $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 100 $workdir
    ir_ftn_mktest_status=$?
    if [ $ir_ftn_mktest_status -ne 0 ]; then
       echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
