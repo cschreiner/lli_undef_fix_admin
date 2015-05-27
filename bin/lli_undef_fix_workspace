@@ -42,7 +42,7 @@ if [ "$need_to_exit" = "true" ]; then
    exit 255
 fi
 
-if [ "$arg_verbose" = "true"]; then 
+if [ "$arg_verbose" = "true" ]; then 
    # print arguments for debugging
    echo arg_shell=\"$arg_shell\"
    echo arg_verbose=\"$arg_verbose\"
