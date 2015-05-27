@@ -11,12 +11,17 @@ scriptname=lli_undef_fix_workspace
 # read command line args
 arg_shell=false
 arg_exec=false
+arg_verbose=false
 
 need_to_exit=false
 while [ $# -ge 1 ]; do
    case $1 in
       --shell)
          arg_shell=true
+         shift
+         ;;
+      -v|--verbose)
+         arg_verbose=true
          shift
          ;;
       --exec)
@@ -37,9 +42,10 @@ if [ "$need_to_exit" = "true" ]; then
    exit 255
 fi
 
-if true; then #;;
+if [ "$arg_verbose" = "true"]; then 
    # print arguments for debugging
    echo arg_shell=\"$arg_shell\"
+   echo arg_verbose=\"$arg_verbose\"
    echo arg_exec=\"$arg_exec\"
    for ii in "$@"; do
       echo arg=\"$ii\"
