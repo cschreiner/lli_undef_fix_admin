@@ -20,6 +20,7 @@ while [ $# -ge 1 ]; do
          shift
          ;;
       --exec)
+         arg_exec=true
          shift
          # we will execute the remaining arguments as a command later.
          break
