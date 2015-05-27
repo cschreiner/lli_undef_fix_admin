@@ -77,7 +77,8 @@ cd $PROJ_ROOT/git
 
 if [ "$arg_exec" = "true" ]; then
    if [ $# -gt 0 ]; then
-      exec "$@"
+      echo "$@" | bash -s
+      exit $?
    else
       ${scriptname}: error: no arguments found after '--exec', nothing to do.
       exit 255
