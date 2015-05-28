@@ -4,11 +4,17 @@
 
 scriptname=run_ir_ftn_mktest_lli
 
+# set up constants
+POUND30='##############################'
+
 # TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
 # that get used.
 
+# ============================================================================
 run_one_file()  
+# ============================================================================
 {
+   ftn_name="run_one_file"
    arg_irfile="$1" # read the functions to test from this file
    if [ -z "$arg_irfile" ]; then
       echo ${scriptname}: no IR file specified, nothing to do.
@@ -47,9 +53,9 @@ run_one_file()
    done
    mv *.ll NOT_YET_DONE
    (
-      echo invocation: $scriptname "$@" 
+      echo invocation: $scriptname $ftn_name'()' "$@" 
       echo start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
-      echo host=`hostname`
+      echo host=`hostname` "  " pid=$$
       echo " "
    ) >> $workdir/log
 
@@ -169,13 +175,27 @@ run_one_file()
       fi
 
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-      # move stuff not needing attention into another directory
+      # finish the report
       echo needs_attention=\"$needs_attention\" >> $report_file
       if [ "$needs_attention" = "true" ]; then
 	 echo $llfile_basename needs_attention
-	 echo $llfile_basename needs_attention >> $workdir/log
 	 metric_num_needs_attention=$(( $metric_num_needs_attention + 1 ))
-      else
+      fi
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # copy the report into the log for later analysis
+      (
+	 echo ${POUND30}${POUND30} 
+         echo `basename $report_file`:
+         echo " "
+         cat $report_file
+         echo " "
+	 echo ${POUND30}${POUND30} 
+      ) >> $workdir/log
+
+      # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+      # move stuff not needing attention into another directory
+      if [ "$needs_attention" != "true" ]; then
          tar -cjf PASSED/${llfile_basename}.tar.bz2 \
 	       ${llfile_basename}.* ${llfile_basename}_*
          rm ${llfile_basename}.* ${llfile_basename}_*
