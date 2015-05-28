@@ -251,7 +251,7 @@ run_one_file()
 
 # ==========================================================================
 # read command line args
-arg_workdir_parent=""
+arg_master_dir=""
 arg_verbose="false"
 declare -a arg_files_array
 
@@ -267,7 +267,7 @@ while [ $# -ge 1 ]; do
       -d)
          shift
          if [ $# -ge 1 ]; then
-	    arg_workdir_parent="$1"
+	    arg_master_dir="$1"
 	    shift
 	 else
             echo ${scriptname}: error: directory name must follow \"-d\".
@@ -282,7 +282,7 @@ done
 
 if [ "$arg_verbose" = "true" ]; then 
    # print arguments for debugging
-   echo arg_workdir_parent=\"$arg_workdir_parent\"
+   echo arg_master_dir=\"$arg_master_dir\"
    echo arg_verbose=\"$arg_verbose\"
    for ii in "${arg_files_array[@]}"; do
       echo arg=\"$ii\"
@@ -292,10 +292,10 @@ fi
 # ----------------------------------------------------------------------
 # check args
 
-if [ -n "$arg_workdir_parent" -a ! -d "$arg_workdir_parent" ]; then
+if [ -n "$arg_master_dir" -a ! -d "$arg_master_dir" ]; then
    echo ${scriptname}: error: workdir parent does not appear to be an existing
    echo	"  " directory.  Please create the directory and rerun.
-   echo "  " dir=\"$arg_workdir_parent\"
+   echo "  " dir=\"$arg_master_dir\"
    need_to_exit=true
 fi
 
@@ -309,16 +309,20 @@ fi
 
 script_id=`hostname -s`_`date +%Y%b%d_%H%M%S`_$$
 
-if [ -z "$arg_workdir_parent" ]; then
-   workdir_parent=$PROJ_ROOT/`hostname -s`/test/${scriptname}..${script_id}
-   mkdir -p $workdir_parent
+if [ -z "$arg_master_dir" ]; then
+   master_dir=$PROJ_ROOT/`hostname -s`/test/${scriptname}..${script_id}
+   workdir_parent="$master_dir"
+   mkdir -p $master_dir
 else 
-   workdir_parent="$arg_workdir_parent"
+   master_dir="$arg_master_dir"
+   workdir_parent=$PROJ_ROOT/`hostname -s`/test/`basename $master_dir`
 fi
+echo Using master dir=
+echo "  " \"$master_dir\"
 echo Using workdir parent=
 echo "  " \"$workdir_parent\"
 
-script_logfile=$workdir_parent/logfile_${script_id}
+script_logfile=$master_dir/logfile_${script_id}
 
 global_start_time=`date +%s`
 (
