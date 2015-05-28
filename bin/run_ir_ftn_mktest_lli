@@ -254,7 +254,7 @@ fi
 # ----------------------------------------------------------------------
 # check args
 
-if [ ! -d "$arg_workdir_parent" ]; then
+if [ -n "$arg_workdir_parent" -a ! -d "$arg_workdir_parent" ]; then
    echo ${scriptname}: error: workdir parent does not appear to be an existing
    echo	"  " directory.  Please create the directory and rerun.
    echo "  " dir=\"$arg_workdir_parent\"
