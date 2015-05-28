@@ -39,11 +39,10 @@ run_one_file()
    mkdir -p $workdir
 
    local current_ftn_num=0;
-   local total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
    local start_time=`date +%s`
+   local total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
    local metric_num_passed=0
    local metric_num_needs_attention=0
-   local num_needs_attention=0
 
    echo running ir_ftn_mktest on \"$arg_irfile\"
    echo running $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 300 $arg_irfile $workdir #;;
