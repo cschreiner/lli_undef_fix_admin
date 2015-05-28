@@ -15,15 +15,15 @@ run_one_file()
       exit 127
    fi
 
-   workdir=$arg_workdir_parent/`basename $arg_irfile`
+   workdir=$workdir_parent/`basename $arg_irfile`
    if [ -e $workdir ]; then
-      workdir=${workdir}_`date %Y%b%d_%H%M%S`_$$
+      workdir=${workdir}_$script_id
       if [ -e $workdir ]; then
          (
 	    echo ERROR: workdir exists:
 	    echo "  " dir=\"$workdir\"
             echo "  " skipping \"$arg_irfile\".
-	 ) >> $arg_workdir_parent/log
+	 ) >> $workdir_parent/log
          return 126
       fi
    fi
@@ -213,7 +213,7 @@ run_one_file()
 
 # ==========================================================================
 # read command line args
-arg_workdir_parent=$PROJ_ROOT/`hostname -s`/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$
+arg_workdir_parent=""
 arg_verbose="false"
 declare -a arg_files_array
 
@@ -267,11 +267,41 @@ if [ "$need_to_exit" = "true" ]; then
 fi
 
 # ===========================================================================
+# set up 
+
+script_id=`hostname -s`_`date +%Y%b%d_%H%M%S`_$$
+script_logfile=$workdir_parent/logfile_${script_id}
+
+if [ -z "$arg_workdir_parent" ]; then
+   workdir_parent=$PROJ_ROOT/`hostname -s`/test/${scriptname}..${script_id}
+else 
+   workdir_parent="$arg_workdir_parent"
+fi
+echo Using workdir parent=\"$workdir_parent\"
+
+(
+   echo `hostname -s` start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
+   echo "  " will attempt to run:
+   for ii in "${arg_files_array[@]}"; do
+      echo "  " \"$ii\"
+   done
+   echo " "
+) >> $script_logfile
+
+
+# ===========================================================================
 # main program
 
 for file in "${arg_files_array[@]}"; do
    run_one_file "$file"
 done
+
+# ===========================================================================
+# clean up
+(
+   echo " "
+   echo `hostname -s` stop time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
+) >> $script_logfile
 
 # ===========================================================================
 # end of script
