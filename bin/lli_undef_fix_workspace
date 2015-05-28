@@ -86,7 +86,7 @@ if [ "$arg_exec" = "true" ]; then
 fi
 
 if [ "$arg_shell" = "true" ]; then
-   exec bash -c "$@"
+   exec bash 
 fi
 
 # start a bunch of xwindows
