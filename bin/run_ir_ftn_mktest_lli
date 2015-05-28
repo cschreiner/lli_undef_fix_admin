@@ -253,6 +253,8 @@ run_one_file()
 # read command line args
 arg_master_dir=""
 arg_verbose="false"
+arg_o3_script=""
+arg_o3_ll=""
 declare -a arg_files_array
 
 # ----------------------------------------------------------------------
@@ -271,6 +273,26 @@ while [ $# -ge 1 ]; do
 	    shift
 	 else
             echo ${scriptname}: error: directory name must follow \"-d\".
+            need_to_exit=true
+         fi
+	 ;;
+      --o3-script)
+         shif--o3-scriptt
+         if [ $# -ge 1 ]; then
+	    arg_o3_script="$1"
+	    shift
+	 else
+            echo ${scriptname}: error: a script name must follow \"--o3-script\".
+            need_to_exit=true
+         fi
+	 ;;
+      --o3-ll)
+         shift
+         if [ $# -ge 1 ]; then
+	    arg_o3_ll="$1"
+	    shift
+	 else
+            echo ${scriptname}: error: an .ll file must follow \"--o3-ll\".
             need_to_exit=true
          fi
 	 ;;
