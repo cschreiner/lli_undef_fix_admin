@@ -309,6 +309,15 @@ fi
 
 script_id=`hostname -s`_`date +%Y%b%d_%H%M%S`_$$
 
+# Concept definitions:
+# master_dir: all hosts running related jobs write their script_logfiles here.
+#	This is typically on a networked hard drive.
+# workdir_parent: a dir on a local hard drive where per-input-file workdirs 
+#	are created, along with the per-input-file logs.  This distributes
+#	disk accesses across many hard drives, so no one hard drive is as 
+#	likely to get thrashed.
+# Often, the master_dir is also the workdir_parent for one host.
+
 if [ -z "$arg_master_dir" ]; then
    master_dir=$PROJ_ROOT/`hostname -s`/test/${scriptname}..${script_id}
    workdir_parent="$master_dir"
