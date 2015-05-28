@@ -5,7 +5,8 @@
 scriptname=run_ir_ftn_mktest_lli
 
 # set up constants
-POUND30='##############################'
+POUND32='################################'
+DOUBLE_DASH_32="================================"
 
 # TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
 # that get used.
@@ -14,14 +15,14 @@ POUND30='##############################'
 run_one_file()  
 # ============================================================================
 {
-   ftn_name="run_one_file"
-   arg_irfile="$1" # read the functions to test from this file
+   local ftn_name="run_one_file"
+   local arg_irfile="$1" # read the functions to test from this file
    if [ -z "$arg_irfile" ]; then
       echo ${scriptname}: no IR file specified, nothing to do.
       exit 127
    fi
 
-   workdir=$workdir_parent/`basename $arg_irfile`
+   local workdir=$workdir_parent/`basename $arg_irfile`
    if [ -e $workdir ]; then
       workdir=${workdir}_$script_id
       if [ -e $workdir ]; then
@@ -37,10 +38,17 @@ run_one_file()
    echo workdir=\"$workdir\"
    mkdir -p $workdir
 
+   local current_ftn_num=0;
+   local total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
+   local start_time=`date +%s`
+   local metric_num_passed=0
+   local metric_num_needs_attention=0
+   local num_needs_attention=0
+
    echo running ir_ftn_mktest on \"$arg_irfile\"
    echo running $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 300 $arg_irfile $workdir #;;
    $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 300 $arg_irfile $workdir
-   ir_ftn_mktest_status=$?
+   local ir_ftn_mktest_status=$?
    if [ $ir_ftn_mktest_status -ne 0 ]; then
       echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
       return $ir_ftn_mktest_status
@@ -54,17 +62,10 @@ run_one_file()
    mv *.ll NOT_YET_DONE
    (
       echo invocation: $scriptname $ftn_name'()' "$@" 
-      echo start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
+      echo start time=`date +%Y%b%d_%H%M%S` \($start_time s\)
       echo host=`hostname` "  " pid=$$
       echo " "
    ) >> $workdir/log
-
-
-   current_ftn_num=0;
-   total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
-   start_time=`date +%s`
-   metric_num_passed=0
-   metric_num_needs_attention=0
 
    if [ $total_ftns -eq 0 ]; then
       echo No functions found, nothing to do. >> $workdir/log
@@ -73,11 +74,11 @@ run_one_file()
    fi
 
    for raw_llfile in NOT_YET_DONE/*.ll; do
-      llfile_basename=`basename $raw_llfile .ll`
-      llfile_o0=${llfile_basename}_o0.ll
-      llfile_o3=${llfile_basename}_o3.ll
+      local llfile_basename=`basename $raw_llfile .ll`
+      local llfile_o0=${llfile_basename}_o0.ll
+      local llfile_o3=${llfile_basename}_o3.ll
 
-      report_file=$llfile_basename.report 
+      local report_file=$llfile_basename.report 
       touch $report_file
       (
 	 echo report for basename $llfile_basename 
@@ -87,9 +88,9 @@ run_one_file()
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # report progress
       current_ftn_num=$(( $current_ftn_num+ 1 ))
-      percent=$(( 100 * $current_ftn_num / $total_ftns ))
+      local percent=$(( 100 * $current_ftn_num / $total_ftns ))
 
-      current_time=`date +%s`
+      local current_time=`date +%s`
       # formula development:
       # time_remaining = total_time * percent_remaining
       # 
@@ -103,12 +104,12 @@ run_one_file()
       # time_remaining = (-------------------------) * (100-percent_so_far)
       #                    percent_so_far
       if [ $percent -eq 0 ]; then
-	 time_remaining=2147418112
-	 time_remaining_min=2147418112
+	 local time_remaining=2147418112
+	 local time_remaining_min=2147418112
       else 
-	 time_remaining=$(( ($current_time-$start_time)*(100-$percent)/ \
+	 local time_remaining=$(( ($current_time-$start_time)*(100-$percent)/ \
 	       ($percent) ))
-	 time_remaining_min=$(( $time_remaining / 60 + 1 ))
+	 local time_remaining_min=$(( $time_remaining / 60 + 1 ))
       fi
 
       echo examining $llfile_basename \
@@ -124,7 +125,7 @@ run_one_file()
       # TODO: add test here to insure program catches an undefined
       # optimization behavior.
 
-      opt_status=$?
+      local opt_status=$?
       if [ $opt_status -ne 0 -o -s $llfile_basename.opt.stderr ]; then
 	 (
 	    echo opt failed with status \"$opt_status\", 
@@ -136,26 +137,26 @@ run_one_file()
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # run the unoptimized and optimized versions
       llifi $llfile_o0 > $llfile_o0.stdout 2> $llfile_o0.stderr
-      o0_status=$?
+      local o0_status=$?
       echo o0_status=$o0_status >> $report_file
 
       llifi $llfile_o3 > $llfile_o3.stdout 2> $llfile_o3.stderr
-      o3_status=$?
+      local o3_status=$?
       echo o3_status=$o3_status >> $report_file
 
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # tests for less definedness
-      needs_attention=false
+      local needs_attention=false
       if [ "$o0_status" -eq 0 -a "$o3_status" -ne 0 ]; then
 	 echo o3 is less defined by exit status >> $report_file
 	 needs_attention=true
       fi
 
       grep -q poison $llfile_o0.stdout 
-      o0_poison=$?
+      local o0_poison=$?
       echo o0_poison=$o0_poison '(1 means no poison)' >> $report_file
       grep -q poison $llfile_o3.stdout 
-      o3_poison=$?
+      local o3_poison=$?
       echo o3_poison=$o3_poison '(1 means no poison)' >> $report_file
       if [ "$o0_poison" -eq 1 -a "$o3_poison" -ne 1 ]; then
 	 echo o3 is less defined by poison >> $report_file
@@ -163,14 +164,16 @@ run_one_file()
       fi
 
       diff -q $llfile_o0.stdout $llfile_o3.stdout >> /dev/null
-      diff_status=$?
+      local diff_status=$?
       if [ $diff_status -ne 0 ]; then
 	 if [ "$needs_attention" = "false" -a \
 	       $o0_status -eq 0 -a $o0_poison -eq 1 ]; then
-	    echo stdout differs yet everything else seems in order >> $report_file
+	    echo stdout differs yet everything else seems in order \
+		  >> $report_file
 	    needs_attention=true
 	 else 
-	    echo stdout differs, as expected given other problems >> $report_file
+	    echo stdout differs, as expected given other problems \
+		  >> $report_file
 	 fi
       fi
 
@@ -185,12 +188,12 @@ run_one_file()
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # copy the report into the log for later analysis
       (
-	 echo ${POUND30}${POUND30} 
+	 echo ${POUND32}${POUND32} 
          echo `basename $report_file`:
          echo " "
          cat $report_file
          echo " "
-	 echo ${POUND30}${POUND30} 
+	 echo ${POUND32}${POUND32} 
       ) >> $workdir/log
 
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -207,10 +210,9 @@ run_one_file()
    # log summary metrics
    (
       echo " "
-      echo double_dash_32="================================"
-      echo ${double_dash_32}${double_dash_32}
+      echo ${DOUBLE_DASH_32}${DOUBLE_DASH_32}
       stop_time=`date +%s`
-      echo stop time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
+      echo stop time=`date +%Y%b%d_%H%M%S` \($stop_time s\)
       duration_s=$(( $stop_time - $start_time ))
       duration_min=$(( $duration_s / 60 ))
       duration_rem_s=$(( $duration_s % 60 ))
