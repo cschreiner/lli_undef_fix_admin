@@ -20,7 +20,7 @@ echo_run_time()
    local arg_stop_time=$1
    local arg_label="$@"
 
-   local duration_s=$(( $stop_time - $start_time ))
+   local duration_s=$(( $arg_stop_time - $arg_start_time ))
    local duration_min=$(( $duration_s / 60 ))
    local duration_rem_s=$(( $duration_s % 60 ))
    local duration_hrs=$(( $duration_min / 60 ))
