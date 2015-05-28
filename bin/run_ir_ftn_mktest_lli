@@ -205,6 +205,8 @@ arg_workdir_parent=`pwd`
 arg_verbose="false"
 declare -a arg_files_array
 
+# ----------------------------------------------------------------------
+# parse args
 need_to_exit=false
 while [ $# -ge 1 ]; do
    case "$1" in
@@ -228,11 +230,6 @@ while [ $# -ge 1 ]; do
    esac
 done
 
-if [ "$need_to_exit" = "true" ]; then
-   echo ${scriptname}: too many errors, exiting.
-   exit 255
-fi
-
 if [ "$arg_verbose" = "true" ]; then 
    # print arguments for debugging
    echo arg_workdir_parent=\"$arg_workdir_parent\"
@@ -241,6 +238,22 @@ if [ "$arg_verbose" = "true" ]; then
       echo arg=\"$ii\"
    done
 fi
+
+# ----------------------------------------------------------------------
+# check args
+
+if [ ! -d "$arg_workdir_parent" ]; then
+   echo ${scriptname}: error: workdir parent does not appear to be an existing
+   echo	"  " directory.  Please create the directory and rerun.
+   echo "  " dir=\"$arg_workdir_parent\"
+   need_to_exit=true
+fi
+
+if [ "$need_to_exit" = "true" ]; then
+   echo ${scriptname}: too many errors, exiting.
+   exit 255
+fi
+
 
 exit 1 #;;
 
