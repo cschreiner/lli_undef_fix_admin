@@ -4,12 +4,33 @@
 
 scriptname=run_ir_ftn_mktest_lli
 
+# TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
+# that get used.
+
+# ===========================================================================
 # set up constants
 POUND32='################################'
 DOUBLE_DASH_32="================================"
 
-# TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
-# that get used.
+# ============================================================================
+echo_run_time()  
+# ============================================================================
+{
+   local arg_start_time=$1
+   local arg_stop_time=$1
+   local arg_label="$@"
+
+   local duration_s=$(( $stop_time - $start_time ))
+   local duration_min=$(( $duration_s / 60 ))
+   local duration_rem_s=$(( $duration_s % 60 ))
+   local duration_hrs=$(( $duration_min / 60 ))
+   local duration_rem_min=$(( $duration_min % 60 ))
+   echo $arg_label \
+	 run time= ${duration_hrs}:${duration_rem_min}:${duration_rem_s} \
+	 \($duration_s s\)
+   return 0
+}
+
 
 # ============================================================================
 run_one_file()  
@@ -212,13 +233,7 @@ run_one_file()
       echo ${DOUBLE_DASH_32}${DOUBLE_DASH_32}
       stop_time=`date +%s`
       echo stop time=`date +%Y%b%d_%H%M%S` \($stop_time s\)
-      duration_s=$(( $stop_time - $start_time ))
-      duration_min=$(( $duration_s / 60 ))
-      duration_rem_s=$(( $duration_s % 60 ))
-      duration_hrs=$(( $duration_min / 60 ))
-      duration_rem_min=$(( $duration_min % 60 ))
-      echo run time= ${duration_hrs}:${duration_rem_min}:${duration_rem_s} \
-	    \($duration_s s\)
+      echo_run_time $start_time $stop_time file
       echo " "
 
       echo "number of ftns passing= ......... \"$metric_num_passed\"
@@ -305,8 +320,9 @@ echo "  " \"$workdir_parent\"
 
 script_logfile=$workdir_parent/logfile_${script_id}
 
+global_start_time=`date +%s`
 (
-   echo `hostname -s` start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
+   echo `hostname -s` start time=`date +%Y%b%d_%H%M%S` \($start_time s\)
    echo "  " will attempt to process these files:
    for ii in "${arg_files_array[@]}"; do
       echo "  " \"$ii\"
@@ -324,9 +340,12 @@ done
 
 # ===========================================================================
 # clean up
+global_stop_time=`date +%s`
 (
    echo " "
-   echo `hostname -s` stop time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
+   echo `hostname -s` stop time=`date +%Y%b%d_%H%M%S` \($global_stop_time s\)
+   echo_run_time $global_start_time $global_stop_time "`hostname -s` global"
+   echo " "
 ) >> $script_logfile
 
 # ===========================================================================
