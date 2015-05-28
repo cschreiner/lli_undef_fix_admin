@@ -270,7 +270,6 @@ fi
 # set up 
 
 script_id=`hostname -s`_`date +%Y%b%d_%H%M%S`_$$
-script_logfile=$workdir_parent/logfile_${script_id}
 
 if [ -z "$arg_workdir_parent" ]; then
    workdir_parent=$PROJ_ROOT/`hostname -s`/test/${scriptname}..${script_id}
@@ -278,6 +277,8 @@ else
    workdir_parent="$arg_workdir_parent"
 fi
 echo Using workdir parent=\"$workdir_parent\"
+
+script_logfile=$workdir_parent/logfile_${script_id}
 
 (
    echo `hostname -s` start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
