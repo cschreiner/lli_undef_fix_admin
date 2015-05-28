@@ -273,6 +273,7 @@ script_id=`hostname -s`_`date +%Y%b%d_%H%M%S`_$$
 
 if [ -z "$arg_workdir_parent" ]; then
    workdir_parent=$PROJ_ROOT/`hostname -s`/test/${scriptname}..${script_id}
+   mkdir -p $workdir_parent
 else 
    workdir_parent="$arg_workdir_parent"
 fi
