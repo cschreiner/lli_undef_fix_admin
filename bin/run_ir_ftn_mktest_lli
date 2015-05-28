@@ -4,8 +4,6 @@
 
 scriptname=run_ir_ftn_mktest_lli
 
-# TODO: move the bulk of this program into a shell function, so we can call the function one time for every ir file specified on the command line.
-
 # TODO: tweak ir_ftn_mktest so it warns about functions that have no arguments
 # that get used.
 
@@ -16,8 +14,19 @@ run_one_file()
       echo ${scriptname}: no IR file specified, nothing to do.
       exit 127
    fi
-   workdir=$PROJ_ROOT/`hostname -s`/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$/`basename $arg_irfile`
-   # TODO: add something so a parent of the workdir can be specified on the command line.
+
+   workdir=$arg_workdir_parent/`basename $arg_irfile`
+   if [ -e $workdir ]; then
+      workdir=${workdir}_`date %Y%b%d_%H%M%S`_$$
+      if [ -e $workdir ]; then
+         (
+	    echo ERROR: workdir exists:
+	    echo "  " dir=\"$workdir\"
+            echo "  " skipping \"$arg_irfile\".
+	 ) >> $arg_workdir_parent/log
+         return 126
+      fi
+   fi
 
    mkdir -p $workdir
 
@@ -37,7 +46,7 @@ run_one_file()
    mv *.ll NOT_YET_DONE
    (
       echo invocation: $scriptname "$@" 
-      echo start time=`date +%Y%b%d_%H%M%S` 
+      echo start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
       echo host=`hostname`
       echo " "
    ) >> $workdir/log
@@ -103,6 +112,10 @@ run_one_file()
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # run opt
       opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
+
+      # TODO: add test here to insure program catches an undefined
+      # optimization behavior.
+
       opt_status=$?
       if [ $opt_status -ne 0 -o -s $llfile_basename.opt.stderr ]; then
 	 (
@@ -175,7 +188,7 @@ run_one_file()
       echo double_dash_32="================================"
       echo ${double_dash_32}${double_dash_32}
       stop_time=`date +%s`
-      echo stop time=`date +%Y%b%d_%H%M%S` 
+      echo stop time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
       duration_s=$(( $stop_time - $start_time ))
       duration_min=$(( $duration_s / 60 ))
       duration_rem_s=$(( $duration_s % 60 ))
@@ -200,7 +213,7 @@ run_one_file()
 
 # ==========================================================================
 # read command line args
-arg_workdir_parent=`pwd`
+arg_workdir_parent=$PROJ_ROOT/`hostname -s`/test/${scriptname}..`date +%Y%b%d_%H%M%S`_$$
 arg_verbose="false"
 declare -a arg_files_array
 
