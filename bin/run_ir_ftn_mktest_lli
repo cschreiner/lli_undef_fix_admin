@@ -140,7 +140,13 @@ run_one_file()
 
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # run opt
-      opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
+      if [ -a $arg_o3_ll ]; then
+	 opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
+      else
+         # simulate running opt during while testing this script
+	 cat $arg_o3_ll > $llfile_o3
+         touch $llfile_basename.opt.stderr
+      fi
 
       # TODO: add test here to insure program catches an undefined
       # optimization behavior.
@@ -160,7 +166,12 @@ run_one_file()
       local o0_status=$?
       echo o0_status=$o0_status >> $report_file
 
-      llifi $llfile_o3 > $llfile_o3.stdout 2> $llfile_o3.stderr
+      if [ -z $arg_o3_script ]; then
+	 llifi $llfile_o3 > $llfile_o3.stdout 2> $llfile_o3.stderr
+      else
+         # simulate running $llfile_o3 while testing this script
+         $arg_o3_script > $llfile_o3.stdout 2> $llfile_o3.stderr
+      fi
       local o3_status=$?
       echo o3_status=$o3_status >> $report_file
 
