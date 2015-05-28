@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # script to run ir_ftn_mktest + lli and look for definedness issues
 # between optimized and unoptimized code.
 
@@ -199,14 +199,55 @@ run_one_file()
    return 0
 }
 
-# ===========================================================================
-# process command line args
+# ==========================================================================
+# read command line args
+arg_workdir_parent=`pwd`
+arg_verbose="false"
+declare -a arg_files_array
 
+need_to_exit=false
+while [ $# -ge 1 ]; do
+   case "$1" in
+      -v|--verbose)
+         arg_verbose=true
+         shift
+         ;;
+      -d)
+         shift
+         if [ $# -ge 1 ]; then
+	    arg_workdir_parent="$1"
+	    shift
+	 else
+            echo ${scriptname}: error: directory name must follow \"-d\".
+            need_to_exit=true
+         fi
+	 ;;
+      *)
+         arg_files_array=( "${arg_files_array[@]}" "$1" )
+         shift
+   esac
+done
+
+if [ "$need_to_exit" = "true" ]; then
+   echo ${scriptname}: too many errors, exiting.
+   exit 255
+fi
+
+if [ "$arg_verbose" = "true" ]; then 
+   # print arguments for debugging
+   echo arg_workdir_parent=\"$arg_workdir_parent\"
+   echo arg_verbose=\"$arg_verbose\"
+   for ii in "${arg_files_array[@]}"; do
+      echo arg=\"$ii\"
+   done
+fi
+
+exit 1 #;;
 
 # ===========================================================================
 # main program
 
-for file in "$@"; do
+for file in "${arg_files_array[@]}"; do
    run_one_file "$file"
 done
 
