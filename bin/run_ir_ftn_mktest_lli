@@ -28,6 +28,7 @@ run_one_file()
       fi
    fi
 
+   echo workdir=\"$workdir\"
    mkdir -p $workdir
 
    echo running ir_ftn_mktest on \"$arg_irfile\"
