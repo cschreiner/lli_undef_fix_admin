@@ -279,13 +279,14 @@ if [ -z "$arg_workdir_parent" ]; then
 else 
    workdir_parent="$arg_workdir_parent"
 fi
-echo Using workdir parent=\"$workdir_parent\"
+echo Using workdir parent=
+echo "  " \"$workdir_parent\"
 
 script_logfile=$workdir_parent/logfile_${script_id}
 
 (
    echo `hostname -s` start time=`date +%Y%b%d_%H%M%S` \(`date +%s` s\)
-   echo "  " will attempt to run:
+   echo "  " will attempt to process these files:
    for ii in "${arg_files_array[@]}"; do
       echo "  " \"$ii\"
    done
