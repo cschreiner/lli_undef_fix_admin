@@ -43,6 +43,7 @@ run_one_file()
       exit 127
    fi
 
+   echo got to venus line 46 #;;
    local workdir=$workdir_parent/`basename $arg_irfile`
    if [ -e $workdir ]; then
       workdir=${workdir}_$script_id
@@ -58,28 +59,29 @@ run_one_file()
 
    echo workdir=\"$workdir\"
    mkdir -p $workdir
+   for ii in INTERESTING UNINTERESTING TOOL_ISSUE/DUP PASSED KILLED \
+	 NOT_YET_DONE; do
+      mkdir -p $workdir/$ii
+   done
 
    local current_ftn_num=0;
    local start_time=`date +%s`
-   local total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
+   local total_ftns=0 # a value must be computed later
    local metric_num_passed=0
    local metric_num_needs_attention=0
 
    echo running ir_ftn_mktest on \"$arg_irfile\"
    echo running $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 300 $arg_irfile $workdir #;;
-   $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 300 $arg_irfile $workdir
+   $PROJ_ROOT/admin/bin/ir_ftn_mktest -n 300 $arg_irfile $workdir/NOT_YET_DONE
    local ir_ftn_mktest_status=$?
    if [ $ir_ftn_mktest_status -ne 0 ]; then
       echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
       return $ir_ftn_mktest_status
    fi
+   total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
 
    cd $workdir
-   for ii in INTERESTING UNINTERESTING TOOL_ISSUE/DUP PASSED KILLED \
-	 NOT_YET_DONE; do
-      mkdir -p $ii
-   done
-   mv *.ll NOT_YET_DONE
+
    (
       echo invocation: $scriptname $ftn_name'()' "$@" 
       echo start time=`date +%Y%b%d_%H%M%S` \($start_time s\)
@@ -94,6 +96,7 @@ run_one_file()
    fi
 
    for raw_llfile in NOT_YET_DONE/*.ll; do
+      echo got to earth line 98 #;;
       local llfile_basename=`basename $raw_llfile .ll`
       local llfile_o0=${llfile_basename}_o0.ll
       local llfile_o3=${llfile_basename}_o3.ll
@@ -218,6 +221,7 @@ run_one_file()
 
       # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
       # copy the report into the log for later analysis
+      echo got to mars line 223 #;;
       (
 	 echo ${POUND32}${POUND32} 
          echo `basename $report_file`:
@@ -288,7 +292,7 @@ while [ $# -ge 1 ]; do
          fi
 	 ;;
       --o3-script)
-         shif--o3-scriptt
+         shift
          if [ $# -ge 1 ]; then
 	    arg_o3_script="$1"
 	    shift
@@ -306,6 +310,11 @@ while [ $# -ge 1 ]; do
             echo ${scriptname}: error: an .ll file must follow \"--o3-ll\".
             need_to_exit=true
          fi
+	 ;;
+      -*)
+         echo ${scriptname}: error: do not understand option \"$1\"
+	 need_to_exit=true
+	 shift
 	 ;;
       *)
          arg_files_array=( "${arg_files_array[@]}" "$1" )
@@ -357,6 +366,7 @@ if [ -z "$arg_master_dir" ]; then
    mkdir -p $master_dir
 else 
    master_dir="$arg_master_dir"
+   echo got to mercury line 360 #;;
    workdir_parent=$PROJ_ROOT/`hostname -s`/test/`basename $master_dir`
 fi
 echo Using master dir=
