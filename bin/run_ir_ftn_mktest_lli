@@ -78,9 +78,9 @@ run_one_file()
       echo ir_ftn_mktest exited with status \"$ir_ftn_mktest_status\"
       return $ir_ftn_mktest_status
    fi
-   total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
 
    cd $workdir
+   total_ftns=`ls -1 NOT_YET_DONE/*.ll | grep -c ^`
 
    (
       echo invocation: $scriptname $ftn_name'()' "$@" 
