@@ -687,9 +687,15 @@ public class IRTokenizer
 	 idx++;
 	 break;
       default:
-	 throw new Error( "Internal error 2015may21_120736: "+ 
-			  "do not recognize char '"+ ch+ "' at position "+ 
-			  idx+ "." );
+	 {
+	     int start= idx- 20;
+	     if ( start < 0 ) { start= 0; }
+
+	     throw new Error( "Internal error 2015may21_120736: "+ 
+			      "do not recognize char '"+ ch+ "' at position "+ 
+			      idx+ ".\n"+  
+			      "\""+ txt.substring( start, idx+1 )+ "\"\n" );
+	 }
       } // switch
 
       // if we reached end-of-txt, clean up
