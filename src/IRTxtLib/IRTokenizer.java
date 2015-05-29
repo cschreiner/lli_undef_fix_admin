@@ -649,6 +649,9 @@ public class IRTokenizer
 	 tokenTxt.append(ch);
 	 idx++;
 	 break;
+      case '.': /* TODO: find a way to lex an elipsis ("...") into a
+		 * single token.
+		 */
       case ',': case '!': case '*': case '=': 
       case '(': case ')': 
       case '[': case ']': 
