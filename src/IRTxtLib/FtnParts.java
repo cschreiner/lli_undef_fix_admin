@@ -43,7 +43,10 @@ import IRTxtLib.*;
 // ****************************************************************************
 // File's primary class: FtnParts
 // ****************************************************************************
-/** 
+/** Converts a lexed (aka tokenized) LLVM IR function and splits it up
+ * into parts, such as the function name, its arguments, return type,
+ * body, and so forth.
+ *
  * <ul>
  * <li> Description: 
  *
@@ -186,7 +189,12 @@ public class FtnParts
       }
 
       Vector<RegWithType> argVec= new Vector<RegWithType>();
-      int argNum= 1;
+      int argNum= 0; /* Apparently the LLVM spec says that the first
+		      * unnamed argument is %0. If there are no
+		      * unnamed arguments, then %0 apparently is
+		      * applied as a label for the first basic block
+		      * of the function. -- CAS 2015may28
+		      */
       int firstBodyChunk= 0; // the first chunk that contains the function body
 
       int currentChunk= 0; 
@@ -325,7 +333,8 @@ public class FtnParts
    // ------------------------------------------------------------------------
    // toString()
    // ------------------------------------------------------------------------
-   /** generates a string representation of this instance 
+   /** generates a string representation of this instance: the name of
+    * the function, its return type, info on its arguments, etc.
     * 
     * <ul>
     * <li> Detailed Description: 
