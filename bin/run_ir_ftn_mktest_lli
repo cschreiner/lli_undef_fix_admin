@@ -368,7 +368,7 @@ if [ -z "$arg_master_dir" ]; then
    workdir_parent="$master_dir"
    mkdir -p $master_dir
 else 
-   master_dir="$arg_master_dir"
+   master_dir=`realpath "$arg_master_dir"`
    workdir_parent=$PROJ_ROOT/`hostname -s`/test/`basename $master_dir`
 fi
 echo Using master dir=
