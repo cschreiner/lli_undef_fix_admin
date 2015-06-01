@@ -69,6 +69,10 @@ bindings/go/llvm/workdir
 # stuff added by CAS
 #==============================================================================#
 
+# text editor temporary files
+*#
+*.bak
+
 # java files
 *.class
 
