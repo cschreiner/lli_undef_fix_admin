@@ -148,7 +148,7 @@ run_one_file()
 	 opt -O3 -S $llfile_o0 > $llfile_o3 2> $llfile_basename.opt.stderr
       else
          # simulate running opt during while testing this script
-	 cat $arg_o3_ll > $llfile_o3
+	 cat $abs_o3_ll > $llfile_o3
          touch $llfile_basename.opt.stderr
       fi
 
@@ -350,6 +350,9 @@ fi
 # set up 
 
 script_id=`hostname -s`_`date +%Y%b%d_%H%M%S`_$$
+STARTDIR=`pwd`
+
+abs_o3_ll=`realpath $arg_o3_ll`
 
 # Concept definitions:
 # master_dir: all hosts running related jobs write their script_logfiles here.
