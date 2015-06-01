@@ -76,6 +76,9 @@ bindings/go/llvm/workdir
 # java files
 *.class
 
+# java-build files created by this project's makefiles
+.build_complete
+
 # stuff staged for deletion
 OLD
 
