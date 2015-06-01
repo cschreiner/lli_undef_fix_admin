@@ -2,9 +2,9 @@
 # test run_ir_ftn_mktest_lli's ability to deal with an optimized .ll file
 # whose exit status indicates a problem.
 
-scriptname=<scriptname>
+scriptname=run_ir_ftn_mktest_lli..o3_status.sh
 
-if [ -z "TESTDRIVER_CASE_WORKDIR" ]; then
+if [ -z "$TESTDRIVER_CASE_WORKDIR" ]; then
    export TESTDRIVER_CASE_WORKDIR=tmp/${scriptname}_`date +Y%b%d_%H%M%S`_$$
    mkdir $TESTDRIVER_CASE_WORKDIR
    echo "had to create TESTDRIVER_CASE_WORKDIR="
