@@ -19,7 +19,7 @@ run_ir_ftn_mktest_lli -d $TESTDRIVER_CASE_WORKDIR \
       --o3-ll data/ir_ftn_mktest/add_overflow.ll \
       data/funcs-3-2/00a.ll
 
-(cd $TESTDRIVER_CASE_WORKDIR/001.ll; cat *.report)
+(cd $TESTDRIVER_CASE_WORKDIR/00a.ll; cat *.report)
 
 # ===========================================================================
 # end of script
