@@ -260,7 +260,7 @@ run_one_file()
    ) >> $workdir/log
 
    # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-   # log summary metrics
+   # clean up and return
    return 0
 }
 
