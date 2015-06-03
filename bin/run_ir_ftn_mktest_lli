@@ -282,13 +282,13 @@ while [ $# -ge 1 ]; do
          arg_verbose=true
          shift
          ;;
-      -d)
+      --master)
          shift
          if [ $# -ge 1 ]; then
 	    arg_master_dir="$1"
 	    shift
 	 else
-            echo ${scriptname}: error: directory name must follow \"-d\".
+            echo ${scriptname}: error: directory name must follow \"--master\".
             need_to_exit=true
          fi
 	 ;;
