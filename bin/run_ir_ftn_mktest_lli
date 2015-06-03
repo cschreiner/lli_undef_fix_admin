@@ -390,6 +390,8 @@ fi
 if [ -n "$arg_workdir_parent" ]; then
    workdir_parent=$arg_workdir_parent
 fi
+master_dir=`realpath $master_dir`
+workdir_parent=`realpath $workdir_parent`
 echo Using master dir=
 echo "  " \"$master_dir\"
 echo Using workdir parent=
