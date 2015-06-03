@@ -5,7 +5,7 @@
 scriptname=run_ir_ftn_mktest..add_overflow_03.sh
 
 if [ -z "$TESTDRIVER_CASE_WORKDIR" ]; then
-   export TESTDRIVER_CASE_WORKDIR=tmp/${scriptname}_`date +%Y%b%d_%H%M%S`_$$
+   export TESTDRIVER_CASE_WORKDIR=`pwd`/tmp/${scriptname}_`date +%Y%b%d_%H%M%S`_$$
    mkdir $TESTDRIVER_CASE_WORKDIR
    echo "had to create TESTDRIVER_CASE_WORKDIR="
    echo "  " \"$TESTDRIVER_CASE_WORKDIR\"
