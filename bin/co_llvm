@@ -1,0 +1,72 @@
+#!/bin/sh
+# checks out llvm into the current directory
+
+arg_version="$1"
+
+scriptname=co_llvm
+start_dir=`pwd`
+
+svn_flags="-r $arg_version"
+
+# ===========================================================================
+# check out
+
+# . . . . . . . . . . . . . . . . . . . .
+# checkout llvm
+svn co $svn_flags http://llvm.org/svn/llvm-project/llvm/trunk .
+status=$?
+if [ "$status" != 0 ]; then
+   echo ${scriptname}: Error: something went wrong checking out Llvm\'s 
+   echo "  " svn repository, exit status=\"$status\".
+   exit -1
+fi
+
+# . . . . . . . . . . . . . . . . . . . .
+# checkout clang
+if false; then
+   cd llvm/tools
+   svn co $svn_flags http://llvm.org/svn/llvm-project/cfe/trunk \
+	 clang
+   status=$?
+   if [ "$status" != 0 ]; then
+      echo ${scriptname}: Error: something went wrong checking out Llvm \
+	    clang\'s 
+      echo "  " svn repository, exit status=\"$status\".
+      exit -1
+   fi
+   cd ../..
+fi
+
+
+# . . . . . . . . . . . . . . . . . . . .
+# checkout clang extra tools
+
+if false; then
+   cd llvm/tools/clang/tools
+   svn co $svn_flags http://llvm.org/svn/llvm-project/clang-tools-extra/trunk \
+	 extra
+   status=$?
+   if [ "$status" != 0 ]; then
+      echo ${scriptname}: Error: something went wrong checking out Llvm \
+	    clan extra\'s 
+      echo "  " svn repository, exit status=\"$status\".
+      exit -1
+fi
+   cd ../../../..
+fi
+
+# . . . . . . . . . . . . . . . . . . . .
+# checkout compiler-rt
+cd llvm/projects
+svn co $svn_flags http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+status=$?
+if [ "$status" != 0 ]; then
+   echo ${scriptname}: Error: something went wrong checking out Llvm clang\'s 
+   echo "  " svn repository, exit status=\"$status\".
+   exit -1
+fi
+cd ../..
+
+# ===========================================================================
+# end of script
+
