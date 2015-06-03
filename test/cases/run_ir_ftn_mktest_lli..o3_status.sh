@@ -14,7 +14,9 @@ fi
 # -----------------------------------------------------------------------------
 # main script
 
-run_ir_ftn_mktest_lli -d $TESTDRIVER_CASE_WORKDIR --o3-script false \
+run_ir_ftn_mktest_lli --master $TESTDRIVER_CASE_WORKDIR \
+      --parent $TESTDRIVER_CASE_WORKDIR \
+      --o3-script false \
       test/data/func-3-2/001.ll
 
 (cd $TESTDRIVER_CASE_WORKDIR/001.ll; cat *.report)
