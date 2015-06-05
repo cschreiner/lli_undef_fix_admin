@@ -60,14 +60,14 @@ fi
 # =============================================================================
 # set up
 
-workdir=${scriptname}_workdir
+workdir=`pwd`/${scriptname}_workdir
 if [ -e $workdir ]; then
    echo ${scriptname}: error: workdir seems to already exist
    echo "  " dir=\"$workdir\"
    exit 127
 fi
 
-logfile=$cwd/${scriptname}_`date +%Y%b%d_%H%M%S`_$$
+logfile=`pwd`/${scriptname}_`date +%Y%b%d_%H%M%S`_$$.log
 echo logfile=\"$logfile\"
 if [ -e $logfile ]; then
    echo ${scriptname}: error: logfile seems to already exist
@@ -82,7 +82,7 @@ if [ ! -d "$PROJ_ROOT" ]; then
    exit 127
 fi
 
-echo "using workdir=" \"$cwd/$workdir\"
+echo "using workdir=" \"$workdir\"
 mkdir $workdir
 cd $workdir
 
@@ -175,7 +175,7 @@ while [ $ver -gt 0 ]; do
       echo version $ver does not appear in the svn log. >> $logfile
   
    fi
-   ver=(( $ver - 1 ))
+   ver=$(( $ver - 1 ))
 done
 
 echo ${scriptname}: error: got to version \"$ver\" without anything passing.
