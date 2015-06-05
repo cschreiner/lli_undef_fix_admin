@@ -99,7 +99,7 @@ test_one_version()
    echo "starting version $ver at" `date` >> $logfile
    cd $workdir
 
-   $PROJ_ROOT/bin/co_llvm
+   $PROJ_ROOT/admin/bin/co_llvm
    status=$?
    if [ $status != 0 ]; then
       echo ${scriptname}: error checking out version \"$ver\", \
@@ -116,7 +116,7 @@ test_one_version()
 
    cd build
 
-   $PROJ_ROOT/bin/configure-llvm --distcc --prefix $workdir/live
+   $PROJ_ROOT/admin/bin/configure-llvm --distcc --prefix $workdir/live
    status=$?
    if [ $status != 0 ]; then
       echo ${scriptname}: error configuring version \"$ver\", \
@@ -127,7 +127,7 @@ test_one_version()
       return $status
    fi
 
-   $PROJ_ROOT/bin/make-llvm --cwd
+   $PROJ_ROOT/admin/bin/make-llvm --cwd
    status=$?
    if [ $status != 0 ]; then
       echo ${scriptname}: error building \"$ver\", \
@@ -160,7 +160,7 @@ test_one_version()
 
 ver=$arg_start_ver
 while [ $ver -gt 0 ]; do
-   svn log http://llvm.org/svn/llvm-project/llvm/trunk | grep ^r$ver
+   svn log http://llvm.org/svn/llvm-project/llvm/trunk | grep -q ^r$ver
    svn_status=$?
    if [ $svn_status = 0 ]; then
       test_one_version $ver 
