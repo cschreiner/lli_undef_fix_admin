@@ -1,0 +1,182 @@
+#!/bin/sh
+# script to work backwards along llvm releases, looking for a release that
+# builds ok and optionally passes `make check`
+
+scriptname=find_working_llvm_ver
+
+# =============================================================================
+# parse args
+
+arg_make_check=false
+arg_start_ver=""
+
+need_to_exit=false
+while [ $# -gt 0 ]; do
+   case "$1" in
+      --make-check)
+         arg_make_check=true
+         shift
+         ;;
+      -*)
+         echo ${scriptname}: Error: do not recognize option \"$1\"
+         need_to_exit=true
+         shift
+	 ;;
+      [0-9][0-9]*)
+         if echo "$1" | grep '^[0-9]*$'; then
+            if [ -z "$arg_start_ver" ]; then
+               arg_start_ver=$1
+            else
+               echo ${scriptname}: Error: found an extra start version on
+	       echo "  " the command line: \"$1\".
+	       need_to_exit=true
+            fi
+         else 
+	    echo ${scriptname}: Error: specified start version appears to
+	    echo "  " be partially non-numeric: \"$1\".
+	    need_to_exit=true
+	 fi
+	 shift
+	 ;;
+      *) 
+         echo ${scriptname}: Error: do not recognize command line word \"$1\"
+         need_to_exit=true
+         shift
+	 ;;
+   esac
+done
+
+if [ "$need_to_exit" != "false" ]; then
+   echo ${scriptname}: too many errors, exiting.
+   exit 127
+fi
+
+# make sure critical args are present
+if [ -z "$arg_start_ver" ]; then
+   echo ${scriptname}: Error: no start version found on command line.
+   exit 127
+fi
+
+# =============================================================================
+# set up
+
+workdir=${scriptname}_workdir
+if [ -e $workdir ]; then
+   echo ${scriptname}: error: workdir seems to already exist
+   echo "  " dir=\"$workdir\"
+   exit 127
+fi
+
+logfile=$cwd/${scriptname}_`date +%Y%b%d_%H%M%S`_$$
+echo logfile=\"$logfile\"
+if [ -e $logfile ]; then
+   echo ${scriptname}: error: logfile seems to already exist
+   echo "  " dir=\"$logfile\"
+   exit 127
+fi
+
+if [ ! -d "$PROJ_ROOT" ]; then
+   echo ${scriptname}: \
+	 error: PROJ_ROOT directory does not seem to be a valid dir,
+   echo "  " dir=\"$PROJ_ROOT\"
+   exit 127
+fi
+
+echo "using workdir=" \"$cwd/$workdir\"
+mkdir $workdir
+cd $workdir
+
+ver=$arg_start_ver
+
+# =============================================================================
+test_one_version()
+{
+   local ver status
+   ver="$1"
+   status=0
+
+   echo "starting version $ver at" `date` 
+   echo "starting version $ver at" `date` >> $logfile
+
+   $PROJ_ROOT/bin/co_llvm
+   status=$?
+   if [ $status != 0 ]; then
+      echo ${scriptname}: error checking out version \"$ver\", \
+	    status=\"$status\".
+      echo ${scriptname}: error checking out version \"$ver\", \
+	    status=\"$status\". >> $logfile
+      return $status
+   fi
+
+   rm -rf build live
+   mkdir build live
+
+   cd build
+
+   $PROJ_ROOT/bin/configure-llvm --distcc --prefix $workdir/live
+   status=$?
+   if [ $status != 0 ]; then
+      echo ${scriptname}: error configuring version \"$ver\", \
+	    status=\"$status\".
+      echo ${scriptname}: error configuring version \"$ver\", \
+	    status=\"$status\". >> $logfile
+      cd ..
+      return $status
+   fi
+
+   $PROJ_ROOT/bin/make-llvm --cwd
+   status=$?
+   if [ $status != 0 ]; then
+      echo ${scriptname}: error building \"$ver\", \
+	    status=\"$status\".
+      echo ${scriptname}: error building \"$ver\", \
+	    status=\"$status\". >> $logfile
+      cd ..
+      return $status
+   fi
+
+   if [ "$arg_make_check" = "true" ]; then
+      make check
+      status=$?
+      if [ $status != 0 ]; then
+	 echo ${scriptname}: error runing \'make check\' on \"$ver\", \
+	       status=\"$status\".
+	 echo ${scriptname}: error runing \'make check\' on \"$ver\", \
+	       status=\"$status\". >> $logfile
+	 cd ..
+	 return $status
+      fi
+   fi
+
+   return 0
+}
+
+
+# =============================================================================
+# run the test
+
+ver=$arg_start_ver
+while [ $ver -gt 0 ]; do
+   svn log http://llvm.org/svn/llvm-project/llvm/trunk | grep ^r$ver
+   svn_status=$?
+   if [ $svn_status = 0 ]; then
+      test_one_version $ver 
+      status=$?
+      if [ $status -eq 0 ]; then
+	 echo ${scriptname}: SUCCESS: version $ver passes.
+	 echo ${scriptname}: SUCCESS: version $ver passes. >> $logfile
+	 exit 0
+      fi
+   else 
+      echo version $ver does not appear in the svn log.
+      echo version $ver does not appear in the svn log. >> $logfile
+  
+   fi
+   ver=(( $ver - 1 ))
+done
+
+echo ${scriptname}: error: got to version \"$ver\" without anything passing.
+exit 1
+
+# =============================================================================
+# end of script
