@@ -18,7 +18,7 @@ status=$?
 if [ "$status" != 0 ]; then
    echo ${scriptname}: Error: something went wrong checking out Llvm\'s 
    echo "  " svn repository, exit status=\"$status\".
-   exit -1
+   exit 255
 fi
 
 # . . . . . . . . . . . . . . . . . . . .
@@ -32,7 +32,7 @@ if false; then
       echo ${scriptname}: Error: something went wrong checking out Llvm \
 	    clang\'s 
       echo "  " svn repository, exit status=\"$status\".
-      exit -1
+      exit 255 
    fi
    cd ../..
 fi
@@ -50,7 +50,7 @@ if false; then
       echo ${scriptname}: Error: something went wrong checking out Llvm \
 	    clan extra\'s 
       echo "  " svn repository, exit status=\"$status\".
-      exit -1
+      exit 255
 fi
    cd ../../../..
 fi
@@ -63,7 +63,7 @@ status=$?
 if [ "$status" != 0 ]; then
    echo ${scriptname}: Error: something went wrong checking out Llvm clang\'s 
    echo "  " svn repository, exit status=\"$status\".
-   exit -1
+   exit 255
 fi
 cd ../..
 
