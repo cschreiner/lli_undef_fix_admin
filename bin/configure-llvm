@@ -26,15 +26,33 @@ BUILD_DIR=`pwd`
 need_to_exit="false"
 
 arg_distcc="false"
+arg_batch="false"
+arg_prefix=""
+
 while [ $# -gt 0 ]; do
    case "$1" in
       --distcc)
          arg_distcc="true"
          shift
          ;;
+      --batch)
+         arg_batch="true"
+         shift
+         ;;
+      --prefix)
+         shift
+         if [ $# -gt 0 ]; then
+	    arg_prefix="$1"
+	    shift
+         else
+            echo ${scriptname}: error: --prefix must be followed by a directory.
+            need_to_exit=true
+         fi
+         ;;
       --config)
          # Args after this one need to be passed directly to the 
-	 # <src_tree>/configure script.
+	 # <src_tree>/configure script.  Note that --prefix will be
+	 # specified later, based on the --prefix option to this script.
          shift
          break
          ;;
@@ -59,17 +77,22 @@ echo "  " \"$BUILD_DIR\"
 echo with distcc=\"$arg_distcc\"
 echo configure args="$@"
 echo " "
-echo -n "Is that correct? (Y/n) "
-read input
-case $input in
-   y*|Y*)
-      echo continuing...
-      ;;
-   *)
-      echo Please cd to the intended build directory and rerun this script.
-      exit 255
-      ;;
-esac
+if [ "$arg_batch" = "false" ]; then
+   echo -n "Is that correct? (Y/n) "
+   read input
+   case $input in
+      y*|Y*)
+	 echo continuing...
+	 ;;
+      *)
+	 echo Please cd to the intended build directory and rerun this script.
+	 exit 255
+	 ;;
+   esac
+else
+   echo running in batch mode with no user interaction.
+   echo " "
+fi
 
 # is the current directory empty?
 if find | grep -vEq -e '^\\s*$'; then
@@ -88,7 +111,6 @@ if [ $arg_distcc = "true" ]; then
    export CC="distcc ${CC:-gcc}"
    export CXX="distcc ${CXX:-g++}"
 fi
-
 
 # ----------------------------------------------------------------------------
 # print our setup and exit (only when debugging this script)
@@ -123,8 +145,14 @@ fi
 # TODO: see how --enable-libffi works.  This is supposed to allow the
 # 	newly build lli use the standard C library.
 
+if [ -z "$arg_prefix" ]; then
+   prefix=$PROJ_ROOT/live
+else
+   prefix="$arg_prefix"
+fi
+
 echo ======================================================================
-$PROJ_ROOT/git/configure --prefix $PROJ_ROOT/live \
+$PROJ_ROOT/git/configure --prefix $prefix \
       --enable-optimized --disable-bindings --enable-libffi \
       $host_specific_options "$@"
 
