@@ -35,8 +35,6 @@ done
 
 separator="===================================================================="
 
-export exit_status=0
-
 if [ -z "$BUILD_ROOT" ]; then
    BUILD_ROOT=$PROJ_ROOT/llvm.build
 fi
