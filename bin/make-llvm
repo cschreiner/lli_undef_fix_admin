@@ -35,6 +35,8 @@ done
 
 separator="===================================================================="
 
+export exit_status=0
+
 if [ -z "$BUILD_ROOT" ]; then
    BUILD_ROOT=$PROJ_ROOT/llvm.build
 fi
@@ -141,9 +143,18 @@ fi
    (cd $PROJ_ROOT/admin/log; \
 	 git ci -m"recorded another build time" BUILD_time.log )
 
+   # ------------------------------------------------------------------------
+   # exit
+   echo subshell ending with make_status=\"$make_status\" #;;
+   exit $make_status
+
 # ---------------------------------------------------------------------------
 # stop logging output
 ) 2>&1 | tee BUILD.out
+
+exit_status=${PIPESTATUS[0]} # PIPESTATUS is a bash feature
+echo $scriptname exiting with status \"$exit_status\"
+exit $exit_status
 
 # ---------------------------------------------------------------------------
 # end of script
