@@ -1,11 +1,16 @@
 #!/bin/sh
 # checks out llvm into the current directory
 
+scriptname=co_llvm
+
 arg_version="$1"
 
-scriptname=co_llvm
-start_dir=`pwd`
+if [ -z "$arg_version" ]; then
+   echo ${scriptname}: error, no version specified on command line
+   exit 254
+fi
 
+start_dir=`pwd`
 svn_flags="-r $arg_version"
 
 # ===========================================================================
@@ -13,7 +18,7 @@ svn_flags="-r $arg_version"
 
 # . . . . . . . . . . . . . . . . . . . .
 # checkout llvm
-svn co $svn_flags http://llvm.org/svn/llvm-project/llvm/trunk .
+svn co $svn_flags http://llvm.org/svn/llvm-project/llvm/trunk . 
 status=$?
 if [ "$status" != 0 ]; then
    echo ${scriptname}: Error: something went wrong checking out Llvm\'s 
@@ -58,7 +63,7 @@ fi
 # . . . . . . . . . . . . . . . . . . . .
 # checkout compiler-rt
 cd llvm/projects
-svn co $svn_flags http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+svn co $svn_flags http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt 
 status=$?
 if [ "$status" != 0 ]; then
    echo ${scriptname}: Error: something went wrong checking out Llvm clang\'s 
