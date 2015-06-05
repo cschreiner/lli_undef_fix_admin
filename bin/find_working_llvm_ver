@@ -9,12 +9,17 @@ scriptname=find_working_llvm_ver
 
 arg_make_check=false
 arg_start_ver=""
+arg_use_existing_workdir=false
 
 need_to_exit=false
 while [ $# -gt 0 ]; do
    case "$1" in
       --make-check)
          arg_make_check=true
+         shift
+         ;;
+      --use-existing-workdir)
+         arg_use_existing_workdir=true
          shift
          ;;
       -*)
@@ -61,7 +66,7 @@ fi
 # set up
 
 workdir=`pwd`/${scriptname}_workdir
-if [ -e $workdir ]; then
+if [ -e $workdir -a "$arg_use_existing_workdir" = "false" ]; then
    echo ${scriptname}: error: workdir seems to already exist
    echo "  " dir=\"$workdir\"
    exit 127
@@ -82,8 +87,16 @@ if [ ! -d "$PROJ_ROOT" ]; then
    exit 127
 fi
 
+if [ -z "$DISTCC_HOSTS" ]; then
+   echo ${scriptname}: error: env var DISTCC_HOSTS is unset, we will be 
+   echo "  " unable to build in parallel.
+   exit 127
+fi
+
 echo "using workdir=" \"$workdir\"
-mkdir $workdir
+if [ ! -d "$workdir" ]; then
+   mkdir $workdir
+fi
 cd $workdir
 
 ver=$arg_start_ver
@@ -131,6 +144,7 @@ test_one_version()
 
    $PROJ_ROOT/admin/bin/make-llvm --cwd
    status=$?
+   echo make status=\"$status\" #;;
    if [ $status != 0 ]; then
       echo ${scriptname}: error building \"$ver\", \
 	    status=\"$status\".
@@ -143,6 +157,7 @@ test_one_version()
    if [ "$arg_make_check" = "true" ]; then
       make check
       status=$?
+      echo make check status=\"$status\" #;;
       if [ $status != 0 ]; then
 	 echo ${scriptname}: error runing \'make check\' on \"$ver\", \
 	       status=\"$status\".
