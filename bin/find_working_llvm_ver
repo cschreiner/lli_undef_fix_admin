@@ -97,6 +97,7 @@ test_one_version()
 
    echo "starting version $ver at" `date` 
    echo "starting version $ver at" `date` >> $logfile
+   cd $workdir
 
    $PROJ_ROOT/bin/co_llvm
    status=$?
@@ -107,6 +108,8 @@ test_one_version()
 	    status=\"$status\". >> $logfile
       return $status
    fi
+   # Note: contents of this dir are retained to minimize the time to
+   # checkout in future loop iterations.
 
    rm -rf build live
    mkdir build live
