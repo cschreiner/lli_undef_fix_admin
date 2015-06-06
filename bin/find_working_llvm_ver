@@ -97,7 +97,17 @@ echo "using workdir=" \"$workdir\"
 if [ ! -d "$workdir" ]; then
    mkdir $workdir
 fi
+mkdir -p $workdir/git
 cd $workdir
+
+echo getting svn log...
+svn log http://llvm.org/svn/llvm-project/llvm/trunk > $workdir/svn_log
+status=$?
+echo ... svn log received with status \"$status\".
+if [ $status -ne 0 ]; then
+   echo ${scriptname}: error receiving svn log.
+   exit 127
+fi
 
 ver=$arg_start_ver
 
@@ -114,6 +124,7 @@ test_one_version()
    echo "starting version $ver at" `date` >> $logfile
    cd $workdir
 
+   cd git
    $PROJ_ROOT/admin/bin/co_llvm $ver
    status=$?
    if [ $status != 0 ]; then
@@ -125,6 +136,7 @@ test_one_version()
    fi
    # Note: contents of this dir are retained to minimize the time to
    # checkout in future loop iterations.
+   cd ..
 
    rm -rf build live
    mkdir build live
@@ -144,7 +156,6 @@ test_one_version()
 
    $PROJ_ROOT/admin/bin/make-llvm --cwd
    status=$?
-   echo make status=\"$status\" #;;
    if [ $status != 0 ]; then
       echo ${scriptname}: error building \"$ver\", \
 	    status=\"$status\".
@@ -177,7 +188,7 @@ test_one_version()
 
 ver=$arg_start_ver
 while [ $ver -gt 0 ]; do
-   svn log http://llvm.org/svn/llvm-project/llvm/trunk | grep -q ^r$ver
+   grep -q ^r$ver $workdir/svn_log
    svn_status=$?
    if [ $svn_status = 0 ]; then
       test_one_version $ver 
