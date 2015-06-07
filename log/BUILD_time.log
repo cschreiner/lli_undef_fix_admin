@@ -3718,3 +3718,8 @@ build status=2 (should be 0)
 build time 3:54 (234 s)
    start time=Sat Jun 6 21:40:28 MDT 2015
    stop time=Sat Jun 6 21:44:22 MDT 2015
+====================================================================
+build status=2 (should be 0)
+build time 3:35 (215 s)
+   start time=Sat Jun 6 21:44:36 MDT 2015
+   stop time=Sat Jun 6 21:48:11 MDT 2015
