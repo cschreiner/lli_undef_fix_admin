@@ -139,9 +139,10 @@ test_one_version()
    cd ..
 
    rm -rf build live
-   mkdir build live
+   mkdir -p build live OLD
 
    cd build
+   ln -s ../OLD OLD
 
    $PROJ_ROOT/admin/bin/configure-llvm --distcc --batch --prefix $workdir/live
    status=$?
@@ -174,11 +175,18 @@ test_one_version()
 	       status=\"$status\".
 	 echo ${scriptname}: error runing \'make check\' on \"$ver\", \
 	       status=\"$status\". >> $logfile
+         mv BUILD.out BUILD.$ver.out
+         bzip2 BUILD.$ver.out
+         # TODO2: find a way to save the bzip2 file in a directory
+         # specific to this run.  It would probably need to be named
+         # after the timestamp in the logfile name, or similar.
+         cleandir BUILD.$ver.out.bz2
 	 cd ..
 	 return $status
       fi
    fi
 
+   cd ..
    return 0
 }
 
