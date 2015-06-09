@@ -160,8 +160,15 @@ echo ======================================================================
 #      --enable-optimized --disable-bindings --enable-libffi \
 #      $host_specific_options "$@"
 
+echo running cmake:
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
       $PROJ_ROOT/git
+cmake_status=$?
+echo " "
+if [ $cmake_status -ne 0 ]; then
+   echo cmake exited with status \"$cmake_status\".
+   exit $cmake_status
+fi
 
 # ----------------------------------------------------------------------------
 # set up stuff derived from the configuration
