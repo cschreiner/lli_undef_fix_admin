@@ -152,9 +152,12 @@ else
 fi
 
 echo ======================================================================
+
 $PROJ_ROOT/git/configure --prefix $prefix \
       --enable-optimized --disable-bindings --enable-libffi \
       $host_specific_options "$@"
+
+cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/scratch/cas/edu/uut/lli_undef_fix3/tmp/cas_workdir/live ../git
 
 # ----------------------------------------------------------------------------
 # set up stuff derived from the configuration
