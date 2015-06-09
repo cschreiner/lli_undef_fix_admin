@@ -1,0 +1,29 @@
+#!/bin/sh
+# Copies files affected by a merge to insure that each one is identical to
+# its counterpart in the source directory tree.  The script's initial
+# working directory is assumed to be the root of the source directory tree.
+
+arg_dest_root="$1"
+
+process_one_file()
+{
+   src="$1"
+
+   cp $src $arg_dest_root/$src
+   (cd $arg_dest_root; git add $src)
+   git_add_status=$?
+   echo git_add_status=$git_add_status
+   return $git_add_status
+}
+
+for file in "$@"; do
+   process_one_file $file
+   status=$?
+   if [ $status -ne 0 ]; then
+      echo git add returned an error status \"$status\" for file
+      echo "  " file=\"$file\"
+      exit
+   fi
+done
+
+
