@@ -52,14 +52,18 @@ fi
 # test for distcc
 distcc=false
 if [ -n "$DISTCC_HOSTS" ]; then
-   grep -Eq -e '^CC=.*\bdistcc\b' config.log
-   cc_uses_distcc=$?
-   grep -Eq -e '^CXX=.*\bdistcc\b' config.log
-   cxx_uses_distcc=$?
-   if [ $cc_uses_distcc==0 -o $cxx_uses_distcc==0 ]; then
-      distcc=true
+   if [ -f config.log ]; then
+      grep -Eq -e '^CC=.*\bdistcc\b' config.log
+      cc_uses_distcc=$?
+      grep -Eq -e '^CXX=.*\bdistcc\b' config.log
+      cxx_uses_distcc=$?
+      if [ $cc_uses_distcc==0 -o $cxx_uses_distcc==0 ]; then
+	 distcc=true
+      else
+	 echo FYI: config file ignores distcc, despite DISTCC_HOSTS being set.
+      fi
    else
-      echo FYI: config file ignores distcc, despite DISTCC_HOSTS being set.
+      echo FYI: no config.log file found, can not test for distcc.
    fi
 fi
 
