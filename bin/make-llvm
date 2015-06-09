@@ -106,7 +106,9 @@ fi
    fi
    echo FYI: using $num_procs processes.
 
-   make -j $num_procs "$@"
+   # build with GNU Make
+   # this stopped working in May 2015.
+   #make -j $num_procs "$@"
    make_status=$?
 
    if [ $make_status -eq 0 ]; then
@@ -114,7 +116,10 @@ fi
       echo $separator
       echo Installing...
       echo " "
-      make install
+      # build with GNU Make
+      # this stopped working in May 2015.
+      # make install
+      ninja install
       make_status=$?
    fi
 

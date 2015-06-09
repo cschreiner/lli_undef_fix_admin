@@ -107,9 +107,11 @@ fi
 # ----------------------------------------------------------------------------
 # setup based on above parameters
 
+CMAKE_DISTCC_OPTS=""
 if [ $arg_distcc = "true" ]; then
    export CC="distcc ${CC:-gcc}"
    export CXX="distcc ${CXX:-g++}"
+   CMAKE_DISTCC_OPTS="-DCMAKE_C_COMPILER=\"$CC\" -DCMAKE_CXX_COMPILER=\"$CXX\""
 fi
 
 # ----------------------------------------------------------------------------
@@ -153,11 +155,13 @@ fi
 
 echo ======================================================================
 
-$PROJ_ROOT/git/configure --prefix $prefix \
-      --enable-optimized --disable-bindings --enable-libffi \
-      $host_specific_options "$@"
+# configure with gnu autotools, which stopped working about May 2015.
+#$PROJ_ROOT/git/configure --prefix $prefix \
+#      --enable-optimized --disable-bindings --enable-libffi \
+#      $host_specific_options "$@"
 
-cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/scratch/cas/edu/uut/lli_undef_fix3/tmp/cas_workdir/live ../git
+cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
+      $PROJ_ROOT/git
 
 # ----------------------------------------------------------------------------
 # set up stuff derived from the configuration
