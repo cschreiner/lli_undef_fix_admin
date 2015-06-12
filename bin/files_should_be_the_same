@@ -4,10 +4,20 @@
 # working directory is assumed to be the root of the source directory tree.
 
 arg_dest_root="$1"
+shift
 
 process_one_file()
 {
    src="$1"
+   echo \-\-\- #;;
+   echo arg_dest_root=\"$arg_dest_root\" #;;
+   echo src=\"$src\" #;;
+
+   if [ ! -e $src ]; then
+      echo source file does not exist, should the destination be removed?
+      echo "  " missing file=\"$src\"
+      return 0
+   fi
 
    cp $src $arg_dest_root/$src
    (cd $arg_dest_root; git add $src)
