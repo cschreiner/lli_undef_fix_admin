@@ -75,7 +75,8 @@ fi
 echo configuring to build in this directory:
 echo "  " \"$BUILD_DIR\"
 echo with distcc=\"$arg_distcc\"
-echo configure args="$@"
+echo configure args=\""$@"\"
+echo config tool: cmake
 echo " "
 if [ "$arg_batch" = "false" ]; then
    echo -n "Is that correct? (Y/n) "
@@ -124,7 +125,6 @@ if false; then
    echo extra args to configure=\< "$@" \>
    echo CC=\"$CC\"
    echo CXX=\"$CXX\"
-   echo config tool: cmake
    echo " "
    exit 0
 fi
