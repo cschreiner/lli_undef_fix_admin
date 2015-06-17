@@ -124,6 +124,7 @@ if false; then
    echo extra args to configure=\< "$@" \>
    echo CC=\"$CC\"
    echo CXX=\"$CXX\"
+   echo config tool: cmake
    echo " "
    exit 0
 fi
