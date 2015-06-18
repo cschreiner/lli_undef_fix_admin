@@ -127,6 +127,7 @@ fi
       # make install
       ninja install
       make_status=$?
+      echo install complete with status \"$make_status\"
    else
       echo ${scriptname}: ERROR: build failed with status \"$make_status\", 
       echo "  " skipping install.
