@@ -28,6 +28,7 @@ need_to_exit="false"
 arg_distcc="false"
 arg_batch="false"
 arg_prefix=""
+arg_src=$PROJ_ROOT/git
 
 while [ $# -gt 0 ]; do
    case "$1" in
@@ -38,6 +39,16 @@ while [ $# -gt 0 ]; do
       --batch)
          arg_batch="true"
          shift
+         ;;
+      --src)
+         shift
+         if [ $# -gt 0 ]; then
+	    arg_src="$1"
+	    shift
+         else
+            echo ${scriptname}: error: --src must be followed by a directory.
+            need_to_exit=true
+         fi
          ;;
       --prefix)
          shift
@@ -63,6 +74,21 @@ while [ $# -gt 0 ]; do
    esac
 done
 
+# . . . . . . . . . .
+# check
+if [ ! -d $arg_src ]; then
+   echo ${scriptname}: error: --src dir does not appear to be a dir.
+   echo "  " dir=\"$arg_src\"
+   need_to_exit=true
+fi
+if [ ! -d $arg_prefix ]; then
+   echo ${scriptname}: error: --prefix dir does not appear to be a dir.
+   echo "  " dir=\"$arg_prefix\"
+   need_to_exit=true
+fi
+
+# . . . . . . . . . .
+# and exit if things are wrong
 if [ $need_to_exit = "true" ]; then
    echo ${scriptname}: too many errors.  Unable to continue.
    exit 255
@@ -74,6 +100,7 @@ fi
 # is the current directory the intended build directory?
 echo configuring to build in this directory:
 echo "  " \"$BUILD_DIR\"
+echo with src dir=\"$arg_src\"
 echo with distcc=\"$arg_distcc\"
 echo configure args=\""$@"\"
 echo config tool: cmake
@@ -163,7 +190,7 @@ echo ======================================================================
 
 echo running cmake:
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
-      $PROJ_ROOT/git
+      $arg_src 
 cmake_status=$?
 echo " "
 if [ $cmake_status -ne 0 ]; then
