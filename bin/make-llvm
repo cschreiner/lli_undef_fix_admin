@@ -113,7 +113,9 @@ fi
    # build with GNU Make
    # this stopped working in May 2015.
    #make -j $num_procs "$@"
+   ninja
    make_status=$?
+   echo build finished with status \"$make_status\" 
 
    if [ $make_status -eq 0 ]; then
       echo " "
@@ -125,6 +127,9 @@ fi
       # make install
       ninja install
       make_status=$?
+   else
+      echo ${scriptname}: ERROR: build failed with status \"$make_status\", 
+      echo "  " skipping install.
    fi
 
    # ------------------------------------------------------------------------
