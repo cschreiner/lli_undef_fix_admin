@@ -101,6 +101,7 @@ fi
 echo configuring to build in this directory:
 echo "  " \"$BUILD_DIR\"
 echo with src dir=\"$arg_src\"
+echo with prefix=\"$arg_prefix\"
 echo with distcc=\"$arg_distcc\"
 echo configure args=\""$@"\"
 echo config tool: cmake
