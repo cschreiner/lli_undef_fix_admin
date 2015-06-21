@@ -114,8 +114,15 @@ cd ../..
 
 ver=$arg_start_ver
 
-echo workdir=\"$workdir\" >> $logfile
-echo PATH=\"$PATH\" >> $logfile
+# =============================================================================
+# make initial log entries
+
+(
+   echo start ver=\"$arg_start_ver\"
+   echo minimum svn version=\"$MIN_SVN_REV\"
+   echo workdir=\"$workdir\" 
+   echo PATH=\"$PATH\" 
+) >> $logfile
 
 # =============================================================================
 test_one_version()
