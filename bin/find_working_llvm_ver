@@ -199,7 +199,8 @@ test_one_version()
    fi
 
    if [ "$arg_make_check" = "true" ]; then
-      ninja check-all
+      ninja check 
+      # Note: apparently the check-all target doesn't always work.
       status=$?
       echo make check status=\"$status\" #;;
       if [ $status != 0 ]; then
