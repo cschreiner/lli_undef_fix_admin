@@ -124,7 +124,7 @@ test_one_version()
    echo "starting version $ver at" `date` >> $logfile
    cd $workdir
 
-   cd git
+   cd llvm
    $PROJ_ROOT/admin/bin/co_llvm $ver
    status=$?
    if [ $status != 0 ]; then
@@ -144,7 +144,8 @@ test_one_version()
    cd build
    ln -s ../OLD OLD
 
-   $PROJ_ROOT/admin/bin/configure-llvm --distcc --batch --prefix $workdir/live
+   cmake -G Ninja -DCMAKE_INSTALL_PREFIX=`pwd`/../live ../llvm \
+	 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
    status=$?
    if [ $status != 0 ]; then
       echo ${scriptname}: error configuring version \"$ver\", \
@@ -155,19 +156,30 @@ test_one_version()
       return $status
    fi
 
-   $PROJ_ROOT/admin/bin/make-llvm --cwd
+   ninja > BUILD.out 2>&1 
    status=$?
    if [ $status != 0 ]; then
       echo ${scriptname}: error building \"$ver\", \
 	    status=\"$status\".
       echo ${scriptname}: error building \"$ver\", \
+	    status=\"$status\". >> $logfile
+      cd ..
+      return $status
+   fi
+
+   ninja install >> BUILD.out 2>&1 
+   status=$?
+   if [ $status != 0 ]; then
+      echo ${scriptname}: error installing \"$ver\", \
+	    status=\"$status\".
+      echo ${scriptname}: error installing \"$ver\", \
 	    status=\"$status\". >> $logfile
       cd ..
       return $status
    fi
 
    if [ "$arg_make_check" = "true" ]; then
-      make check
+      ninja check-all
       status=$?
       echo make check status=\"$status\" #;;
       if [ $status != 0 ]; then
