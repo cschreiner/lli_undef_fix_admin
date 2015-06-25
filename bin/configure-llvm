@@ -5,7 +5,7 @@
 # ----------------------------------------------------------------------------
 # most basic setup
 
-scriptname=lli_undef_fix3/admin/bin/configure-llvm
+scriptname=lli_undef_fix4/admin/bin/configure-llvm
 
 if [ -z "$PROJ_ROOT" ]; then
    echo ${scriptname}: environment variable PROJ_ROOT not set.
@@ -28,7 +28,7 @@ need_to_exit="false"
 arg_distcc="false"
 arg_batch="false"
 arg_prefix=""
-arg_src=$PROJ_ROOT/git
+arg_src=$PROJ_ROOT/llvm4
 
 while [ $# -gt 0 ]; do
    case "$1" in
@@ -185,7 +185,7 @@ fi
 echo ======================================================================
 
 # configure with gnu autotools, which stopped working about May 2015.
-#$PROJ_ROOT/git/configure --prefix $prefix \
+#$PROJ_ROOT/llvm4/configure --prefix $prefix \
 #      --enable-optimized --disable-bindings --enable-libffi \
 #      $host_specific_options "$@"
 
@@ -203,7 +203,7 @@ fi
 # set up stuff derived from the configuration
 
 # lit needs a config-generated file in its test dir hierarchy
-LIT_SITE_CFG=$PROJ_ROOT/git/test/lit.site.cfg 
+LIT_SITE_CFG=$PROJ_ROOT/llvm4/test/lit.site.cfg 
 if [ -e $LIT_SITE_CFG -o -L $LIT_SITE_CFG ]; then
    echo cleaning up old lit.site.cfg file at:
    echo "  " \"$LIT_SITE_CFG\"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # build llvm and install it
-scriptname=llvm_undef_fix3/admin/bin/make-llvm
+scriptname=llvm_undef_fix4/admin/bin/make-llvm
 
 if [ -z "$PROJ_ROOT" ]; then
    echo ${scriptname}: environment variable PROJ_ROOT not set.
@@ -36,7 +36,7 @@ done
 separator="===================================================================="
 
 if [ -z "$BUILD_ROOT" ]; then
-   BUILD_ROOT=$PROJ_ROOT/llvm.build
+   BUILD_ROOT=$PROJ_ROOT/build
 fi
 cd $BUILD_ROOT
 echo building in directory:
