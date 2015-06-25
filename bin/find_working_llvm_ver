@@ -71,7 +71,9 @@ fi
 # set up
 
 # TODO: find a permanent place for the llvm version de-jure
-export PATH=/usr/local/bin:/usr/bin:/bin:/uusoc/bin:/uusoc/opt/bin:/usr/bin:/usr/lib/jvm/java-7-oracle/bin:/usr/lib/jvm/java-7-oracle/db/bin:/usr/lib/jvm/java-7-oracle/jre/bin:$HOME/s/dyson/edu/uut/lli_undef_fix3/3.6.1/bin
+export PATH=/usr/local/bin:/usr/bin:/bin:/uusoc/bin:/uusoc/opt/bin:/usr/bin:/usr/lib/jvm/java-7-oracle/bin:/usr/lib/jvm/java-7-oracle/db/bin:/usr/lib/jvm/java-7-oracle/jre/bin # add entry to llvm3.6.1 here, per above TODO.
+echo ${scriptname}: error: need to add an entry to a TUUT llvm 3.6.1 #;;
+exit 255 #;;
 echo PATH=\"$PATH\"
 
 workdir=`pwd`/${scriptname}_workdir
