@@ -17,6 +17,7 @@ lib/ExecutionEngine/Interpreter/Execution.cpp
 lib/ExecutionEngine/Interpreter/Interpreter.cpp
 lib/ExecutionEngine/Interpreter/Interpreter.h
 lib/IR/Instruction.cpp
+test/CAS
 test/lli_undef_fix
 testdriver
 
