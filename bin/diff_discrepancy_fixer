@@ -233,7 +233,8 @@ foreach my $line_nl ( <STDIN> )  {
    if ( $dir_part =~ m/^$arg_src_dir/ )  {
       my $dest_dir_part= $dir_part;
       $dest_dir_part=~ s/^$arg_src_dir/$arg_dest_dir/;
-      my $cmd= "cp $dir_part/$file_base_part $dest_dir_part/$file_base_part";
+      my $cmd= "cp --archive " . 
+	    "$dir_part/$file_base_part $dest_dir_part/$file_base_part";
       if ( ! $debug_flag )  {
          print "copying \"$dir_part/$file_base_part\"\n" .
 	       "  " . "to \"$dest_dir_part/$file_base_part\"\n";
