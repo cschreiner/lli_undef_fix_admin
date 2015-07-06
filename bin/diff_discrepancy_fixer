@@ -230,7 +230,7 @@ foreach my $line_nl ( <STDIN> )  {
       my $dest_dir_part= $dir_part;
       $dest_dir_part=~ s/^$dir_part/$arg_dest_dir/;
       my $cmd= "cp $dir_part/$file_base_part $dest_dir_part/$file_base_part";
-      my( $status, undef, undef)= $system_wrapper( $cmd, "" );
+      my( $status, undef, undef)= system_wrapper( $cmd, "" );
       if ( $status != 0 )  {
          print "copy command failed with status \"$status\", \n" .
                "  " . "\"$cmd\"\n" .
