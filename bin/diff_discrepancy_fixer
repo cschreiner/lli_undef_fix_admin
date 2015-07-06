@@ -143,7 +143,6 @@ $need_to_exit= $FALSE;
 
 use vars qw( $arg_src_dir $arg_dest_dir );
 
-
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
 
@@ -198,6 +197,9 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOptions left behind
 
+$arg_src_dir= shift @ARGV;
+$arg_dest_dir= shift @ARGV;
+
 ## -----------------------------------------------------------------------
 ##   check arguments
 
@@ -209,6 +211,9 @@ if ( $debug_flag )  {
 
 
 }
+
+print "src dir=\"$arg_src_dir\"\n";
+print "dest dir=\"$arg_dest_dir\"\n";
 
 ## ===========================================================================
 ##   
