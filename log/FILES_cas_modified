@@ -1,5 +1,6 @@
 include/llvm/ADT/APInt.h
 include/llvm/ADT/APIntPoison.h
+include/llvm/ExecutionEngine/ExecutionEngine.h
 include/llvm/IR/Instruction.h
 include/llvm/IR/InstVisitor.h
 include/llvm/Support/LLIUndefFix.h
