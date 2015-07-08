@@ -1,0 +1,9 @@
+#!/bin/bash
+# create a diff of two llvm directory trees suitable for generating a patch
+# to send to the LLVM maintainers.  The diff is sent to stdout.
+#
+# Usage:
+#   mkdiff <additional_diff_options> <left_dir> <right_dir>
+
+diff -ruN -x '.git' -x 'projects' "$@"
+
