@@ -173,8 +173,6 @@ fi
 # Note: fixing the ctypes warning can be resolved on Ubuntu 14.04 by
 # 	installing:
 #	libctypes-ocaml		libctypes-ocaml-dev
-# TODO: see how --enable-libffi works.  This is supposed to allow the
-# 	newly build lli use the standard C library.
 
 if [ -z "$arg_prefix" ]; then
    prefix=$PROJ_ROOT/live
@@ -191,6 +189,7 @@ echo ======================================================================
 
 echo running cmake:
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
+      -DLLVM_ENABLE_FFI=ON \
       $arg_src 
 cmake_status=$?
 echo " "
