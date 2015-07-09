@@ -188,6 +188,8 @@ echo ======================================================================
 #      $host_specific_options "$@"
 
 echo running cmake:
+# Note: the above autotools options appear to have no equivalents under cmake:
+#	--enable-optimized, --disable-bindings 
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
       -DLLVM_ENABLE_FFI=ON \
       $arg_src 
