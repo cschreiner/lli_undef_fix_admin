@@ -1,0 +1,197 @@
+diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/include/llvm/ExecutionEngine/ExecutionEngine.h llvm4.store_struct_fix/include/llvm/ExecutionEngine/ExecutionEngine.h
+--- llvm4.up/include/llvm/ExecutionEngine/ExecutionEngine.h	2015-06-21 02:05:31.253003082 -0600
++++ llvm4.store_struct_fix/include/llvm/ExecutionEngine/ExecutionEngine.h	2015-07-08 17:05:17.658225477 -0600
+@@ -366,6 +366,20 @@
+   ///
+   const GlobalValue *getGlobalValueAtAddress(void *Addr);
+ 
++private:
++  /// \brief Writes a struct out from a register.  
++  ///
++  /// This is intended to be a helper function for
++  /// StoreValueToMemory(~), and takes the same parameters as that
++  /// function.
++  /// 
++  /// \param Src the value to read from
++  /// \param Dest the address to write to
++  /// \param Ty information about the data type being written
++  void StoreStructToMemory(const GenericValue &Src,
++                           GenericValue *Dest, Type *Ty );
++
++public:
+   /// StoreValueToMemory - Stores the data in Val of type Ty at address Ptr.
+   /// Ptr is the address of the memory at which to store Val, cast to
+   /// GenericValue *.  It is not a pointer to a GenericValue containing the
+@@ -483,6 +497,33 @@
+   void EmitGlobalVariable(const GlobalVariable *GV);
+ 
+   GenericValue getConstantValue(const Constant *C);
++
++private:
++  /// \brief Loads a struct into a register.  
++  ///
++  /// This is intended to be a helper function for
++  /// LoadValueFromMemory(~), and takes the same parameter types as
++  /// that function.
++  ///
++  /// \param [out] Dest the location data should be written to (this is the
++  ///     Result parameter from LoadValueFromMemory(~))
++  /// \param Src read data from here (this is the Ptr parameter from
++  ///     LoadValueFromMemory(~))
++  /// \param Ty information on the type of the data to move
++  void LoadStructFromMemory(GenericValue &Dest,
++                            GenericValue *Src, Type *Ty);
++protected:
++  /// \brief loads an item of data from memory to a register, regardless of 
++  /// its data type.  
++  ///
++  /// Typically this function determines the relevant data type, and then acts
++  /// as a dispatcher to other functions who specialize in loading that exact
++  /// data type.
++  ///
++  /// \param [out] Result the location data should be written to 
++  /// \param Ptr read data from here
++  /// \param Ty information on the type of the data to move
++  ///
+   void LoadValueFromMemory(GenericValue &Result, GenericValue *Ptr,
+                            Type *Ty);
+ };
+diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/lib/ExecutionEngine/ExecutionEngine.cpp llvm4.store_struct_fix/lib/ExecutionEngine/ExecutionEngine.cpp
+--- llvm4.up/lib/ExecutionEngine/ExecutionEngine.cpp	2015-06-21 02:05:06.165484637 -0600
++++ llvm4.store_struct_fix/lib/ExecutionEngine/ExecutionEngine.cpp	2015-07-07 20:40:31.770377719 -0600
+@@ -26,6 +26,7 @@
+ #include "llvm/IR/Module.h"
+ #include "llvm/IR/Operator.h"
+ #include "llvm/IR/ValueHandle.h"
++#include "llvm/IR/Instructions.h"
+ #include "llvm/Object/Archive.h"
+ #include "llvm/Object/ObjectFile.h"
+ #include "llvm/Support/Debug.h"
+@@ -1031,6 +1032,25 @@
+   }
+ }
+ 
++void ExecutionEngine::StoreStructToMemory(const GenericValue &Src,
++                                          GenericValue *Dest, Type *Ty )  
++{{ 
++  assert( Dest!= NULL && "Dest is null?");
++  assert( Ty!= NULL && "Ty is null?");
++  int8_t* destPtr= (int8_t*)Dest;
++  unsigned elemIdx= 0;
++  unsigned numElements= Ty->getStructNumElements();
++  for ( elemIdx= 0; elemIdx < numElements; elemIdx++ )  {
++    Type* elemType= Ty->getStructElementType(elemIdx); 
++    ExecutionEngine::StoreValueToMemory( Src.AggregateVal[elemIdx], 
++        (GenericValue*)destPtr, elemType );
++    destPtr+= getDataLayout()->getTypeStoreSize( elemType );
++  }
++
++  return;
++}}
++
++
+ void ExecutionEngine::StoreValueToMemory(const GenericValue &Val,
+                                          GenericValue *Ptr, Type *Ty) {
+   const unsigned StoreBytes = getDataLayout()->getTypeStoreSize(Ty);
+@@ -1039,6 +1059,9 @@
+   default:
+     dbgs() << "Cannot store value of type " << *Ty << "!\n";
+     break;
++  case Type::StructTyID:
++    StoreStructToMemory( Val, Ptr, Ty );
++    break;
+   case Type::IntegerTyID:
+     StoreIntToMemory(Val.IntVal, (uint8_t*)Ptr, StoreBytes);
+     break;
+@@ -1107,12 +1130,42 @@
+ 
+ /// FIXME: document
+ ///
++void ExecutionEngine::LoadStructFromMemory(GenericValue &Dest,
++      GenericValue *Src, Type *Ty)  
++{{ 
++  assert( Src!= NULL && "Src is null?");
++  assert( Ty!= NULL && "Ty is null?");
++  /* Note: we use the number of elements in Ty, not in Src, as Src is a
++     pointer that is semi-arbitrarily cast to GenericValue*, it doesn't
++     point to any useful information about the struct being loaded.
++  */
++  Dest.AggregateVal.resize( Ty->getStructNumElements() );
++
++  // TODO: check all this:
++  int8_t* valPtr= (int8_t*)Src;
++  unsigned elemIdx= 0;
++  unsigned numElements= Ty->getStructNumElements();
++  for ( elemIdx= 0; elemIdx < numElements; elemIdx++ )  {
++    GenericValue elem;
++    Type* elemType= Ty->getStructElementType(elemIdx); 
++    LoadValueFromMemory( elem, (GenericValue*)valPtr, elemType );
++    Dest.AggregateVal[elemIdx]= elem;
++    valPtr+= getDataLayout()->getTypeStoreSize( elemType );
++  }
++
++  return;
++}}
++
+ void ExecutionEngine::LoadValueFromMemory(GenericValue &Result,
+                                           GenericValue *Ptr,
+                                           Type *Ty) {
+   const unsigned LoadBytes = getDataLayout()->getTypeStoreSize(Ty);
+ 
+   switch (Ty->getTypeID()) {
++  case Type::StructTyID:  {
++    LoadStructFromMemory( Result, Ptr, Ty );
++    break;
++  }
+   case Type::IntegerTyID:
+     // An APInt with all words initially zero.
+     Result.IntVal = APInt(cast<IntegerType>(Ty)->getBitWidth(), 0);
+diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll llvm4.store_struct_fix/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll
+--- llvm4.up/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll	1969-12-31 17:00:00.000000000 -0700
++++ llvm4.store_struct_fix/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll	2015-07-08 19:19:10.416510151 -0600
+@@ -0,0 +1,17 @@
++; RUN: %lli -force-interpreter %s 
++
++;; Test that a structure can be loaded from memory.  
++
++;; Note: This test fails with `lli -force-interpreter` from svn revision 
++;; 240238: 
++;;	lli -force-interpreter 2015-02-25-StoreStruct.ll
++;; but succeeds with the accompanying patch.
++
++%struct_4 = type { i32 }
++
++@some_addr= global %struct_4 { i32 5 }, align 8
++
++define void @main() {
++  %1= load %struct_4, %struct_4* @some_addr
++  ret void
++}
+diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/test/ExecutionEngine/Interpreter/2015-06-25-StoreStruct.ll llvm4.store_struct_fix/test/ExecutionEngine/Interpreter/2015-06-25-StoreStruct.ll
+--- llvm4.up/test/ExecutionEngine/Interpreter/2015-06-25-StoreStruct.ll	1969-12-31 17:00:00.000000000 -0700
++++ llvm4.store_struct_fix/test/ExecutionEngine/Interpreter/2015-06-25-StoreStruct.ll	2015-07-08 19:19:15.892398759 -0600
+@@ -0,0 +1,24 @@
++; RUN: %lli -force-interpreter %s 
++;; we expect this to fail until the investigation mentioned below is finished.
++; XFAIL: * 
++
++;; Status: this test currently fails, but not for the intended reason.
++;; Apparently while the raw "store" code works, some other part of the
++;; interpreter gripes and halts.  Investigation is still pending as of
++;; 2015jul08.
++
++;; Test that a structure can be stored to memory.  
++
++;; This test fails with lli from svn revision 240238, see the above note: 
++;;	lli -force-interpreter 2015-02-25-StoreStruct.ll
++;; The reason for failure changes with the accompanying patch.
++
++%struct_4 = type { i32 }
++
++@some_addr= global %struct_4 { i32 5 }, align 8
++
++define void @main() {
++  store %struct_4 zeroinitializer, %struct_4* @some_addr
++  ret void
++}
++
