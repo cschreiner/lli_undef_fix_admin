@@ -5,5 +5,6 @@
 # Usage:
 #   mkdiff <additional_diff_options> <left_dir> <right_dir>
 
-diff -ruN -x '.git' -x 'projects' "$@"
+diff -ruN -x '.git' -x 'projects' -x '*.pyc' -x 'OLD' -x 'lit.*cfg' -x '*~' \
+      "$@"
 
