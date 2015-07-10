@@ -41,6 +41,7 @@ fi
 cd $BUILD_ROOT
 echo building in directory:
 echo "  " \"`pwd`\"
+sleep 2 # give user time to see this message and hit Ctl-C if needed.
 if [ -f BUILD.out ]; then
    cleandir BUILD.out
 fi
