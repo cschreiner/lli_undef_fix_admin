@@ -1,22 +1,22 @@
 diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/include/llvm/ExecutionEngine/ExecutionEngine.h llvm4.store_struct_fix/include/llvm/ExecutionEngine/ExecutionEngine.h
 --- llvm4.up/include/llvm/ExecutionEngine/ExecutionEngine.h	2015-06-21 02:05:31.253003082 -0600
-+++ llvm4.store_struct_fix/include/llvm/ExecutionEngine/ExecutionEngine.h	2015-07-08 17:05:17.658225477 -0600
++++ llvm4.store_struct_fix/include/llvm/ExecutionEngine/ExecutionEngine.h	2015-07-10 17:10:22.721079219 -0600
 @@ -366,6 +366,20 @@
    ///
    const GlobalValue *getGlobalValueAtAddress(void *Addr);
  
 +private:
-+  /// \brief Writes a struct out from a register.  
++  /// \brief Writes a struct out from a register.
 +  ///
 +  /// This is intended to be a helper function for
 +  /// StoreValueToMemory(~), and takes the same parameters as that
 +  /// function.
-+  /// 
++  ///
 +  /// \param Src the value to read from
 +  /// \param Dest the address to write to
 +  /// \param Ty information about the data type being written
-+  void StoreStructToMemory(const GenericValue &Src,
-+                           GenericValue *Dest, Type *Ty );
++  void StoreStructToMemory(const GenericValue &Src, GenericValue *Dest, 
++			   Type *Ty);
 +
 +public:
    /// StoreValueToMemory - Stores the data in Val of type Ty at address Ptr.
@@ -28,7 +28,7 @@ diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/i
    GenericValue getConstantValue(const Constant *C);
 +
 +private:
-+  /// \brief Loads a struct into a register.  
++  /// \brief Loads a struct into a register.
 +  ///
 +  /// This is intended to be a helper function for
 +  /// LoadValueFromMemory(~), and takes the same parameter types as
@@ -39,17 +39,17 @@ diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/i
 +  /// \param Src read data from here (this is the Ptr parameter from
 +  ///     LoadValueFromMemory(~))
 +  /// \param Ty information on the type of the data to move
-+  void LoadStructFromMemory(GenericValue &Dest,
-+                            GenericValue *Src, Type *Ty);
++  void LoadStructFromMemory(GenericValue &Dest, GenericValue *Src, Type *Ty);
++
 +protected:
-+  /// \brief loads an item of data from memory to a register, regardless of 
-+  /// its data type.  
++  /// \brief loads an item of data from memory to a register, regardless of
++  /// its data type.
 +  ///
 +  /// Typically this function determines the relevant data type, and then acts
 +  /// as a dispatcher to other functions who specialize in loading that exact
 +  /// data type.
 +  ///
-+  /// \param [out] Result the location data should be written to 
++  /// \param [out] Result the location data should be written to
 +  /// \param Ptr read data from here
 +  /// \param Ty information on the type of the data to move
 +  ///
@@ -58,7 +58,7 @@ diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/i
  };
 diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/lib/ExecutionEngine/ExecutionEngine.cpp llvm4.store_struct_fix/lib/ExecutionEngine/ExecutionEngine.cpp
 --- llvm4.up/lib/ExecutionEngine/ExecutionEngine.cpp	2015-06-21 02:05:06.165484637 -0600
-+++ llvm4.store_struct_fix/lib/ExecutionEngine/ExecutionEngine.cpp	2015-07-07 20:40:31.770377719 -0600
++++ llvm4.store_struct_fix/lib/ExecutionEngine/ExecutionEngine.cpp	2015-07-10 17:19:58.929910981 -0600
 @@ -26,6 +26,7 @@
  #include "llvm/IR/Module.h"
  #include "llvm/IR/Operator.h"
@@ -67,85 +67,169 @@ diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/l
  #include "llvm/Object/Archive.h"
  #include "llvm/Object/ObjectFile.h"
  #include "llvm/Support/Debug.h"
-@@ -1031,6 +1032,25 @@
+@@ -501,7 +502,7 @@
+   // to the function tells DynamicLibrary to load the program, not a library.
+   if (sys::DynamicLibrary::LoadLibraryPermanently(nullptr, ErrorStr))
+     return nullptr;
+-  
++
+   // If the user specified a memory manager but didn't specify which engine to
+   // create, we assume they only want the JIT, and we fail if they only want
+   // the interpreter.
+@@ -602,7 +603,7 @@
+         for (unsigned int i = 0; i < elemNum; ++i) {
+           Type *ElemTy = STy->getElementType(i);
+           if (ElemTy->isIntegerTy())
+-            Result.AggregateVal[i].IntVal = 
++            Result.AggregateVal[i].IntVal =
+               APInt(ElemTy->getPrimitiveSizeInBits(), 0);
+           else if (ElemTy->isAggregateType()) {
+               const Constant *ElemUndef = UndefValue::get(ElemTy);
+@@ -966,7 +967,7 @@
+     // Check if vector holds integers.
+     if (ElemTy->isIntegerTy()) {
+       if (CAZ) {
+-        GenericValue intZero;     
++        GenericValue intZero;
+         intZero.IntVal = APInt(ElemTy->getScalarSizeInBits(), 0ull);
+         std::fill(Result.AggregateVal.begin(), Result.AggregateVal.end(),
+                   intZero);
+@@ -1031,6 +1032,23 @@
    }
  }
  
 +void ExecutionEngine::StoreStructToMemory(const GenericValue &Src,
-+                                          GenericValue *Dest, Type *Ty )  
-+{{ 
-+  assert( Dest!= NULL && "Dest is null?");
-+  assert( Ty!= NULL && "Ty is null?");
-+  int8_t* destPtr= (int8_t*)Dest;
-+  unsigned elemIdx= 0;
-+  unsigned numElements= Ty->getStructNumElements();
-+  for ( elemIdx= 0; elemIdx < numElements; elemIdx++ )  {
-+    Type* elemType= Ty->getStructElementType(elemIdx); 
-+    ExecutionEngine::StoreValueToMemory( Src.AggregateVal[elemIdx], 
-+        (GenericValue*)destPtr, elemType );
-+    destPtr+= getDataLayout()->getTypeStoreSize( elemType );
++                                          GenericValue *Dest, Type *Ty) {
++  assert(Dest != NULL && "Dest is null?");
++  assert(Ty != NULL && "Ty is null?");
++  int8_t* destPtr= (int8_t *)Dest;
++  unsigned elemIdx = 0;
++  unsigned numElements = Ty->getStructNumElements();
++  for (elemIdx = 0; elemIdx < numElements; elemIdx++) {
++    Type* elemType = Ty->getStructElementType(elemIdx);
++    ExecutionEngine::StoreValueToMemory(Src.AggregateVal[elemIdx],
++					(GenericValue *)destPtr, elemType);
++    destPtr += getDataLayout()->getTypeStoreSize(elemType);
 +  }
 +
 +  return;
-+}}
-+
++}
 +
  void ExecutionEngine::StoreValueToMemory(const GenericValue &Val,
                                           GenericValue *Ptr, Type *Ty) {
    const unsigned StoreBytes = getDataLayout()->getTypeStoreSize(Ty);
-@@ -1039,6 +1059,9 @@
+@@ -1039,8 +1057,11 @@
    default:
      dbgs() << "Cannot store value of type " << *Ty << "!\n";
      break;
 +  case Type::StructTyID:
-+    StoreStructToMemory( Val, Ptr, Ty );
++    StoreStructToMemory(Val, Ptr, Ty);
 +    break;
    case Type::IntegerTyID:
-     StoreIntToMemory(Val.IntVal, (uint8_t*)Ptr, StoreBytes);
+-    StoreIntToMemory(Val.IntVal, (uint8_t*)Ptr, StoreBytes);
++    StoreIntToMemory(Val.IntVal, (uint8_t *)Ptr, StoreBytes);
      break;
-@@ -1107,12 +1130,42 @@
+   case Type::FloatTyID:
+     *((float*)Ptr) = Val.FloatVal;
+@@ -1066,7 +1087,7 @@
+         *(((float*)Ptr)+i) = Val.AggregateVal[i].FloatVal;
+       if (cast<VectorType>(Ty)->getElementType()->isIntegerTy()) {
+         unsigned numOfBytes =(Val.AggregateVal[i].IntVal.getBitWidth()+7)/8;
+-        StoreIntToMemory(Val.AggregateVal[i].IntVal, 
++        StoreIntToMemory(Val.AggregateVal[i].IntVal,
+           (uint8_t*)Ptr + numOfBytes*i, numOfBytes);
+       }
+     }
+@@ -1105,18 +1126,52 @@
+   }
+ }
  
- /// FIXME: document
+-/// FIXME: document
++/// LoadStructFromMemory -- Loads a struct into a register.  This is
++/// intended to be a helper function for LoadValueFromMemory(~), and
++/// takes the same parameters as that function.
  ///
++/// \param Dest the location data should be written to (this is the
++///    Result parameter from LoadValueFromMemory(~))
++/// \param Src read data from here (this is the Ptr parameter from
++///    LoadValueFromMemory(~))
++/// \param Ty information on the type of the data to move
 +void ExecutionEngine::LoadStructFromMemory(GenericValue &Dest,
-+      GenericValue *Src, Type *Ty)  
-+{{ 
-+  assert( Src!= NULL && "Src is null?");
-+  assert( Ty!= NULL && "Ty is null?");
++					   GenericValue *Src, Type *Ty) {
++  assert(Src != NULL && "Src is null?");
++  assert(Ty != NULL && "Ty is null?");
 +  /* Note: we use the number of elements in Ty, not in Src, as Src is a
 +     pointer that is semi-arbitrarily cast to GenericValue*, it doesn't
 +     point to any useful information about the struct being loaded.
 +  */
 +  Dest.AggregateVal.resize( Ty->getStructNumElements() );
 +
-+  // TODO: check all this:
-+  int8_t* valPtr= (int8_t*)Src;
-+  unsigned elemIdx= 0;
-+  unsigned numElements= Ty->getStructNumElements();
-+  for ( elemIdx= 0; elemIdx < numElements; elemIdx++ )  {
++  int8_t *valPtr = (int8_t *)Src;
++  unsigned elemIdx = 0;
++  unsigned numElements = Ty->getStructNumElements();
++  for (elemIdx = 0; elemIdx < numElements; elemIdx++)  {
 +    GenericValue elem;
-+    Type* elemType= Ty->getStructElementType(elemIdx); 
-+    LoadValueFromMemory( elem, (GenericValue*)valPtr, elemType );
-+    Dest.AggregateVal[elemIdx]= elem;
-+    valPtr+= getDataLayout()->getTypeStoreSize( elemType );
++    Type* elemType = Ty->getStructElementType(elemIdx);
++    LoadValueFromMemory(elem, (GenericValue *)valPtr, elemType);
++    Dest.AggregateVal[elemIdx] = elem;
++    valPtr += getDataLayout()->getTypeStoreSize(elemType);
 +  }
 +
 +  return;
-+}}
++}
 +
  void ExecutionEngine::LoadValueFromMemory(GenericValue &Result,
-                                           GenericValue *Ptr,
-                                           Type *Ty) {
+-                                          GenericValue *Ptr,
+-                                          Type *Ty) {
++                                          GenericValue *Ptr, Type *Ty) {
    const unsigned LoadBytes = getDataLayout()->getTypeStoreSize(Ty);
  
    switch (Ty->getTypeID()) {
-+  case Type::StructTyID:  {
-+    LoadStructFromMemory( Result, Ptr, Ty );
++  case Type::StructTyID: {
++    LoadStructFromMemory(Result, Ptr, Ty);
 +    break;
 +  }
    case Type::IntegerTyID:
      // An APInt with all words initially zero.
      Result.IntVal = APInt(cast<IntegerType>(Ty)->getBitWidth(), 0);
+-    LoadIntFromMemory(Result.IntVal, (uint8_t*)Ptr, LoadBytes);
++    LoadIntFromMemory(Result.IntVal, (uint8_t *)Ptr, LoadBytes);
+     break;
+   case Type::FloatTyID:
+     Result.FloatVal = *((float*)Ptr);
+@@ -1173,7 +1228,7 @@
+   DEBUG(Init->dump());
+   if (isa<UndefValue>(Init))
+     return;
+-  
++
+   if (const ConstantVector *CP = dyn_cast<ConstantVector>(Init)) {
+     unsigned ElementSize =
+       getDataLayout()->getTypeAllocSize(CP->getType()->getElementType());
+@@ -1181,12 +1236,12 @@
+       InitializeMemory(CP->getOperand(i), (char*)Addr+i*ElementSize);
+     return;
+   }
+-  
++
+   if (isa<ConstantAggregateZero>(Init)) {
+     memset(Addr, 0, (size_t)getDataLayout()->getTypeAllocSize(Init->getType()));
+     return;
+   }
+-  
++
+   if (const ConstantArray *CPA = dyn_cast<ConstantArray>(Init)) {
+     unsigned ElementSize =
+       getDataLayout()->getTypeAllocSize(CPA->getType()->getElementType());
+@@ -1194,7 +1249,7 @@
+       InitializeMemory(CPA->getOperand(i), (char*)Addr+i*ElementSize);
+     return;
+   }
+-  
++
+   if (const ConstantStruct *CPS = dyn_cast<ConstantStruct>(Init)) {
+     const StructLayout *SL =
+       getDataLayout()->getStructLayout(cast<StructType>(CPS->getType()));
 diff -ruN -x .git -x projects -x '*.pyc' -x OLD -x 'lit.*cfg' -x '*~' llvm4.up/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll llvm4.store_struct_fix/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll
 --- llvm4.up/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll	1969-12-31 17:00:00.000000000 -0700
 +++ llvm4.store_struct_fix/test/ExecutionEngine/Interpreter/2015-06-25-LoadStruct.ll	2015-07-08 19:19:10.416510151 -0600
