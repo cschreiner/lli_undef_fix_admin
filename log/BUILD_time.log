@@ -8038,3 +8038,8 @@ build status=1 (should be 0)
 build time 0:01 (1 s)
    start time=Tue Jul 21 22:59:40 MDT 2015
    stop time=Tue Jul 21 22:59:41 MDT 2015
+====================================================================
+build status=1 (should be 0)
+build time 0:01 (1 s)
+   start time=Tue Jul 21 23:01:09 MDT 2015
+   stop time=Tue Jul 21 23:01:10 MDT 2015
