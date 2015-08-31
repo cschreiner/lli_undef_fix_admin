@@ -8123,3 +8123,8 @@ build status=0 (should be 0)
 build time 18:06 (1086 s)
    start time=Mon Aug 31 10:50:02 MDT 2015
    stop time=Mon Aug 31 11:08:08 MDT 2015
+====================================================================
+build status=1 (should be 0)
+build time 0:07 (7 s)
+   start time=Mon Aug 31 11:29:50 MDT 2015
+   stop time=Mon Aug 31 11:29:57 MDT 2015
