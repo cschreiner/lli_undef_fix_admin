@@ -1,4 +1,28 @@
 #!/bin/bash
+# Description:
+# Creates programs via csmith, compiles them at -O0 and -O3 levels, runs them,
+# and compares the results.  If the results are identical, deletes that
+# program.  Continues running until a file named STOP is found in its work
+# directory (causing clean exit), or Ctl-C is pressed (causing sloppy exit).
+#
+# Correct Use:
+#    run_csmith_lli <no_arguments>
+# 
+# Details:
+# Creates a directory based on today's date and time in the current directory,
+# cds to that directory, and creates the following files there:
+# 
+#    runXXX.c
+#    runXXX_o0.ll
+#    runXXX_o0.ll.stdout
+#    runXXX_o0.ll.stderr
+#    runXXX_o3.ll
+#    runXXX_o3.ll.stdout
+#    runXXX_o3.ll.stderr
+#    runXXX.report
+# 
+# where XXX is the number of the Csmith generated program.
+# 
 
 scriptname=run_csmith_lli
 
