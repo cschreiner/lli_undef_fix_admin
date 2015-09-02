@@ -1,7 +1,12 @@
 #!/bin/sh
-# Generate metrics from a dir tree created by test_csmith.
-# The current directory is assumed to be the root of the test_csmith output
+# Generate metrics from a dir tree created by run_csmith_lli.
+# The current directory is assumed to be the root of the run_csmith_lli output
 # tree.
+#
+# Csmith-generated programs in the PASSED subdirectory are counted as having
+# passed, those in the KILLED subdirectory are counted as killed (the test
+# program did not run to completion), and those in the run_csmith_lli root
+# directory are counted as needing investigation.   
 
 total=`find . -iname \*report | grep -c ^` 
 need_investigation=`find . -maxdepth 1 -iname \*report | grep -c ^` 
