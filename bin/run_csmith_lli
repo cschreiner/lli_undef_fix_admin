@@ -42,6 +42,7 @@ function test_one_round()
    (
      echo report for source file ${cfile}: 
      echo date=`date`
+     echo LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
    ) | tee $report_file
 
    csmith > $cfile
