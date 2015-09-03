@@ -211,6 +211,15 @@ logfile=`pwd`/LOG_${$scriptname}
    echo ---
 ) >> $logfile
 
+# verify settings
+echo Settings are:
+cat $logfile
+echo " "
+echo If any of this is incorrect, press Ctl-C NOW and fix it.
+sleep 3
+echo Proceeding.
+echo " "
+
 # run
 round=0
 while true; do
