@@ -180,7 +180,8 @@ if [ -z "$arg_max_rounds" ]; then
 fi
 
 # set up
-date_dir=`date +%Y%b%d_%H%M%S`
+start_time=`date +%Y%b%d_%H%M%S`
+date_dir=$start_time
 if [ -d "$date_dir" ]; then
    echo ${scriptname}: ERROR: the dir for the current date+time stamp exists.
    echo date_dir=\"$date_dir\"
@@ -191,6 +192,24 @@ for ii in INTERESTING UNINTERESTING TOOL_ISSUE PASSED KILLED; do
 done
 mkdir -p $date_dir/TOOL_ISSUE/DUP
 cd $date_dir
+
+# start logfile
+logfile=`pwd`/LOG_${$scriptname}
+(
+   echo logfile for \"$scriptname\"
+   echo started $start_time
+   echo LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
+   echo ---
+   echo clang=`which clang`
+   clang --version
+   echo ---
+   echo llifi=`which llifi`
+   llifi --version
+   echo ---
+   echo csmith=`which csmith`
+   csmith --version
+   echo ---
+) >> $logfile
 
 # run
 round=0
@@ -212,8 +231,11 @@ while true; do
       # A STOP file allows one to stop this script cleanly at the end of a
       # round, as opposed to pressing CTL-C, which stops the script in the
       # middle of a round.
+      stop_time=`date +%Y%b%d_%H%M%S`
+      echo stopped running at $stop_time >> $logfile
       round=$(( $round - 1 ))
       echo completed $round rounds before finding a STOP file.
+      echo completed $round rounds before finding a STOP file. >> $logfile
       if [ -s STOP ]; then
 	 echo ${scriptname}: stop file has contents, and so must be removed 
 	 echo manually.
@@ -223,7 +245,6 @@ while true; do
       exit 0
    fi
 done
-
 
 # ============================================================================
 # end of file 
