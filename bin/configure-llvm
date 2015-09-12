@@ -192,6 +192,7 @@ echo running cmake:
 # Note: the above autotools options appear to have no equivalents under cmake:
 #	--enable-optimized, --disable-bindings 
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
+      -DCMAKE_C_FLAGS=-std=gnu11 -DCMAKE_CXX_FLAGS=-std=gnu++11 \
       -DLLVM_ENABLE_FFI=ON \
       $arg_src 
 cmake_status=$?
