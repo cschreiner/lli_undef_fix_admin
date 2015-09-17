@@ -29,7 +29,7 @@ if [ -z "$PROJ_ROOT" ]; then
    exit 127
 fi
 
-if ! (echo $PATH | grep -e $PROJ_ROOT/admin/bin -e $PROJ_ROOT/dbin); then
+if ! (echo $PATH | grep -q -e $PROJ_ROOT/admin/bin -e $PROJ_ROOT/dbin); then
    echo ${scriptname}: error: can not find PROJ_ROOT/admin/bin on PATH
    exit 127
 fi
