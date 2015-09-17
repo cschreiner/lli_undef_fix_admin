@@ -30,19 +30,19 @@ if ! (echo $PATH | grep -e $PROJ_ROOT/admin/bin -e $PROJ_ROOT/dbin); then
    exit 127
 fi
 
-if ! which clang; then
+if ! which clang >> /dev/null ; then
    echo ${scriptname}: error: can not find clang
    exit 127
 fi
-if ! which gcc; then
+if ! which gcc >> /dev/null ; then
    echo ${scriptname}: error: can not find gcc
    exit 127
 fi
-if ! which frama-c; then
+if ! which frama-c >> /dev/null; then
    echo ${scriptname}: error: can not find frama-c
    exit 127
 fi
-if ! which llifi; then
+if ! which llifi >> /dev/null; then
    echo ${scriptname}: error: can not find llifi
    exit 127
 fi
