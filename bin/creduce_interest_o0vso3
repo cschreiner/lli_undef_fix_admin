@@ -15,7 +15,7 @@ BASENAME=$CFILE
 # obsolete:
 #CFILE=$BASENAME.creduce
 
-CLANG_ll="clang -emit-llvm -c -I/uusoc/scratch/dyson/cas/tuut/x86_64/all/include/csmith-2.2.0 -S" 
+CLANG_ll="clang -emit-llvm -c -I$TUUT/all/include/csmith-2.3.0 -S" 
 
 # INCLUDE_DIR is an environment variable specifying the directory where the
 # csmith header files are.
