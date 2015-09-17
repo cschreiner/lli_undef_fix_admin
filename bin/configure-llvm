@@ -70,6 +70,7 @@ while [ $# -gt 0 ]; do
       *)
          echo ${scriptname}: do not recognize argument "$1".
          need_to_exit="true"
+	 shift
          ;;
    esac
 done
@@ -190,9 +191,20 @@ echo ======================================================================
 echo running cmake:
 # Note: the above autotools options appear to have no equivalents under cmake:
 #	--enable-optimized, --disable-bindings 
+# The following CMAKE variables are not set by default, and so can be
+# 	set here without wrecking anything:
+#	CMAKE_BUILD_TYPE	CMAKE_INSTALL_PREFIX 	LLVM_LIBDIR_SUFFIX
+#	CMAKE_C_FLAGS   	CMAKE_CXX_FLAGS 	BUILD_SHARED_LIBS
+#	There are probably others.  We check this by unsetting the
+#	flag, running cmake, and seeing if the variable is set to an
+#	empty string in CMakeCache.txt.
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$prefix $CMAKE_DISTCC_OPTS \
+      -DCMAKE_C_FLAGS=-std=gnu11 -DCMAKE_CXX_FLAGS=-std=gnu++11 \
       -DLLVM_ENABLE_FFI=ON \
       $arg_src 
+
+# stuff being experimented with:
+
 cmake_status=$?
 echo " "
 if [ $cmake_status -ne 0 ]; then

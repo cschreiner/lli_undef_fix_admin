@@ -1,0 +1,14 @@
+List of special packages that need to be installed to make this work on various 
+OS distributions.
+
+Ubuntu 14
+---------
+libctypes-ocaml [not in standard repos]
+libctypes-ocaml-dev [not in standard repos]
+
+libffi-dev 
+libffi
+
+end of file
+-----------
+
