@@ -6,12 +6,49 @@
 
 scriptname=creduce_interest_o0vso3
 
+# ---------------------------------------------------------------------------
+# process command line args
 arg_cfile="$1"
 if [ ! -f "$arg_cfile" ]; then
    echo ${scriptname}: error: no .c file on command line
    exit 127
 fi
 
+# ---------------------------------------------------------------------------
+# check for required programs and environment 
+# Yes, it is arguably computationally expensive to do these checks,
+# but when these checks fail, the whole script fails in mysterious
+# ways, and it is too easy to waste hours and hours of debugging.
+
+if [ -z "$PROJ_ROOT" ]; then
+   echo ${scriptname}: error: environment variable PROJ_ROOT not set.
+   exit 127
+fi
+
+if ! (echo $PATH | grep -e $PROJ_ROOT/admin/bin -e $PROJ_ROOT/dbin); then
+   echo ${scriptname}: error: can not find PROJ_ROOT/admin/bin on PATH
+   exit 127
+fi
+
+if ! which clang; then
+   echo ${scriptname}: error: can not find clang
+   exit 127
+fi
+if ! which gcc; then
+   echo ${scriptname}: error: can not find gcc
+   exit 127
+fi
+if ! which frama-c; then
+   echo ${scriptname}: error: can not find frama-c
+   exit 127
+fi
+if ! which llifi; then
+   echo ${scriptname}: error: can not find llifi
+   exit 127
+fi
+
+# ---------------------------------------------------------------------------
+# set up
 CFILE=`basename $arg_cfile .c`
 
 BASENAME=$CFILE
