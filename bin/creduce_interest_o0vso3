@@ -16,9 +16,13 @@ fi
 
 # ---------------------------------------------------------------------------
 # check for required programs and environment 
-# Yes, it is arguably computationally expensive to do these checks,
-# but when these checks fail, the whole script fails in mysterious
-# ways, and it is too easy to waste hours and hours of debugging.
+
+# Yes, it is arguably computationally expensive to do these checks
+# every time when creduce runs this script thousands of times in quick
+# succession, but when these checks fail, the whole script fails in
+# mysterious ways, and it is too easy to waste hours and hours of
+# debugging.  Besides,t he time to do these checks is probably much
+# less than the time to run clang, gcc, or frama-c.
 
 if [ -z "$PROJ_ROOT" ]; then
    echo ${scriptname}: error: environment variable PROJ_ROOT not set.
