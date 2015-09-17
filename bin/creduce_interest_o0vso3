@@ -15,13 +15,16 @@ BASENAME=$CFILE
 # obsolete:
 #CFILE=$BASENAME.creduce
 
+# TODO: explain the purpose of this variable.  Should its -I argument
+# (i.e. the include directory) be the same as the environment variable
+# $INCLUDE_DIR?
 CLANG_ll="clang -emit-llvm -c -I$TUUT/all/include/csmith-2.3.0 -S" 
 
 # INCLUDE_DIR is an environment variable specifying the directory where the
 # csmith header files are.
 if [ -z "$INCLUDE_DIR" ]; then
    # set to needed include dir on my machine
-   INCLUDE_DIR=$TUUT/all/include/csmith-2.2.0 
+   INCLUDE_DIR=$TUUT/all/include/csmith-2.3.0 
 fi
 if [ ! -d "$INCLUDE_DIR" ]; then
    echo ${scriptname}: error: include directory does not seem to exist.
