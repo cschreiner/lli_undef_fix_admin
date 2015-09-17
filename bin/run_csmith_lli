@@ -194,7 +194,7 @@ mkdir -p $date_dir/TOOL_ISSUE/DUP
 cd $date_dir
 
 # start logfile
-logfile=`pwd`/LOG_${$scriptname}
+logfile=`pwd`/LOG_${scriptname}
 (
    echo logfile for \"$scriptname\"
    echo started $start_time
