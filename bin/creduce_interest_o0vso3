@@ -56,9 +56,11 @@ fi
 CFILE=`basename $arg_cfile .c`
 
 BASENAME=$CFILE
-
-# obsolete:
-#CFILE=$BASENAME.creduce
+if [ -z "$BASENAME" ]; then
+   echo ${scriptname}: error: BASENAME is a null string, output files
+   echo "  " would have very strange names.
+   exit 127
+fi
 
 # TODO: explain the purpose of this variable.  Should its -I argument
 # (i.e. the include directory) be the same as the environment variable
@@ -82,7 +84,6 @@ fi
 regehr_test()
 {
    rm -f out*.txt
-   echo BASENAME=\"$BASENAME\" #;;
    if 
      (
 	clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
