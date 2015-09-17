@@ -7,6 +7,10 @@
 scriptname=creduce_interest_o0vso3
 
 arg_cfile="$1"
+if [ ! -f "$arg_cfile" ]; then
+   echo ${scriptname}: error: no .c file on command line
+   exit 127
+fi
 
 CFILE=`basename $arg_cfile .c`
 
