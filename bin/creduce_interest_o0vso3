@@ -65,6 +65,8 @@ fi
 # TODO: explain the purpose of this variable.  Should its -I argument
 # (i.e. the include directory) be the same as the environment variable
 # $INCLUDE_DIR?
+#
+# command to run clang to produce an .ll file as output
 CLANG_ll="clang -emit-llvm -c -I$TUUT/all/include/csmith-2.3.0 -S" 
 
 # INCLUDE_DIR is an environment variable specifying the directory where the
@@ -212,6 +214,18 @@ o3_status=$?
 # ---------------------------------------------------------------------------
 # compare output
 echo pwd=`pwd` #;;
+
+# Both o0 and o3 can't exit due to infinite loops. If they both fail
+# with the same exit status, the infinite loop is probably in the
+# original .c code, which is bad.  
+#
+# TODO: rewrite this as 
+# if [ o0 == TIMEOUT_EXIT_STATUS and o3 == TIMEOUT_EXIT_STATUS ]; then ...
+if [ $o0_status -ne 0 -a $o3_status -ne 0 -a $o0_status -eq $o3_status ]; then
+   echo both o0 and o3 failed: \
+	 o0_status=\"$o0_status\", o3_status=\"$o3_status\"
+   exit 1
+fi
 
 # compare the exit statuses
 if [ $o0_status -ne $o3_status ]; then
