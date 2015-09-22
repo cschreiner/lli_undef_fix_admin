@@ -132,7 +132,7 @@ regehr_test()
      #! diff out1.txt out2.txt &&\
      cp $CFILE.c $BASENAME-framac.c &&
      perl -pi.bak -e 's/int main \(int argc, char\* argv\[\]\)/int argc; char **argv; int main (void)/' $BASENAME-framac.c &&\
-     frama-c -cpp-command "gcc -C -Dvolatile= -E -I. -I$INCLUDE_DIR" -no-val-show-progress -machdep x86_64 -obviously-terminates $BASENAME-framac.c >${BASENAME}_framac.out 2>&1 &&\
+     (ulimit -t 5; frama-c -cpp-command "gcc -C -Dvolatile= -E -I.  -I$INCLUDE_DIR" -no-val-show-progress -machdep x86_64 -obviously-terminates $BASENAME-framac.c >${BASENAME}_framac.out 2>&1 ) &&\
      ! egrep -i '(user error|assert)' ${BASENAME}_framac.out >/dev/null 2>&1
    then
      return 0
