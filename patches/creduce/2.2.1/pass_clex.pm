@@ -17,7 +17,7 @@ use POSIX;
 
 use File::Copy;
 use File::Spec;
-use Cwd 'abs_path';
+use Cwd 'abs_path'; #CASedit
 
 use creduce_config qw(bindir libexecdir);
 use creduce_regexes;
