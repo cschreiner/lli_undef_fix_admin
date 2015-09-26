@@ -8209,3 +8209,8 @@ build time 0:09 (9 s)
    start time=Tue Sep 15 17:38:55 MDT 2015
    stop time=Tue Sep 15 17:39:04 MDT 2015
 ====================================================================
+====================================================================
+build status=0 (should be 0)
+build time 8:01 (481 s)
+   start time=Sat Sep 19 22:27:26 MDT 2015
+   stop time=Sat Sep 19 22:35:27 MDT 2015
