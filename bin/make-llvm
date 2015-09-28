@@ -148,6 +148,8 @@ fi
    echo " "
    (
       echo $separator
+      echo host=`hostname` with $num_cores cores and \
+	    $total_distcc_procs distcc procs.
       echo build status=$make_status \(should be 0\)
       printf "build time %d:%2.2d (%d s)\n" \
 	    $elapsed_min $elapsed_min_rem_s $elapsed_s 
