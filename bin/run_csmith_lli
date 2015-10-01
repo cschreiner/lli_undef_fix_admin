@@ -46,14 +46,14 @@ function test_one_round()
    ) | tee $report_file
 
    csmith > $cfile
-   clang -I$TUUT/all/include/csmith-2.2.0 -S -O0 -emit-llvm $cfile
+   clang -I$TUUT/all/include/csmith-2.3.0 -S -O0 -emit-llvm $cfile
    clang_status=$?
    if [ "$clang_status" -ne 0 ]; then
       echo clang exited with status \"$clang_status\" at -O0 >> $report_file
       return 1
    fi
    mv $file_stem.ll $opt0_ll
-   clang -I$TUUT/all/include/csmith-2.2.0 -S -O3 -emit-llvm $cfile
+   clang -I$TUUT/all/include/csmith-2.3.0 -S -O3 -emit-llvm $cfile
    if [ "$clang_status" -ne 0 ]; then
       echo clang exited with status \"$clang_status\" at -O3 >> $report_file
       return 1
