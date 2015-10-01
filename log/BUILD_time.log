@@ -8219,3 +8219,9 @@ build status=0 (should be 0)
 build time 1:54 (114 s)
    start time=Mon Sep 28 13:16:21 MDT 2015
    stop time=Mon Sep 28 13:18:15 MDT 2015
+====================================================================
+host=teller with cores and 0 distcc procs.
+build status=0 (should be 0)
+build time 0:01 (1 s)
+   start time=Thu Oct 1 17:42:57 MDT 2015
+   stop time=Thu Oct 1 17:42:58 MDT 2015
