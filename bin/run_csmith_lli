@@ -211,6 +211,9 @@ cd $date_dir
 # ------------------------------------------------------------------------
 # set up the include dir
 
+# TODO3: ideally, this would be something that csmith could spit out to
+# us.  Like `csmith --print-include-dir`.
+
 # `which csmith` usually yields something like "/foo/bar/baz/bin/csmith".
 # The include dir is usually /foo/bar/baz/include/csmith-x.y.x, where 
 # x.y.x is the csmith version number.
