@@ -1,0 +1,22 @@
+#!/bin/sh
+# Quick check to verify that a C program has at least one assignment
+# statement, and that it ceclares at least one integer variable.
+# This will probably never be a sufficient "interesting" script for
+# Creduce, but it has been a useful component when invoked from an
+# "interesting" script.  -- CAS 2015oct06
+
+arg_c_file=$1
+
+if ! grep -Eq '=[^=]' $arg_c_file; then
+   echo fail, this program has no assignment statements
+   exit 1
+fi
+if ! grep -E -e '\bint\b' -e '\bint[0-9]*_t\b' -e '\bunsigned\b' \
+      -e '\buint[0-9]*_t\b' -e '\bshort\b' -e '\blong\b' -e \b'char\b' \
+      $arg_c_file | grep -vq 'main *('; then
+   echo fail, this program has no integer variables
+   exit 1
+fi
+
+exit 0
+
