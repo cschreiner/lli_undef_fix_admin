@@ -24,10 +24,10 @@ while (1) {
     while (my $line = <INF>) {
 	chomp $line;
 	next unless (
-	    $line =~ /^cc1/ ||
-	    $line =~ /opencc/ ||
-	    $line =~ /clang/ ||
-            $line =~ /lli/
+	    $line =~ /^cc1\b/ ||
+	    $line =~ /\bopencc\b/ ||
+	    $line =~ /\bclang\b/ ||
+            $line =~ /\blli\b/
 	    );
 	next unless ($line =~ /\s+([0-9]+)\s+(.*)$/);
 	my $pid = $1;
