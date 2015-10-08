@@ -178,9 +178,13 @@ if [ $status -ne 0 -a $status -ne 137 ]; then
    echo running fsanitize=undefined version failed
    exit 1
 fi
-if [ ! -e $CFILE.fsanitize.stderr -o -s $CFILE.fsanitize.stderr ]; then
+if [ ! -e $CFILE.fsanitize.stderr ]; then
+   echo fsanitize=undef version could not produce a stderr file \(it should
+   echo "  " have 0 length\)
+   exit 127
+elif [ -s $CFILE.fsanitize.stderr ]; then
    echo fsanitize=undefined version wrote to stderr
-   exit 127 # either stderr file got lost, or program emitted error messages
+   exit 127 # program emitted error messages
 fi
 
 # ---------------------------------------------------------------------------
