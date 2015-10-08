@@ -244,6 +244,7 @@ logfile=`pwd`/LOG_${scriptname}
    echo logfile for \"$scriptname\"
    echo started $start_time
    echo LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
+   echo PROJ_ROOT=\"$PROJ_ROOT\"
    echo ---
    echo clang=`which clang`
    clang --version
@@ -254,6 +255,8 @@ logfile=`pwd`/LOG_${scriptname}
    echo csmith=`which csmith`
    csmith --version
    echo csmith include dir=$include_dir
+   echo ---
+   echo PATH=$PATH
    echo ---
 ) >> $logfile
 
