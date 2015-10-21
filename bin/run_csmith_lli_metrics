@@ -12,10 +12,15 @@ total=`find . -iname \*report | grep -c ^`
 need_investigation=`find . -maxdepth 1 -iname \*report | grep -c ^` 
 passed=`find PASSED -iname \*report | grep -c ^` 
 killed=`find KILLED -iname \*report | grep -c ^` 
+echo got to mercury #;;
 tool_issue=`find TOOL_ISSUE -iname \*report | grep -c ^` 
+echo got to venus #;;
 interesting=`find INTERESTING -iname \*report | grep -c ^` 
+echo got to earth #;;
 uninteresting=`find UNINTERESTING -iname \*report | grep -c ^` 
-unclassified=`find . -maxdepth 1 -iname \*report \ grep -c ^`
+echo got to mars #;;
+unclassified=`find . -maxdepth 1 -iname \*report | grep -c ^`
+echo got to jupiter #;;
 
 
 total_percent=100
