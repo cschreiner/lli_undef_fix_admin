@@ -31,18 +31,22 @@ our $tool_issue_percent= $tool_issue * 100 / $total;
 our $interesting_percent= $interesting * 100 / $total;
 our $uninteresting_percent= $uninteresting * 100 / $total;
 
-print "total: $total \(100%\) \n";
+print "total: $total (100%) \n";
 print "\n";
-print "need_investigation: " .
-      "$need_investigation \($need_investigation_percent%\) \n";
-print "passed: $passed \($passed_percent%\) \n";
-print "killed: $killed \($killed_percent%\) \n";
-
-print "tool_issue: $tool_issue \($tool_issue_percent%\) \n";
-print "interesting: $interesting \($interesting_percent%\) \n";
-print "uninteresting: $uninteresting \($uninteresting_percent%\) \n";
+print "need_investigation: " .  "$need_investigation (" . 
+      sprintf("%3.1f", $need_investigation_percent) . "%) \n";
+print "passed: " .  "$passed (" . 
+      sprintf("%3.1f", $passed_percent) . "%) \n";
+print "killed: " .  "$killed (" . 
+      sprintf("%3.1f", $killed_percent) . "%) \n";
+print "tool_issue: " .  "$tool_issue (" . 
+      sprintf("%3.1f", $tool_issue_percent) . "%) \n";
+print "interesting: " .  "$interesting (" . 
+      sprintf("%3.1f", $interesting_percent) . "%) \n";
+print "uninteresting: " .  "$uninteresting (" . 
+      sprintf("%3.1f", $uninteresting_percent) . "%) \n";
 
 print "\n";
-print "\(Total percentages may not equal 100 due to rounding.\)\n";
+print "(Total percentages may not equal 100 due to rounding.)\n";
 print "\n";
 
