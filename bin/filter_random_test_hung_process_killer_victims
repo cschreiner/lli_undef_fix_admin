@@ -5,15 +5,29 @@
 
 scriptname=filter_random_test_hung_process_killer_victims
 tmpfile=/tmp/${scriptname}_`date +%Y%b%d_%H%M%S`_${$}_$RANDOM
-echo using tmpfile=\"$tmpfile\"
+echo using tmpfile=\"$tmpfile\" #;;
 
+while read runfile; do
+   #echo runfile=\"$runfile\"
+   run_base=`basename $runfile | \
+	 awk '{sub(/_.*/, ""); sub(/\..*/, ""); sub(/\s+/, "\n"); print $0;}' `
+   echo $run_base
+done < /dev/stdin | sort | uniq > $tmpfile
 
-for runfile in `cat /dev/stdin`; do
+echo tmpfile:
+cat $tmpfile
+echo ===
+
+exit 0 #;;
+
+while read runfile; do
+   echo runfile=\"$runfile\" #;;
    run_base=`basename $runfile | \
 	 awk '{sub(/_.*/, ""); sub(/\..*/, ""); print $0;}' `
    echo $run_base
-done | sort | uniq > $tmpfile
+done < /dev/stdin | sort | uniq > $tmpfile
    
+exit 0 #;;
 
 
 for run_base in `cat $tmpfile`; do
