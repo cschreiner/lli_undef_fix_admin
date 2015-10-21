@@ -12,11 +12,21 @@ total=`find . -iname \*report | grep -c ^`
 need_investigation=`find . -maxdepth 1 -iname \*report | grep -c ^` 
 passed=`find PASSED -iname \*report | grep -c ^` 
 killed=`find KILLED -iname \*report | grep -c ^` 
+tool_issue=`find TOOL_ISSUE -iname \*report | grep -c ^` 
+interesting=`find INTERESTING -iname \*report | grep -c ^` 
+uninteresting=`find UNINTERESTING -iname \*report | grep -c ^` 
+unclassified=`find . -maxdepth 1 -iname \*report \ grep -c ^`
+
 
 total_percent=100
 need_investigation_percent=$(( $need_investigation * 100 / $total ))
 passed_percent=$(( $passed * 100 / $total ))
 killed_percent=$(( $killed * 100 / $total ))
+
+tool_issue_percent=$(( $tool_issue * 100 / $total ))
+interesting_percent=$(( $interesting * 100 / $total ))
+uninteresting_percent=$(( $uninteresting * 100 / $total ))
+unclassified_percent=$(( $unclassified * 100 / $total ))
 
 echo total: $total \(100%\)
 echo " "
@@ -24,6 +34,11 @@ echo need_investigation: \
       $need_investigation \($need_investigation_percent%\)
 echo passed: $passed \($passed_percent%\)
 echo killed: $killed \($killed_percent%\)
+
+echo tool_issue: $tool_issue \($tool_issue_percent%\)
+echo interesting: $interesting \($interesting_percent%\)
+echo uninteresting: $uninteresting \($uninteresting_percent%\)
+echo unclassified: $unclassified \($unclassified_percent%\)
 echo " "
 echo \(Total percentages may not equal 100 due to rounding.\)
 echo " "
