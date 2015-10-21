@@ -220,12 +220,12 @@ our %run_base_hash;
 
 while ( my $line= <STDIN> )  {
    chomp $line;
-   print "read line=\"$line\"\n";;
+   #print "read line=\"$line\"\n";;
 
    my ( $vol, $run_dir, $run_base );
    my @filename_list= split( /\s+/, $line );
    foreach my $runfile ( @filename_list )  {
-      print "---\n";;
+      #print "---\n";;
       ( $vol, $run_dir, $run_base )= 
 	    File::Spec->splitpath( $runfile );
       if ( $run_dir eq "" )  {
@@ -233,7 +233,7 @@ while ( my $line= <STDIN> )  {
       }
       $run_base=~ s/_.*$//;
       $run_base=~ s/\..*$//;
-      print "run_base=\"$run_base\"\n";;
+      #print "run_base=\"$run_base\"\n";;
       if ( exists($run_base_hash{$run_base}) )  {
          if ( $run_base_hash{$run_base} eq $run_dir )  { next; }
 	 die $scriptname . ": $run_base mentioned in two directories \n";
@@ -287,20 +287,20 @@ exit $main::PERL_SUCCESS;
 sub process_one_run
 {{
    my( $run_dir, $run_base )= @_;
-   print "starting process_one_run with run_dir=\"$run_dir\", " . 
-	 "run_base=\"$run_base\"\n";;
+   #print "starting process_one_run with run_dir=\"$run_dir\", " . 
+   #	 "run_base=\"$run_base\"\n";;
 
    my $run_0_stderr="$run_dir/$run_base" . "_o0.ll.stderr";
    my $run_3_stderr="$run_dir/$run_base" . "_o3.ll.stderr";
-   print "run_0_stderr=\"$run_0_stderr\"\n";;
+   #print "run_0_stderr=\"$run_0_stderr\"\n";;
 
    my $cmd;
    $cmd= "grep -qiE '\\bkilled\\b' $run_0_stderr";
-   print "cmd=\"$cmd\"\n";;
+   #print "cmd=\"$cmd\"\n";;
    my($run_0_killed, undef, undef)= system_wrapper( $cmd );
    $cmd= "grep -qiE '\\bkilled\\b' $run_3_stderr";
    my($run_3_killed, undef, undef)= system_wrapper( $cmd );
-   print "run_0_killed=$run_0_killed, run_3_killed=$run_3_killed. \n";;
+   #print "run_0_killed=$run_0_killed, run_3_killed=$run_3_killed. \n";;
 
    if ( $run_0_killed == 0 and -z $run_3_stderr or 
          $run_3_killed == 0 and -z $run_0_stderr or 
