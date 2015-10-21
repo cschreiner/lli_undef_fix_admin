@@ -9,6 +9,7 @@
 # directory are counted as needing investigation.   
 
 our $total=`find . -iname \\*report | grep -v /NO_TEST/ | grep -c ^`; 
+chomp $total;
 our $need_investigation=`find . -maxdepth 1 -iname \\*report | grep -c ^`;
 chomp $need_investigation;
 our $passed=`find PASSED -iname \\*report | grep -c ^`;
