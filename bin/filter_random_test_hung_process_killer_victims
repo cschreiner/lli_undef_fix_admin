@@ -226,6 +226,9 @@ while ( my $line= <STDIN> )  {
    my @filename_list= split( /\s+/, $line );
    foreach my $runfile ( @filename_list )  {
       #print "---\n";;
+      if ( ! -e $runfile )  {
+         warn $scriptname . ": file \"$runfile\" does not exist \n";
+      }
       ( $vol, $run_dir, $run_base )= 
 	    File::Spec->splitpath( $runfile );
       if ( $run_dir eq "" )  {
