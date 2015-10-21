@@ -230,9 +230,14 @@ while ( my $line= <STDIN> )  {
    my ( $vol, $run_dir, $run_base );
    my @filename_list= split( /\s+/, $line );
    foreach my $runfile ( @filename_list )  {
-      ( $vol, $run_dir, $run_base)= 
-	    File::Spec->splitpath( $run_dir, $run_base );
+      ( $vol, $run_dir, $run_base )= 
+	    File::Spec->splitpath( $runfile );
+      if ( $run_dir eq "" )  {
+         $run_dir= "."; # i.e. the current directory
+      }
+      print "run_base 0=\"$run_base\"\n";;
       $run_base=~ s/_.*$//;
+      print "run_base 1=\"$run_base\"\n";;
       $run_base=~ s/\..*$//;
       print "run_base=\"$run_base\"\n";;
       if ( exists($run_base_hash{$run_base}) )  {
@@ -289,6 +294,8 @@ while ( my $line= <STDIN> )  {
 sub process_one_run
 {{
    my( $run_dir, $run_base )= @_;
+   print "starting process_one_run with run_dir=\"$run_dir\", " . 
+	 "run_base=\"$run_base\"\n";;
 
    my $run_0_stderr="$run_dir/$run_base" . "_o0.ll.stderr";
    my $run_3_stderr="$run_dir/$run_base" . "_o3.ll.stderr";
