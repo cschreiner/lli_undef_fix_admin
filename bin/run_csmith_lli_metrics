@@ -8,7 +8,7 @@
 # program did not run to completion), and those in the run_csmith_lli root
 # directory are counted as needing investigation.   
 
-our $total=`find . -iname \\*report | grep -c ^`; 
+our $total=`find . -iname \\*report | grep -v /NO_TEST/ | grep -c ^`; 
 our $need_investigation=`find . -maxdepth 1 -iname \\*report | grep -c ^`;
 chomp $need_investigation;
 our $passed=`find PASSED -iname \\*report | grep -c ^`;
