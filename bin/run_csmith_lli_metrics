@@ -25,7 +25,6 @@ killed_percent=$(( $killed * 100 / $total ))
 tool_issue_percent=$(( $tool_issue * 100 / $total ))
 interesting_percent=$(( $interesting * 100 / $total ))
 uninteresting_percent=$(( $uninteresting * 100 / $total ))
-unclassified_percent=$(( $unclassified * 100 / $total ))
 
 echo total: $total \(100%\)
 echo " "
