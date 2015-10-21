@@ -12,15 +12,9 @@ total=`find . -iname \*report | grep -c ^`
 need_investigation=`find . -maxdepth 1 -iname \*report | grep -c ^` 
 passed=`find PASSED -iname \*report | grep -c ^` 
 killed=`find KILLED -iname \*report | grep -c ^` 
-echo got to mercury #;;
 tool_issue=`find TOOL_ISSUE -iname \*report | grep -c ^` 
-echo got to venus #;;
 interesting=`find INTERESTING -iname \*report | grep -c ^` 
-echo got to earth #;;
 uninteresting=`find UNINTERESTING -iname \*report | grep -c ^` 
-echo got to mars #;;
-unclassified=`find . -maxdepth 1 -iname \*report | grep -c ^`
-echo got to jupiter #;;
 
 
 total_percent=100
@@ -43,7 +37,6 @@ echo killed: $killed \($killed_percent%\)
 echo tool_issue: $tool_issue \($tool_issue_percent%\)
 echo interesting: $interesting \($interesting_percent%\)
 echo uninteresting: $uninteresting \($uninteresting_percent%\)
-echo unclassified: $unclassified \($unclassified_percent%\)
 echo " "
 echo \(Total percentages may not equal 100 due to rounding.\)
 echo " "
