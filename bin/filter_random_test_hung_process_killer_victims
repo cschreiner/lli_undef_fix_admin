@@ -211,59 +211,39 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
-##   
+##   set up
 our $datestamp= `date +%Y%b%d_%H%M%S`;
 chomp $datestamp;
 our $tmpfile= "/tmp/" . $scriptname . "_" . $datestamp . "_" . 
       $$ . "_" .  int(1e6*rand());
 print "using tmpfile=\"$tmpfile\"\n"; #;;
 
-##;;
-#
-#while read runfile; do
-#   #echo runfile=\"$runfile\"
-#   run_base=`basename $runfile | \
-#	 awk '{sub(/_.*/, ""); sub(/\..*/, ""); sub(/\s+/, "\n"); print $0;}' `
-#   echo $run_base
-#done < /dev/stdin | sort | uniq > $tmpfile
-#
-#echo tmpfile:
-#cat $tmpfile
-#echo ===
-#
-#exit 0 #;;
-#
-#while read runfile; do
-#   echo runfile=\"$runfile\" #;;
-#   run_base=`basename $runfile | \
-#	 awk '{sub(/_.*/, ""); sub(/\..*/, ""); print $0;}' `
-#   echo $run_base
-#done < /dev/stdin | sort | uniq > $tmpfile
-#   
-#exit 0 #;;
-#
-#
-#for run_base in `cat $tmpfile`; do
-#   run_base=`basename $runfile | \
-#	 awk '{sub(/_.*/, ""); sub(/\..*/, ""); print $0;}' `
-#   
-#   run_dir=`dirname $runfile`
-#   run_0_stderr=$run_dir/${run_base}_o0.ll.stderr
-#   run_3_stderr=$run_dir/${run_base}_o3.ll.stderr
-#
-#   grep -qiE '\bkilled\b' $run_0_stderr
-#   run_0_killed=$?
-#   grep -qiE '\bkilled\b' $run_3_stderr
-#   run_3_killed=$?
-#   run_0_len=`stat --printf="%s\n" $run_0_stderr`
-#   run_3_len=`stat --printf="%s\n" $run_3_stderr`
-#
-#   if [ $run_0_killed -eq 0 -a $run_3_len -eq 0 -o \
-#         $run_3_killed -eq 3 -a -$run_0_len -eq 0 -o \
-#         $run_0_killed -eq 0 -a $run_3_killed -eq 0 ]; then 
-#      echo $run_dir/$run_base
-#    fi
-#done
+our %run_base_hash;
+
+## ===========================================================================
+##   begin processing
+
+while ( my $line= <STDIN> )  {
+   chomp $line;
+   print read line=\"$line\"\n";;
+   my @filename_list= split( /\s+/, $line );
+   foreach my $runfile ( @filename_list )  {
+      my( $vol, $run_dir, $run_base)= 
+	    File::Spec->splitpath( $run_dir, $run_base );
+      $run_base=~ s/_.*$//;
+      $run_base=~ s/\..*$//;
+      print "run_base=\"$run_base\"\n";;
+      if ( exists($run_base_hash{$run_base}) )  {
+         if ( $run_base_hash{$run_base} eq $run_dir )  { next; }
+	 die $scriptname . ": $run_base mentioned in two directories \n";
+         # TODO2: update this to print out the old and new dirs, to continue
+         # processing, and to stop after scanning all of the input.
+      }
+      $run_base_hash{$run_base}= $run_dir;
+      process_one_run( $run_dir, $run_base );
+   }
+}
+
 #
 #rm $tmpfile
 
@@ -282,6 +262,48 @@ print "using tmpfile=\"$tmpfile\"\n"; #;;
 ## ===========================================================================
 ##   
 
+## ===========================================================================
+## Subroutine process_one_run()
+## ===========================================================================
+# Description: determines if this run appears to have been killed by
+# 	random_test_hung_opprocess_killer.
+#
+# Method: 
+#
+# Notes: 
+#
+# Warnings: 
+#
+# Inputs: 
+#   $run_dir: the directory of the run to process
+#   $run_base: the basename of the run to process
+#	$run_base typically has form "run4355" 
+# 
+# Outputs: none
+#   
+# Return Value: PERL_SUCCESS
+#   
+# ============================================================================
+sub process_one_run
+{{
+   my( $run_dir, $run_base )= @_;
+
+   my $run_0_stderr=$run_dir/${run_base}_o0.ll.stderr
+   my $run_3_stderr=$run_dir/${run_base}_o3.ll.stderr
+
+   my($run_0_killed, undef, undef)= system_wrapper( 
+	 "grep -qiE '\bkilled\b' $run_0_stderr" );
+   my($run_3_killed, undef, undef)= system_wrapper( 
+	 "grep -qiE '\bkilled\b' $run_3_stderr" );
+
+   if ( $run_0_killed == 0 and -z $run_3_stderr or 
+         $run_3_killed == 0 and -z $run_0_stderr or 
+         $run_0_killed == 0 and $run_3_killed == 0 )  {
+      print "$run_dir/$run_base\n";
+   }
+
+   return $main::PERL_SUCCESS;
+}}
 
 # template 25 lines long
 ## ===========================================================================
