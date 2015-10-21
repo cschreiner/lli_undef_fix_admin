@@ -212,11 +212,6 @@ if ( $debug_flag )  {
 
 ## ===========================================================================
 ##   set up
-our $datestamp= `date +%Y%b%d_%H%M%S`;
-chomp $datestamp;
-our $tmpfile= "/tmp/" . $scriptname . "_" . $datestamp . "_" . 
-      $$ . "_" .  int(1e6*rand());
-print "using tmpfile=\"$tmpfile\"\n"; #;;
 
 our %run_base_hash;
 
@@ -235,9 +230,7 @@ while ( my $line= <STDIN> )  {
       if ( $run_dir eq "" )  {
          $run_dir= "."; # i.e. the current directory
       }
-      print "run_base 0=\"$run_base\"\n";;
       $run_base=~ s/_.*$//;
-      print "run_base 1=\"$run_base\"\n";;
       $run_base=~ s/\..*$//;
       print "run_base=\"$run_base\"\n";;
       if ( exists($run_base_hash{$run_base}) )  {
@@ -251,11 +244,10 @@ while ( my $line= <STDIN> )  {
    }
 }
 
-#
-#rm $tmpfile
 
 ## ===========================================================================
-##   
+##   clean up and exit
+exit $main::PERL_SUCCESS;
 
 ## ===========================================================================
 ##   
