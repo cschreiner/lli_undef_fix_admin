@@ -233,6 +233,8 @@ while ( my $line= <STDIN> )  {
 	    File::Spec->splitpath( $runfile );
       if ( $run_dir eq "" )  {
          $run_dir= "."; # i.e. the current directory
+      } else {
+         $run_dir=~ s[/$][]; # chomp off terminating slash
       }
       $run_base=~ s/_.*$//;
       $run_base=~ s/\..*$//;
