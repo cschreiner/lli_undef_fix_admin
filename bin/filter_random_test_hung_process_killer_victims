@@ -225,6 +225,7 @@ while ( my $line= <STDIN> )  {
    my ( $vol, $run_dir, $run_base );
    my @filename_list= split( /\s+/, $line );
    foreach my $runfile ( @filename_list )  {
+      print "---\n";;
       ( $vol, $run_dir, $run_base )= 
 	    File::Spec->splitpath( $runfile );
       if ( $run_dir eq "" )  {
@@ -291,11 +292,15 @@ sub process_one_run
 
    my $run_0_stderr="$run_dir/$run_base" . "_o0.ll.stderr";
    my $run_3_stderr="$run_dir/$run_base" . "_o3.ll.stderr";
+   print "run_0_stderr=\"$run_0_stderr\"\n";;
 
-   my($run_0_killed, undef, undef)= system_wrapper( 
-	 "grep -qiE '\bkilled\b' $run_0_stderr" );
-   my($run_3_killed, undef, undef)= system_wrapper( 
-	 "grep -qiE '\bkilled\b' $run_3_stderr" );
+   my $cmd;
+   $cmd= "grep -qiE '\\bkilled\\b' $run_0_stderr";
+   print "cmd=\"$cmd\"\n";;
+   my($run_0_killed, undef, undef)= system_wrapper( $cmd );
+   $cmd= "grep -qiE '\\bkilled\\b' $run_3_stderr";
+   my($run_3_killed, undef, undef)= system_wrapper( $cmd );
+   print "run_0_killed=$run_0_killed, run_3_killed=$run_3_killed. \n";;
 
    if ( $run_0_killed == 0 and -z $run_3_stderr or 
          $run_3_killed == 0 and -z $run_0_stderr or 
