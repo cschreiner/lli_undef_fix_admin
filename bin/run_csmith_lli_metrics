@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/perl -w
 # Generate metrics from a dir tree created by run_csmith_lli.
 # The current directory is assumed to be the root of the run_csmith_lli output
 # tree.
@@ -8,35 +8,41 @@
 # program did not run to completion), and those in the run_csmith_lli root
 # directory are counted as needing investigation.   
 
-total=`find . -iname \*report | grep -c ^` 
-need_investigation=`find . -maxdepth 1 -iname \*report | grep -c ^` 
-passed=`find PASSED -iname \*report | grep -c ^` 
-killed=`find KILLED -iname \*report | grep -c ^` 
-tool_issue=`find TOOL_ISSUE -iname \*report | grep -c ^` 
-interesting=`find INTERESTING -iname \*report | grep -c ^` 
-uninteresting=`find UNINTERESTING -iname \*report | grep -c ^` 
+our $total=`find . -iname \\*report | grep -c ^`; 
+our $need_investigation=`find . -maxdepth 1 -iname \\*report | grep -c ^`;
+chomp $need_investigation;
+our $passed=`find PASSED -iname \\*report | grep -c ^`;
+chomp $passed;
+our $killed=`find KILLED -iname \\*report | grep -c ^`; 
+chomp $killed;
+our $tool_issue=`find TOOL_ISSUE -iname \\*report | grep -c ^`; 
+chomp $tool_issue;
+our $interesting=`find INTERESTING -iname \\*report | grep -c ^`; 
+chomp $interesting;
+our $uninteresting=`find UNINTERESTING -iname \\*report | grep -c ^`; 
+chomp $uninteresting;
 
+our $total_percent=100;
+our $need_investigation_percent= $need_investigation * 100 / $total;
+our $passed_percent= $passed * 100 / $total; 
+our $killed_percent= $killed * 100 / $total;
 
-total_percent=100
-need_investigation_percent=$(( $need_investigation * 100 / $total ))
-passed_percent=$(( $passed * 100 / $total ))
-killed_percent=$(( $killed * 100 / $total ))
+our $tool_issue_percent= $tool_issue * 100 / $total;
+our $interesting_percent= $interesting * 100 / $total;
+our $uninteresting_percent= $uninteresting * 100 / $total;
 
-tool_issue_percent=$(( $tool_issue * 100 / $total ))
-interesting_percent=$(( $interesting * 100 / $total ))
-uninteresting_percent=$(( $uninteresting * 100 / $total ))
+print "total: $total \(100%\) \n";
+print "\n";
+print "need_investigation: " .
+      "$need_investigation \($need_investigation_percent%\) \n";
+print "passed: $passed \($passed_percent%\) \n";
+print "killed: $killed \($killed_percent%\) \n";
 
-echo total: $total \(100%\)
-echo " "
-echo need_investigation: \
-      $need_investigation \($need_investigation_percent%\)
-echo passed: $passed \($passed_percent%\)
-echo killed: $killed \($killed_percent%\)
+print "tool_issue: $tool_issue \($tool_issue_percent%\) \n";
+print "interesting: $interesting \($interesting_percent%\) \n";
+print "uninteresting: $uninteresting \($uninteresting_percent%\) \n";
 
-echo tool_issue: $tool_issue \($tool_issue_percent%\)
-echo interesting: $interesting \($interesting_percent%\)
-echo uninteresting: $uninteresting \($uninteresting_percent%\)
-echo " "
-echo \(Total percentages may not equal 100 due to rounding.\)
-echo " "
+print "\n";
+print "\(Total percentages may not equal 100 due to rounding.\)\n";
+print "\n";
 
