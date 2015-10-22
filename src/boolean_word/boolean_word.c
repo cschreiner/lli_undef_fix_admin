@@ -110,7 +110,7 @@ int main( int argc, char* argv[] )
   uint32_t both_flags= husband_flags & wife_flags;
 
   printf( "At least one spouse has these characteristics: %x\n", either_flags );
-  printf( "Both spouses have these characteristics: ..... %x\n", either_flags );
+  printf( "Both spouses have these characteristics: ..... %x\n", both_flags );
 
   return 0;
 }}
