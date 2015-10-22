@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdint.h>
 
 /*++ **************************************************************************
    *   declarations
@@ -97,10 +98,10 @@ uint32_t get_flags_from_data_structure( uint32_t key )
    * \param argc (input) number of parameters on the command line
    * \param argv (input) text of each parameter on the command line
    *    
-   * \return EXIT_SUCCESS
+   * \return 0
    *
    */
-void main( int argc, char* argv[] )
+int main( int argc, char* argv[] )
 {{
   uint32_t husband_flags= get_flags_from_data_structure( 5 );  
   uint32_t wife_flags= get_flags_from_data_structure( 5 );  
@@ -111,7 +112,7 @@ void main( int argc, char* argv[] )
   printf( "At least one spouse has these characteristics: %x\n", either_flags );
   printf( "Both spouses have these characteristics: ..... %x\n", either_flags );
 
-  return EXIT_SUCCESS;
+  return 0;
 }}
 
 // template is 22 lines long
