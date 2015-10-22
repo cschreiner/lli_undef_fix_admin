@@ -7,7 +7,7 @@
    *
    * \b File Description: 
    *
-   * <$project_name) was written by Christian A. Schreiner at University of
+   * lli_undef_fix was written by Christian A. Schreiner at University of
    * Utah.  Copyright (C) 2015-2015 by University of Utah.  All rights
    * reserved.  You may use, examine, or modify this file only in accordance
    * with the GNU Public License, or, alternately, by special written
@@ -35,6 +35,9 @@
    *   includes
    * **************************************************************************
    */
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
 
 /*++ **************************************************************************
    *   declarations
@@ -50,6 +53,66 @@
    *   source code
    * **************************************************************************
    */
+
+//   --------------------------------------------------------------------------
+///  \fn function get_flags_from_data_structure()
+//   --------------------------------------------------------------------------
+/*** \brief simulates returning a word of flags from some complex data 
+ *	structure.
+ *
+ * \b Detailed_Description: 
+ *	In practice, returns a random 32-bit integer with a random
+ *	value, which is also poisoned/undef'd at random.
+ *
+ * \b Method: 
+ *
+ * \b Reentrancy: 
+ *
+ * \param key (input) 
+ *    
+ * \return a word of boolean flags 
+ *
+ */
+uint32_t get_flags_from_data_structure( uint32_t key )
+{{
+  uint32_t ret_val= (rand() & 0xffff) << 16 | (rand() & 0xffff);
+  if ( rand() & 0x1 )  {
+    int maybe_poison= INT_MAX+ 1;
+    ret_val= ret_val+ maybe_poison;
+  }
+  return ret_val;
+}}
+
+//   --------------------------------------------------------------------------
+///  \fn function main()
+//   --------------------------------------------------------------------------
+/*** \brief starts the whole program
+   *
+   * \b Detailed_Description: 
+   *
+   * \b Method: 
+   *
+   * \b Reentrancy: 
+   *
+   * \param argc (input) number of parameters on the command line
+   * \param argv (input) text of each parameter on the command line
+   *    
+   * \return EXIT_SUCCESS
+   *
+   */
+void main( int argc, char* argv[] )
+{{
+  uint32_t husband_flags= get_flags_from_data_structure( 5 );  
+  uint32_t wife_flags= get_flags_from_data_structure( 5 );  
+
+  uint32_t either_flags= husband_flags | wife_flags;
+  uint32_t both_flags= husband_flags & wife_flags;
+
+  printf( "At least one spouse has these characteristics: %x\n", either_flags );
+  printf( "Both spouses have these characteristics: ..... %x\n", either_flags );
+
+  return EXIT_SUCCESS;
+}}
 
 // template is 22 lines long
 //   --------------------------------------------------------------------------
