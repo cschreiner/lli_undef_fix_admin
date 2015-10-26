@@ -1,4 +1,8 @@
 #!/bin/sh
+# LOCALLY MODIFIED!
+# $Revision: 1.1 $
+# $Date: 2015/10/26 22:08:03 $
+#
 # This is an "is it interesting" test script for creduce.  Usually one runs
 # creduce in a special work directory only containing the .c file to reduce,
 # and a very short script that invokes this one with the name of the .c file
@@ -178,9 +182,21 @@ if [ $status -ne 0 -a $status -ne 137 ]; then
    echo running fsanitize=undefined version failed
    exit 1
 fi
-if [ ! -e $CFILE.fsanitize.stderr -o -s $CFILE.fsanitize.stderr ]; then
-   echo fsanitize=undefined version wrote to stderr
-   exit 127 # either stderr file got lost, or program emitted error messages
+if [ ! -e $CFILE.fsanitize.stderr ]; then
+   echo fsanitize=undef version could not produce a stderr file \(it should
+   echo "  " produce one with 0 length\)
+   exit 127 
+elif [ -s $CFILE.fsanitize.stderr ]; then
+   grep -v "unsigned integer overflow" $CFILE.fsanitize.stderr > \
+	 $CFILE.fsanitize_filtered.stderr
+   # we are trying to catch errors like these:
+   #run7324.c:1004:18: runtime error: unsigned integer overflow: 0 - 1 cannot be represented in type 'uint64_t' (aka 'unsigned long')
+   #/uusoc/res/embed/users/cas/tuut/x86_64/all/include/csmith-2.3.0/safe_math.h:760:14: runtime error: unsigned integer overflow: 8 - 4294967295 cannot be represented in type 'unsigned int'
+   #run7324.c:245:15: runtime error: unsigned integer overflow: 4294967295 + 1 cannot be represented in type 'uint32_t' (aka 'unsigned int')
+   if [ -s $CFILE.fsanitize_filtered.stderr ]; then
+      echo fsanitize=undefined version wrote unexpectly to stderr
+      exit 127 # program emitted error messages
+   fi
 fi
 
 # ---------------------------------------------------------------------------
