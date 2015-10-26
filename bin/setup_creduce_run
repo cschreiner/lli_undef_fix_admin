@@ -26,7 +26,7 @@
 # ****************************************************************************
 # Compiler Directives (use's)
 # make sure we are using this Perl version or later
-use 5.6.0;
+use 5.10.0;
 
 use strict;
 use Getopt::Long;
@@ -455,11 +455,7 @@ __END__
 
 =head1 NAME - setup_creduce_run.pl
 
-=cut
-
-#put a short (one line) description here
-
-=pod
+Creates a directory for a creduce run, and places relevant files in it.
 
 =head1 SYNOPSIS
 
@@ -476,6 +472,16 @@ __END__
 
 =head1 DESCRIPTION
 
+Creates up a directory new, copies the relevant .c file to it, and creates an
+"interest" script for creduce.  
+
+Once this is done, one can then run creduce as follows:
+
+  cd <dir>
+  creduce interest <filename>.c 
+
+This assumes the file naming and directory organization conventions of
+run_csmith_lli.
 
 =head1 EXTERNAL INFLUENCES
 
