@@ -2,7 +2,7 @@
 #
 # ****************************************************************************
 # Project Name: lli_undef_fix
-# Script Name: setup_creduce_run.pl 
+# Script Name: setup_creduce_run 
 #
 #
 # For a copyright information, see the statement in the POD documentation at
@@ -71,7 +71,7 @@ use File::Copy;
       # script-specific constants
       use vars qw ( *scriptname $revision *SCRIPT_COPYRIGHT_YEAR 
 	    $debug_flag );
-      *scriptname= \"setup_creduce_run.pl";
+      *scriptname= \"setup_creduce_run";
       {
          my ($null);
          ($null, $revision)= split / /, '$Revision $';
@@ -279,6 +279,39 @@ our( $interest_filename )= File::Spec->catfile( $creduce_dir, "interest" );
             "\t" . "file=\"$interest_filename\".\n";
    }
 }
+
+## ===========================================================================
+##   create creduce_frontend
+
+our( $frontend_filename )= File::Spec->catfile( 
+      $creduce_dir, "creduce_frontend" );
+{
+   my $fh= new FileHandle;
+   $fh->open( ">$frontend_filename" ) or
+      die $main::scriptname . ": can not write to creduce_frontend script, \n" .
+            "\t" . "file=\"$frontend_filename\", \n" .
+            "\t" . "$!.\n";
+
+   $fh->print( "#!/bin/sh\n" );
+   $fh->print( "# for " . $arg_c_filename . "\n" );
+
+   $fh->print( "\n" );
+   $fh->print( 'creduce `pwd`/interest ' . $c_file_basename . "\n" );
+   
+   $fh->close() or
+      die $main::scriptname . 
+	    ": can not close creduce_frontend script after writing, \n" .
+            "\t" . "file=\"$frontend_filename\", \n" .
+            "\t" . "$!.\n";
+
+   my $result= chmod 0755, $frontend_filename;
+   if ( $result != 1 )  {
+      die $main::scriptname . 
+	    ": can not set permissions of the creduce_frontend script, \n" . 
+            "\t" . "file=\"$frontend_filename\".\n";
+   }
+}
+
 
 ## ===========================================================================
 ##   clean up and exit
@@ -517,7 +550,7 @@ __END__
 
 =pod
 
-=head1 NAME - setup_creduce_run.pl
+=head1 NAME - setup_creduce_run
 
 Creates a directory for a creduce run, and places relevant files in it.
 
@@ -530,8 +563,8 @@ Creates a directory for a creduce run, and places relevant files in it.
 
 =pod
 
- setup_creduce_run.pl [debug] [-h|help|-help|--help] [--man] [--revision] 
- setup_creduce_run.pl [debug] ? 
+ setup_creduce_run [debug] [-h|help|-help|--help] [--man] [--revision] 
+ setup_creduce_run [debug] ? 
 
 
 =head1 DESCRIPTION
@@ -539,13 +572,21 @@ Creates a directory for a creduce run, and places relevant files in it.
 Creates up a directory new, copies the relevant .c file to it, and creates an
 "interest" script for creduce.  
 
+It also creates a script for invoking,
+credeuce, called creduce_frontend, that records how creduce is invoked.
+This script is initially looks like this:
+
+  creduce `pwd`/interest <filename>.c 
+
+but the user can modify it to include other creduce options as needed.
+
 Once this is done, one can then run creduce as follows:
 
   cd <dir>
-  creduce interest <filename>.c 
+  creduce_frontend 
 
-This assumes the file naming and directory organization conventions of
-run_csmith_lli.
+setup_creduce_run assumes the file naming and directory organization
+conventions of run_csmith_lli.
 
 =head1 EXTERNAL INFLUENCES
 
@@ -586,10 +627,10 @@ already used, and then create a normal <stem>.creduce dir.
 
 =head1 AUTHOR AND COPYRIGHT
 
-setup_creduce_run.pl was written by Christian A. Schreiner.  Copyright (C) 
+setup_creduce_run was written by Christian A. Schreiner.  Copyright (C) 
 2015-2015 by University of Utah.  You may use, examine, or modify
 this software only in accordance with the GNU Public License, or, alternately, 
-by special arrangement with the author.  setup_creduce_run.pl is released without 
+by special arrangement with the author.  setup_creduce_run s released without 
 any warranties; if you use it and something breaks, you are responsible for 
 cleaning up afterwards.  This notice is precautionary only and does not 
 inherently imply publication or release for public use.  
