@@ -1,8 +1,4 @@
 #!/bin/sh
-# LOCALLY MODIFIED!
-# $Revision: 1.1 $
-# $Date: 2015/10/26 22:08:03 $
-#
 # This is an "is it interesting" test script for creduce.  Usually one runs
 # creduce in a special work directory only containing the .c file to reduce,
 # and a very short script that invokes this one with the name of the .c file
