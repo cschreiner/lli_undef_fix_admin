@@ -256,9 +256,9 @@ our( $interest_filename )= File::Spec->catfile( $creduce_dir, "interest" );
    $fh->print( "export " . $lli_luf_opts_val . "\n" );
 
    $fh->print( '$PROJ_ROOT/admin/bin/creduce_interest_assign_int ' .
-	 $c_file_basenaem . " &&\n" );
+	 $c_file_basename . " &&\n" );
    $fh->print( '$PROJ_ROOT/admin/bin/creduce_interest_o0vso3 ' .
-	 $c_file_basenaem . "\n" );
+	 $c_file_basename . "\n" );
    
    $fh->close() or
       die $main::scriptname . 
@@ -266,7 +266,7 @@ our( $interest_filename )= File::Spec->catfile( $creduce_dir, "interest" );
             "\t" . "file=\"$interest_filename\", \n" .
             "\t" . "$!.\n";
 
-   my $result= chmod 0755 $interest_filename;
+   my $result= chmod 0755, $interest_filename;
    if ( $result != 1 )  {
       die $main::scriptname . 
 	    ": can not set permissions of the interest script, \n" . 
