@@ -557,6 +557,21 @@ run_csmith_lli.
 
 =head1 BUGS AND DEFICIENCIES
 
+=head2 Desired Features
+
+=over
+
+=item 
+
+Ability to specify scripts to invoke via a command line option.  Continue to
+specify default scripts if none are specified on the command line.
+
+=item
+
+Ability to specify scripts to invoke IN ADDITION to the default wcripts.
+
+=back
+
 =head1 AUTHOR AND COPYRIGHT
 
 setup_creduce_run.pl was written by Christian A. Schreiner.  Copyright (C) 
