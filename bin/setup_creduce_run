@@ -576,6 +576,12 @@ specify default scripts if none are specified on the command line.
 
 Ability to specify scripts to invoke IN ADDITION to the default wcripts.
 
+=item
+
+An option to check if a <stem>.creduce dir already exists, if so, rename it to
+<stem>.creduce~X where X is the lowest positive integer greater than any
+already used, and then create a normal <stem>.creduce dir.
+
 =back
 
 =head1 AUTHOR AND COPYRIGHT
