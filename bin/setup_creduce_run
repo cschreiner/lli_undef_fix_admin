@@ -34,6 +34,8 @@ use Config;
 use File::Spec;
 use FileHandle;
 
+use File::Copy;
+
 # ****************************************************************************
 # package identification
 
@@ -140,6 +142,7 @@ $need_to_exit= $FALSE;
 ## -----------------------------------------------------------------------
 ##   set up defaults
 
+use vars qw ( $arg_c_filename );
 
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOpt can't handle
@@ -195,6 +198,13 @@ if ( $need_to_exit )  { print "\n"; exit $EXIT_FAILURE; }
 ## -----------------------------------------------------------------------
 ##   parse arguments that GetOptions left behind
 
+$arg_c_filename= shift @ARGV;
+if ( ! -f $arg_c_filename )  {
+   warn $scriptname . ": .c file does not seem to exist: \n" .
+         "\t" . "file=\"$arg_c_filename\"\n";
+   $need_to_exit= $main::TRUE;
+}
+
 ## -----------------------------------------------------------------------
 ##   check arguments
 
@@ -209,16 +219,64 @@ if ( $debug_flag )  {
 
 
 ## ===========================================================================
-##   
+##   create the directory
+
+our( $c_file_vol, $c_file_path, $c_file_basename )=
+      File::Spec->splitpath($arg_c_filename );
+
+our $creduce_dir_basename= $c_file_basename;
+$creduce_dir_basename=~ s/.c$/.creduce/i;
+
+our $creduce_dir= File::Spec->catdir( $c_file_vol, $creduce_dir_basename );
+
+mkdir $creduce_dir, 0777 or
+   die $main::scriptname . ": can not create creduce directory, \n" .
+         "\t" . "dir=\"$creduce_dir\", \n" .
+         "\t" . "$!.\n";
 
 ## ===========================================================================
-##   
+##   copy the .c file
+copy( $arg_c_filename, $creduce_dir );
 
 ## ===========================================================================
-##   
+##   create the interest script
+
+our( $interest_filename )= File::Spec->catfile( $creduce_dir, "interest" );
+{
+   my $fh= new FileHandle;
+   $fh->open( ">$interest_filename" ) or
+      die $main::scriptname . ": can not write to interest script, \n" .
+            "\t" . "file=\"$interest_filename\", \n" .
+            "\t" . "$!.\n";
+
+   $fh->print( "#!/bin/sh\n" );
+   $fh->print( "# for " . $arg_c_filename . "\n" );
+
+   my $lli_luf_opts_val= `grep ^LLI_LUF_OPTS= LOG_run_csmith_lli`;
+   $fh->print( "export " . $lli_luf_opts_val . "\n" );
+
+   $fh->print( '$PROJ_ROOT/admin/bin/creduce_interest_assign_int ' .
+	 $c_file_basenaem . " &&\n" );
+   $fh->print( '$PROJ_ROOT/admin/bin/creduce_interest_o0vso3 ' .
+	 $c_file_basenaem . "\n" );
+   
+   $fh->close() or
+      die $main::scriptname . 
+	    ": can not close interest script after writing, \n" .
+            "\t" . "file=\"$interest_filename\", \n" .
+            "\t" . "$!.\n";
+
+   my $result= chmod 0755 $interest_filename;
+   if ( $result != 1 )  {
+      die $main::scriptname . 
+	    ": can not set permissions of the interest script, \n" . 
+            "\t" . "file=\"$interest_filename\".\n";
+   }
+}
 
 ## ===========================================================================
-##   
+##   clean up and exit
+exit $main::EXIT_SUCCESS;
 
 ## ===========================================================================
 ##   
