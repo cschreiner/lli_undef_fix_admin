@@ -223,11 +223,20 @@ if ( $debug_flag )  {
 
 our( $c_file_vol, $c_file_path, $c_file_basename )=
       File::Spec->splitpath($arg_c_filename );
+print "c_file_vol=\"$c_file_vol\"\n";;
+print "c_file_path=\"$c_file_path\"\n";;
+print "c_file_basename=\"$c_file_basename\"\n";;
 
 our $creduce_dir_basename= $c_file_basename;
-$creduce_dir_basename=~ s/.c$/.creduce/i;
+$creduce_dir_basename=~ s/\.c$/.creduce/i;
+print "creduce_dir_basename=\"$creduce_dir_basename\"\n";;
 
-our $creduce_dir= File::Spec->catdir( $c_file_vol, $creduce_dir_basename );
+our $creduce_dir= $creduce_dir_basename;
+if ( $c_file_vol ne "" or $c_file_path ne "" )  {
+   $creduce_dir= File::Spec->catdir( 
+	    $c_file_vol, $c_file_path, $creduce_dir_basename );
+}
+print "creduce_dir=\"$creduce_dir\"\n";;
 
 mkdir $creduce_dir, 0777 or
    die $main::scriptname . ": can not create creduce directory, \n" .
@@ -243,6 +252,7 @@ copy( $arg_c_filename, $creduce_dir );
 
 our( $interest_filename )= File::Spec->catfile( $creduce_dir, "interest" );
 {
+   use constant INDENT => "   ";
    my $fh= new FileHandle;
    $fh->open( ">$interest_filename" ) or
       die $main::scriptname . ": can not write to interest script, \n" .
@@ -257,7 +267,7 @@ our( $interest_filename )= File::Spec->catfile( $creduce_dir, "interest" );
 
    $fh->print( '$PROJ_ROOT/admin/bin/creduce_interest_assign_int ' .
 	 $c_file_basename . " &&\n" );
-   $fh->print( '$PROJ_ROOT/admin/bin/creduce_interest_o0vso3 ' .
+   $fh->print( INDENT . '$PROJ_ROOT/admin/bin/creduce_interest_o0vso3 ' .
 	 $c_file_basename . "\n" );
    
    $fh->close() or
