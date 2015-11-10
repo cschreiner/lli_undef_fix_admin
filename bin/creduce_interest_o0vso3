@@ -21,8 +21,8 @@ fi
 # every time when creduce runs this script thousands of times in quick
 # succession, but when these checks fail, the whole script fails in
 # mysterious ways, and it is too easy to waste hours and hours of
-# debugging.  Besides,t he time to do these checks is probably much
-# less than the time to run clang, gcc, or frama-c.
+# human debugging time.  Besides, the time to do these checks is probably
+# much less than the time to run clang, gcc, or frama-c.
 
 if [ -z "$PROJ_ROOT" ]; then
    echo ${scriptname}: error: environment variable PROJ_ROOT not set.
@@ -132,13 +132,18 @@ regehr_test()
      #! diff out1.txt out2.txt &&\
      cp $CFILE.c $BASENAME-framac.c &&
      perl -pi.bak -e 's/int main \(int argc, char\* argv\[\]\)/int argc; char **argv; int main (void)/' $BASENAME-framac.c &&\
-     (ulimit -t 5; frama-c -cpp-command "gcc -C -Dvolatile= -E -I.  -I$INCLUDE_DIR" -no-val-show-progress -machdep x86_64 -obviously-terminates $BASENAME-framac.c >${BASENAME}_framac.out 2>&1 ) &&\
+     (ulimit -t 5; frama-c -cpp-command "gcc -C -Dvolatile= -E -I.  -I$INCLUDE_DIR" -no-val-show-progress -machdep x86_64 -obviously-terminates $BASENAME-framac.c >${BASENAME}_framac.out 2>&1; status=$?; echo frama_c exit status=$status; exit $status) &&\
      ! egrep -i '(user error|assert)' ${BASENAME}_framac.out >/dev/null 2>&1
    then
+     echo regehr_test returning 0
      return 0
    else
+     echo regehr_test returning 1
      return 1
    fi
+   status=$?
+   echo regehr_test had an internal error, code=\"$status\" 
+   exit $status
 }
 
 # Note: frama-c command used to be:
@@ -172,10 +177,15 @@ fi
 (ulimit -t 5; ./$CFILE.fsanitize.bin 1> $CFILE.fsanitize.stdout 2> \
       $CFILE.fsanitize.stderr )   
 status=$?
-if [ $status -ne 0 -a $status -ne 137 ]; then 
+if [ $status -eq 0 ]; then
    # exit 0 means success, 
+   echo all ok >> /dev/null
+elif [ $status -eq 137 ]; then
    # exit 137 is 128 (exited due to signal)+ 9 (signal=sigkill)
-   echo running fsanitize=undefined version failed
+   echo fsanitize=undefined version exited due to sigkill, suspect infinite loop
+   exit 1
+else 
+   echo fsanitize=undefined version failed, status=\"$status\"
    exit 1
 fi
 if [ ! -e $CFILE.fsanitize.stderr ]; then
@@ -215,16 +225,21 @@ mv $CFILE.ll ${CFILE}_o3.ll
 
 # ---------------------------------------------------------------------------
 # run
+echo running... #;;
+
 (ulimit -t 15; llifi ${CFILE}_o0.ll > \
       ${CFILE}_o0.ll.stdout 2> ${CFILE}_o0.ll.stderr )
 o0_status=$?
+echo o0_status=\"$o0_status\"
 
 (ulimit -t 15; llifi ${CFILE}_o3.ll > \
       ${CFILE}_o3.ll.stdout 2> ${CFILE}_o3.ll.stderr )
 o3_status=$?
+echo o3_status=\"$o3_status\"
 
 # ---------------------------------------------------------------------------
 # compare output
+echo comparing output #;;
 echo pwd=`pwd` #;;
 
 # Both o0 and o3 can't exit due to infinite loops. If they both fail
@@ -234,6 +249,7 @@ echo pwd=`pwd` #;;
 # TODO: rewrite this as 
 # if [ o0 == TIMEOUT_EXIT_STATUS and o3 == TIMEOUT_EXIT_STATUS ]; then ...
 if [ $o0_status -ne 0 -a $o3_status -ne 0 -a $o0_status -eq $o3_status ]; then
+   # case1
    echo both o0 and o3 failed: \
 	 o0_status=\"$o0_status\", o3_status=\"$o3_status\"
    exit 1
@@ -241,9 +257,31 @@ fi
 
 # compare the exit statuses
 if [ $o0_status -ne $o3_status ]; then
+   # case2
+   echo exit statuses differ #;;
    exit 0 # they are different, therefore interesting
 else
    echo o0 and o3 had the same exit status of \"$o0_status\"
+fi
+
+# make sure that only the intended logic cases get this far
+#
+# for $o0_status and $o3_status:
+#
+#             o3-----------------------------------------
+#              zero                  nonzero
+#              o0==03     o0!=o3     o0==03     o0!=o3
+#            ...........................................
+# o0 zero    : case3      impossible impossible case2
+#    nonzero : impossible case2      case1      case2
+#
+if [ $o0_status -eq 0 -a $o3_status -eq 0 ]; then
+   # case3
+   echo assertion succeeded >> /dev/null
+else
+   echo assertion failed at 2015nov05_182350, 
+   echo "  " o0_status=\"$o0_status\", o3_status=\"$o3_status\"
+   exit 1
 fi
 
 # make sure both stdout files are present
@@ -264,6 +302,7 @@ if [ -e ${CFILE}_o0.ll.stdout -a -e ${CFILE}_o3.ll.stdout ]; then
       exit 0 # they are different, therefore interesting
    else
       echo o0 and o3 produce the same stdout
+      exit 1
    fi
 fi
 
