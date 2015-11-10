@@ -1,3 +1,8 @@
+/* A program with an infinite loop should NOT be interesting.
+   This program was creduced down from interesting.c around 1-9nov2015 via a
+   faulty version of creduce_interest_o0vso3 that sometimes thought infinite
+   loops were interesting.  
+*/
 #include "csmith.h"
 int32_t g_5, g_1272, g_692;
 int32_t *g_4[][1];

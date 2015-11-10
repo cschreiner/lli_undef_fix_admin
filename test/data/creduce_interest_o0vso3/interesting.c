@@ -1,3 +1,12 @@
+/* This program should be interesting to creduce.  It produces 
+   different behavior at the -O0 and -O3 optimization levels, with these
+   versions of programs:
+
+   clang 3.7.0 
+   gcc-4.8.real (Ubuntu 4.8.4-2ubuntu1~14.04) 4.8.4
+
+   and other stuff installed on bohr as of 9nov2015.
+*/
 /*
  * This is a RANDOMLY GENERATED PROGRAM.
  *
