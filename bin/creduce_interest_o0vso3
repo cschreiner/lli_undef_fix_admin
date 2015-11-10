@@ -87,53 +87,61 @@ regehr_test()
 {
    rm -f out*.txt
    if 
-     (
-	clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
-	      -fsanitize=undefined,integer,signed-integer-overflow \
-	      $CFILE.c -o $CFILE.fsanitize.bin >$BASENAME.fsanitize.out 2>&1 
-     ) && \
-     ! grep 'conversions than data arguments' $BASENAME.fsanitize.out &&\
-     ! grep 'incompatible redeclaration' $BASENAME.fsanitize.out &&\
-     ! grep 'ordered comparison between pointer' $BASENAME.fsanitize.out &&\
-     ! grep 'eliding middle term' $BASENAME.fsanitize.out &&\
-     ! grep 'end of non-void function' $BASENAME.fsanitize.out &&\
-     ! grep 'invalid in C99' $BASENAME.fsanitize.out &&\
-     ! grep 'specifies type' $BASENAME.fsanitize.out &&\
-     ! grep 'should return a value' $BASENAME.fsanitize.out &&\
-     ! grep 'uninitialized' $BASENAME.fsanitize.out &&\
-     ! grep 'incompatible pointer to' $BASENAME.fsanitize.out &&\
-     ! grep 'incompatible integer to' $BASENAME.fsanitize.out &&\
-     ! grep 'type specifier missing' $BASENAME.fsanitize.out &&\
-     gcc -I$INCLUDE_DIR -Wall -Wextra -O2 $CFILE.c -o $CFILE.gcc.bin \
-         >$BASENAME.gcc.out 2>&1 &&\
-     ! grep uninitialized $BASENAME.gcc.out &&\
-     ! grep 'without a cast' $BASENAME.gcc.out &&\
-     ! grep 'control reaches end' $BASENAME.gcc.out &&\
-     ! grep 'return type defaults' $BASENAME.gcc.out &&\
-     ! grep 'cast from pointer to integer' $BASENAME.gcc.out &&\
-     ! grep 'useless type name in empty declaration' $BASENAME.gcc.out &&\
-     ! grep 'no semicolon at end' $BASENAME.gcc.out &&\
-     ! grep 'type defaults to' $BASENAME.gcc.out &&\
-     ! grep 'too few arguments for format' $BASENAME.gcc.out &&\
-     ! grep 'incompatible pointer' $BASENAME.gcc.out &&\
-     ! grep 'ordered comparison of pointer with integer' $BASENAME.gcc.out &&\
-     ! grep 'declaration does not declare anything' $BASENAME.gcc.out &&\
-     ! grep 'expects type' $BASENAME.gcc.out &&\
-     ! grep 'pointer from integer' $BASENAME.gcc.out &&\
-     ! grep 'incompatible implicit' $BASENAME.gcc.out &&\
-     ! grep 'excess elements in struct initializer' $BASENAME.gcc.out &&\
-     ! grep 'comparison between pointer and integer' $BASENAME.gcc.out &&\
-     # Disable gcc-- we aren't looking for execution differences between
-     # different gcc optimization levels:
-     #gcc -I$INCLUDE_DIR -O1 $CFILE.c -o small1 > cc_out1.txt 2>&1 &&\
-     #./small1 >out1.txt 2>&1 &&\
-     #gcc -I$INCLUDE_DIR -O2 $CFILE.c -o small2 > cc_out2.txt 2>&1 &&\
-     #./small2 >out2.txt 2>&1 &&\
-     #! diff out1.txt out2.txt &&\
-     cp $CFILE.c $BASENAME-framac.c &&
-     perl -pi.bak -e 's/int main \(int argc, char\* argv\[\]\)/int argc; char **argv; int main (void)/' $BASENAME-framac.c &&\
-     (ulimit -t 5; frama-c -cpp-command "gcc -C -Dvolatile= -E -I.  -I$INCLUDE_DIR" -no-val-show-progress -machdep x86_64 -obviously-terminates $BASENAME-framac.c >${BASENAME}_framac.out 2>&1; status=$?; echo frama_c exit status=$status; exit $status) &&\
-     ! egrep -i '(user error|assert)' ${BASENAME}_framac.out >/dev/null 2>&1
+      (
+         clang -I$INCLUDE_DIR -pedantic -Wall -O0 \
+ 	       -fsanitize=undefined,integer,signed-integer-overflow \
+ 	       $CFILE.c -o $CFILE.fsanitize.bin >$BASENAME.fsanitize.out 2>&1 
+      ) && \
+      ! grep 'conversions than data arguments' $BASENAME.fsanitize.out &&\
+      ! grep 'incompatible redeclaration' $BASENAME.fsanitize.out &&\
+      ! grep 'ordered comparison between pointer' $BASENAME.fsanitize.out &&\
+      ! grep 'eliding middle term' $BASENAME.fsanitize.out &&\
+      ! grep 'end of non-void function' $BASENAME.fsanitize.out &&\
+      ! grep 'invalid in C99' $BASENAME.fsanitize.out &&\
+      ! grep 'specifies type' $BASENAME.fsanitize.out &&\
+      ! grep 'should return a value' $BASENAME.fsanitize.out &&\
+      ! grep 'uninitialized' $BASENAME.fsanitize.out &&\
+      ! grep 'incompatible pointer to' $BASENAME.fsanitize.out &&\
+      ! grep 'incompatible integer to' $BASENAME.fsanitize.out &&\
+      ! grep 'type specifier missing' $BASENAME.fsanitize.out &&\
+      gcc -I$INCLUDE_DIR -Wall -Wextra -O2 $CFILE.c -o $CFILE.gcc.bin \
+          >$BASENAME.gcc.out 2>&1 &&\
+      ! grep uninitialized $BASENAME.gcc.out &&\
+      ! grep 'without a cast' $BASENAME.gcc.out &&\
+      ! grep 'control reaches end' $BASENAME.gcc.out &&\
+      ! grep 'return type defaults' $BASENAME.gcc.out &&\
+      ! grep 'cast from pointer to integer' $BASENAME.gcc.out &&\
+      ! grep 'useless type name in empty declaration' $BASENAME.gcc.out &&\
+      ! grep 'no semicolon at end' $BASENAME.gcc.out &&\
+      ! grep 'type defaults to' $BASENAME.gcc.out &&\
+      ! grep 'too few arguments for format' $BASENAME.gcc.out &&\
+      ! grep 'incompatible pointer' $BASENAME.gcc.out &&\
+      ! grep 'ordered comparison of pointer with integer' $BASENAME.gcc.out &&\
+      ! grep 'declaration does not declare anything' $BASENAME.gcc.out &&\
+      ! grep 'expects type' $BASENAME.gcc.out &&\
+      ! grep 'pointer from integer' $BASENAME.gcc.out &&\
+      ! grep 'incompatible implicit' $BASENAME.gcc.out &&\
+      ! grep 'excess elements in struct initializer' $BASENAME.gcc.out &&\
+      ! grep 'comparison between pointer and integer' $BASENAME.gcc.out &&\
+      # Disable gcc-- we aren't looking for execution differences between
+      # different gcc optimization levels:
+      #gcc -I$INCLUDE_DIR -O1 $CFILE.c -o small1 > cc_out1.txt 2>&1 &&\
+      #./small1 >out1.txt 2>&1 &&\
+      #gcc -I$INCLUDE_DIR -O2 $CFILE.c -o small2 > cc_out2.txt 2>&1 &&\
+      #./small2 >out2.txt 2>&1 &&\
+      #! diff out1.txt out2.txt &&\
+      cp $CFILE.c $BASENAME-framac.c &&
+      perl -pi.bak -e 's/int main \(int argc, char\* argv\[\]\)/int argc; char **argv; int main (void)/' $BASENAME-framac.c &&\
+      (
+         ulimit -t 5 
+         frama-c -cpp-command "gcc -C -Dvolatile= -E -I.  -I$INCLUDE_DIR" -no-val-show-progress -machdep x86_64 -obviously-terminates $BASENAME-framac.c >${BASENAME}_framac.out 2>&1 
+         status=$? 
+         if [ $status -ne 0 ]; then 
+            echo frama_c exit status=$status 
+         fi 
+         exit $status
+      ) &&\
+      ! egrep -i '(user error|assert)' ${BASENAME}_framac.out >/dev/null 2>&1
    then
      echo regehr_test returning 0
      return 0
