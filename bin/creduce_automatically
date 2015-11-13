@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # automatically create a workdir for creduce and fire it off.
 # This is currently quickly written for homing in on the poison=undef
 # question, a different "interestingness" script may be appropriate for
@@ -9,25 +9,65 @@
 # "interestingness" script on the command line along with the .c file, of
 # course in the same order one specifies them to creduce.   
 
+scriptname=creduce_automatically
+
+# ==========================================================================
+# parse args
 arg_cfile="$1"
+
+# ==========================================================================
+# set up
 cfile_dir=`dirname $arg_cfile`
 basename=`basename $arg_cfile .c`
 workdir=$cfile_dir/$basename.creduce
+
+# check LLI_LUF_OPTS
+# Note: even through the interest script would inherit this value from
+#	the environment, explicitly setting it in the interest script
+#	records what value was used.
+if env | grep -q ^LLI_LUF_OPTS=; then
+   echo all ok >> /dev/null
+else
+   echo ${scriptname}: env var LLI_LUF_OPTS is not set, unsure what to put
+   echo "  " in the interest script.
+   exit -1
+fi
+
+# ==========================================================================
+# create workdir
+if [ -e $workdir ]; then
+   echo ${scriptname}: workdir appears to already exist, please rename.
+   echo "  " workdir=\"$workdir\"
+   exit -1
+fi
 
 mkdir $workdir
 
 cp $arg_cfile $workdir
 
+# ==========================================================================
+# create interest file
 touch $workdir/interesting
-echo '#!/bin/sh' >> $workdir/interesting
-echo '$PROJ_ROOT/admin/bin/creduce_interest_o0vso3' $arg_cfile >> \
-      $workdir/interesting
+(
+   echo '#!/bin/sh' 
+   echo " " 
+   echo LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
+   echo " " 
+   echo '$PROJ_ROOT/admin/bin/creduce_interest_assign_int &&' $arg_cfile 
+   echo '  $PROJ_ROOT/admin/bin/creduce_interest_o0vso3' $arg_cfile 
+   echo " " 
+) >> $workdir/interesting
 chmod ugo+x $workdir/interesting
 
+# ==========================================================================
+# run creduce
 cd $workdir
 creduce ./interesting $arg_cfile
+creduce_status=$?
 
-echo "creduce returned" $?
+echo "creduce returned" \"$creduce_status\"
+exit $creduce_status
 
+# ==========================================================================
 # end of script
 
