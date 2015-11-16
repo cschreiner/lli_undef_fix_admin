@@ -38,6 +38,8 @@ fi
 if [ -e $workdir ]; then
    echo ${scriptname}: workdir appears to already exist, please rename.
    echo "  " workdir=\"$workdir\"
+   # TODO2: consider adding code to automatically rename.  This may need 
+   # to be invoked via an option.
    exit -1
 fi
 
@@ -53,7 +55,7 @@ touch $workdir/interesting
    echo " " 
    echo LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
    echo " " 
-   echo '$PROJ_ROOT/admin/bin/creduce_interest_assign_int &&' $arg_cfile 
+   echo '$PROJ_ROOT/admin/bin/creduce_interest_assign_int' $arg_cfile '&&'
    echo '  $PROJ_ROOT/admin/bin/creduce_interest_o0vso3' $arg_cfile 
    echo " " 
 ) >> $workdir/interesting
