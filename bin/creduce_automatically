@@ -51,7 +51,7 @@ touch $workdir/interesting
 (
    echo '#!/bin/sh' 
    echo " " 
-   echo LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
+   echo export LLI_LUF_OPTS=\"$LLI_LUF_OPTS\"
    echo " " 
    echo '$PROJ_ROOT/admin/bin/creduce_interest_assign_int &&' $arg_cfile 
    echo '  $PROJ_ROOT/admin/bin/creduce_interest_o0vso3' $arg_cfile 
