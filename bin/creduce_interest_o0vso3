@@ -210,6 +210,8 @@ elif [ -s $CFILE.fsanitize.stderr ]; then
    if [ -s $CFILE.fsanitize_filtered.stderr ]; then
       echo fsanitize=undefined version wrote unexpectly to stderr
       exit 127 # program emitted error messages
+   else
+      echo unsigned integer overflow errors we can ignore >> /dev/null
    fi
 fi
 
