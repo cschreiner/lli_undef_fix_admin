@@ -233,7 +233,9 @@ our $workdir= $main::scriptname . "_" . cas_timestamp::get() . "_" . $$;
 mkdir $workdir;
 our $logfile= "$workdir/log";
 
-# write out a copy of the command line args
+use constant LOG_SEPARATOR=> "=" x 70 . "\n";
+
+# start the log file
 {
    my $fh= new FileHandle;
    $fh->open( ">$logfile" ) or
@@ -241,16 +243,32 @@ our $logfile= "$workdir/log";
 	    ": can't open command-line argument file for writing, \n" .
             "file=\"$logfile\", \n" .
             "$!. \n";
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # write out a copy of the command line args
    $fh->print( "command line arguments: \n" );
    foreach my $aa ( @ORIG_ARGV )  {
       $fh->print( "   \"$aa\"\n" );
    }
+
+   # . . . . . . . . . . . . . . . . . . . .
+   # write out the environment
+   $fh->print( "\n\n" . LOG_SEPARATOR . "environment: \n" );
+   foreach my $env_var ( sort keys(%ENV) )  {
+      $fh->print( $env_var . "=\"" . $ENV{$env_var} . "\"\n" );     
+   }
+   $fh->print( "\n" );
+
+   # . . . . . . . . . . . . . . . . . . . .
    $fh->close() or
       die $main::scriptname . 
 	    ": can't close command-line argument file after writing, \n" .
             "file=\"$logfile\", \n" .
             "$!. \n";
 }
+
+exit $main::EXIT_SUCCESS; #;;
+
 
 ## ===========================================================================
 ##   run opt
