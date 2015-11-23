@@ -74,9 +74,9 @@
  * \return a word of boolean flags 
  *
  */
-uint32_t get_flags_from_data_structure( uint32_t key )
+int32_t get_flags_from_data_structure( int32_t key )
 {{
-  uint32_t ret_val= (rand() & 0xffff) << 16 | (rand() & 0xffff);
+  int32_t ret_val= (rand() & 0xffff) << 16 | (rand() & 0xffff);
   if ( rand() & 0x1 )  {
     int maybe_poison= INT_MAX+ 1;
     ret_val= ret_val+ maybe_poison;
@@ -103,11 +103,11 @@ uint32_t get_flags_from_data_structure( uint32_t key )
    */
 int main( int argc, char* argv[] )
 {{
-  uint32_t husband_flags= get_flags_from_data_structure( 5 );  
-  uint32_t wife_flags= get_flags_from_data_structure( 5 );  
+  int32_t husband_flags= get_flags_from_data_structure( 5 );  
+  int32_t wife_flags= get_flags_from_data_structure( 5 );  
 
-  uint32_t either_flags= husband_flags | wife_flags;
-  uint32_t both_flags= husband_flags & wife_flags;
+  int32_t either_flags= husband_flags | wife_flags;
+  int32_t both_flags= husband_flags & wife_flags;
 
   printf( "At least one spouse has these characteristics: %x\n", either_flags );
   printf( "Both spouses have these characteristics: ..... %x\n", both_flags );
