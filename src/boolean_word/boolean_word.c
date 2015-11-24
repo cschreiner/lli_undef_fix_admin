@@ -85,6 +85,36 @@ int32_t get_flags_from_data_structure( int32_t key )
 }}
 
 //   --------------------------------------------------------------------------
+///  \fn function run_test()
+//   --------------------------------------------------------------------------
+/*** \brief runs the test that will (hopefully) turn up a poison discrepancy.
+   *
+   * \b Detailed_Description: 
+   *
+   * \b Method: 
+   *
+   * \b Reentrancy: 
+   *
+   * \b no parameters
+   * 
+   * \return 0
+   *
+   */
+int run_test() 
+{{
+  int32_t husband_flags= get_flags_from_data_structure( 5 );  
+  int32_t wife_flags= get_flags_from_data_structure( 5 );  
+
+  int32_t either_flags= husband_flags | wife_flags;
+  int32_t both_flags= husband_flags & wife_flags;
+
+  printf( "At least one spouse has these characteristics: %x\n", either_flags );
+  printf( "Both spouses have these characteristics: ..... %x\n", both_flags );
+
+  return 0;
+}}
+
+//   --------------------------------------------------------------------------
 ///  \fn function main()
 //   --------------------------------------------------------------------------
 /*** \brief starts the whole program
@@ -103,16 +133,20 @@ int32_t get_flags_from_data_structure( int32_t key )
    */
 int main( int argc, char* argv[] )
 {{
-  int32_t husband_flags= get_flags_from_data_structure( 5 );  
-  int32_t wife_flags= get_flags_from_data_structure( 5 );  
+   if ( argc != 2 )  {
+      fprintf( stderr, 
+	    "Expect exactly one command line argument, the random seed. \n" );
+      exit( EXIT_FAILURE );
+   }
+   char * errptr= NULL;
+   int seed= strtol( argv[1], &endptr, 10 );
+   if ( endptr != NULL )  {
+      fprintf( stderr, "Error: can't parse seed string \"%s\" at \"%s\".  \n",
+            argv[1], errptr );
+   }
+   srand( seed );
 
-  int32_t either_flags= husband_flags | wife_flags;
-  int32_t both_flags= husband_flags & wife_flags;
-
-  printf( "At least one spouse has these characteristics: %x\n", either_flags );
-  printf( "Both spouses have these characteristics: ..... %x\n", both_flags );
-
-  return 0;
+   return run_test();
 }}
 
 // template is 22 lines long
