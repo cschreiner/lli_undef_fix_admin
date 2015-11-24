@@ -139,8 +139,8 @@ int main( int argc, char* argv[] )
       exit( EXIT_FAILURE );
    }
    char * errptr= NULL;
-   int seed= strtol( argv[1], &endptr, 10 );
-   if ( endptr != NULL )  {
+   int seed= strtol( argv[1], &errptr, 10 );
+   if ( errptr != NULL )  {
       fprintf( stderr, "Error: can't parse seed string \"%s\" at \"%s\".  \n",
             argv[1], errptr );
    }
