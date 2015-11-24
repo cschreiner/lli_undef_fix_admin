@@ -133,20 +133,28 @@ int run_test()
    */
 int main( int argc, char* argv[] )
 {{
-   if ( argc != 2 )  {
-      fprintf( stderr, 
-	    "Expect exactly one command line argument, the random seed. \n" );
-      exit( EXIT_FAILURE );
-   }
-   char * errptr= NULL;
-   int seed= strtol( argv[1], &errptr, 10 );
-   if ( errptr != NULL )  {
-      fprintf( stderr, "Error: can't parse seed string \"%s\" at \"%s\".  \n",
-            argv[1], errptr );
-   }
-   srand( seed );
+   if ( argc == 2 )  {
+      /* run with the specified seed */
+      char * errptr= NULL;
+      int seed= strtol( argv[1], &errptr, 10 );
+      if ( errptr != NULL )  {
+	 fprintf( stderr, "Error: can't parse seed string \"%s\" at \"%s\".  \n",
+	       argv[1], errptr );
+      }
+      srand( seed );
+      return run_test();
+   } 
 
-   return run_test();
+   /* try all seeds */
+   int seed= 0;
+   for ( seed= 0; seed <= UINT_MAX; seed++ )  {
+      printf( "seed=%u\n", seed );
+      srand( seed );
+      run_test();
+      printf( "---\n" );
+   }
+
+   return 0;
 }}
 
 // template is 22 lines long
