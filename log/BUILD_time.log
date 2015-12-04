@@ -8285,3 +8285,9 @@ build status=1 (should be 0)
 build time 0:05 (5 s)
    start time=Thu Dec 3 15:01:52 MST 2015
    stop time=Thu Dec 3 15:01:57 MST 2015
+====================================================================
+host=bohr with cores and 0 distcc procs.
+build status=0 (should be 0)
+build time 7:19 (439 s)
+   start time=Thu Dec 3 17:17:28 MST 2015
+   stop time=Thu Dec 3 17:24:47 MST 2015
