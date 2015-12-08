@@ -1,0 +1,35 @@
+#!/bin/bash
+
+arg_c_file="$1"
+
+c_file_basename=`basename $arg_c_file .c`
+echo c_file_basename=\"$c_file_basename\"
+
+o0_ll=${c_file_basename}_o0.ll
+o3_ll=${c_file_basename}_o3.ll
+echo o0_ll=\"$o0_ll\"
+echo o3_ll=\"$o3_ll\"
+
+clang_to_ll -I/uusoc/res/embed/users/cas/tuut/x86_64/all/include/csmith-2.3.0/ \
+      -O0 -o $o0_ll $arg_c_file
+
+clang_to_ll -I/uusoc/res/embed/users/cas/tuut/x86_64/all/include/csmith-2.3.0/ \
+      -O3 -o $o3_ll $arg_c_file
+
+llifi $o0_ll > ${o0_ll}.stdout 2> ${o0_ll}.stderr
+llifi $o3_ll > ${o3_ll}.stdout 2> ${o3_ll}.stderr
+
+diff ${o0_ll}.stdout ${o3_ll}.stdout
+diff_stdout_status=$?
+
+diff ${o0_ll}.stderr ${o3_ll}.stderr
+diff_stderr_status=$?
+
+if [ $diff_stdout_status -ne 0 ]; then
+   echo stdout differs
+fi
+if [ $diff_stderr_status -ne 0 ]; then
+   echo stderr differs
+fi
+
+
