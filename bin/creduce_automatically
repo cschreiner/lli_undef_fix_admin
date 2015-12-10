@@ -52,7 +52,12 @@ mkdir $workdir
 # preprocess
 
 gcc -E "$@" $arg_cfile > $workdir/$basename.c
-cp $arg_cfile $workdir
+preprocessor_status=$?
+if [ $preprocessor_status != 0 ]; then
+   echo ${scriptname}: preprocessor step failed with exit status \
+	 \"$preprocessor_status\"
+   exit -1
+fi
 
 # ==========================================================================
 # create interest file
