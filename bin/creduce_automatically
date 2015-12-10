@@ -14,6 +14,9 @@ scriptname=creduce_automatically
 # ==========================================================================
 # parse args
 arg_cfile="$1"
+shift
+
+# further arguments are interpreted as arguments for the preprocessor.
 
 # ==========================================================================
 # set up
@@ -45,6 +48,10 @@ fi
 
 mkdir $workdir
 
+# ==========================================================================
+# preprocess
+
+gcc -E "$@" $arg_cfile > $workdir/$basename.c
 cp $arg_cfile $workdir
 
 # ==========================================================================
