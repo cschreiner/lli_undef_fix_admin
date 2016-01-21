@@ -55,7 +55,10 @@ fi
 
 # ==========================================================================
 # set up environment
-export PROJ_ROOT=$EDUUUT/lli_undef_fix6
+
+# cd to the "view" dir, whose number matches the number in the branch's name.
+export PROJ_ROOT=$EDUUUT/lli_undef_fix6 
+
 if [ ! -d $PROJ_ROOT ]; then
    echo ${scriptname}: can not find project directory.
    echo "  " dir=\"$PROJ_ROOT\".
@@ -69,7 +72,7 @@ if [ ! -d $PROJ_ROOT/live/bin ]; then
 fi
 export PATH=$PROJ_ROOT/live/bin:$PROJ_ROOT/admin/bin:$PATH
 
-cd $PROJ_ROOT/llvm6
+cd $PROJ_ROOT/llvm4 # the repo name
 
 
 # ==========================================================================
