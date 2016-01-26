@@ -55,7 +55,7 @@ fi
 
 # ==========================================================================
 # set up environment
-export PROJ_ROOT=$EDUUUT/lli_undef_fix4
+export PROJ_ROOT=$EDUUUT/lli_undef_fix__caswork6
 if [ ! -d $PROJ_ROOT ]; then
    echo ${scriptname}: can not find project directory.
    echo "  " dir=\"$PROJ_ROOT\".
